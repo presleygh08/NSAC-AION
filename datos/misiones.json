@@ -1,0 +1,54 @@
+[
+  {
+    "nombre": "Artemis I",
+    "destino": "Órbita Lunar",
+    "masa_kg": 25848,
+    "distancia_km": 450000,
+    "duracion_dias": 25.5,
+    "fuente": "https://www.nasa.gov/humans-in-space/artemis/"
+  },
+  {
+    "nombre": "Falcon 9",
+    "capacidad_leo_kg": 22800,
+    "capacidad_luna_kg": null,
+    "capacidad_marte_kg": 4020,
+    "costo_musd": 67,
+    "fuente_leo": "https://www.spacex.com/vehicles/falcon-9",
+    "fuente_luna": null,
+    "fuente_marte": "https://www.spacex.com/vehicles/falcon-9",
+    "fuente_costo": "https://keeptrack.space/deep-dive/how-much-does-a-falcon-9-launch-cost"
+  },
+  {
+    "nombre": "Falcon Heavy",
+    "capacidad_leo_kg": 63800,
+    "capacidad_luna_kg": 15460,
+    "capacidad_marte_kg": 16800,
+    "costo_musd": 97,
+    "fuente_leo": "https://www.spacex.com/vehicles/falcon-heavy",
+    "fuente_luna": "https://www.elonx.net/falcon-heavy-compendium/",
+    "fuente_marte": "https://www.spacex.com/vehicles/falcon-heavy",
+    "fuente_costo": "https://space.stackexchange.com/questions/26155/what-is-falcon-heavys-payload-capacity-to-trans-lunar-injection"
+  },
+  {
+    "nombre": "Atlas V 551",
+    "capacidad_leo_kg": 18850,
+    "capacidad_luna_kg": null,
+    "capacidad_marte_kg": null,
+    "costo_musd": 153,
+    "fuente_leo": "https://www.ulalaunch.com/rockets/atlas-v",
+    "fuente_luna": null,
+    "fuente_marte": null,
+    "fuente_costo": "https://api.nextspaceflight.com/launches/details/6766"
+  },
+  {
+    "nombre": "SLS block 1",
+    "capacidad_leo_kg": 95000,
+    "capacidad_luna_kg": 27000,
+    "capacidad_marte_kg": null,
+    "costo_musd": 2200,
+    "fuente_leo": "https://www.nasa.gov/wp-content/uploads/2022/03/sls-5558-artemis-ii-sls-reference-guide-page-01.jpg",
+    "fuente_luna": "https://www.nasa.gov/wp-content/uploads/2022/03/sls-5558-artemis-ii-sls-reference-guide-page-01.jpg",
+    "fuente_marte": null,
+    "fuente_costo": "https://www.nasa.gov/wp-content/uploads/2022/03/sls-5558-artemis-ii-sls-reference-guide-page-01.jpg"
+  }
+]   
