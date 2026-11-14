@@ -48,6 +48,8 @@ Known inconsistencies to watch for when joining data:
 
 ## Team plan
 Roles, screens, function/data contract and the 48 h schedule: @docs/plan-equipo-resumen.md
+Official challenge statement, deliverables, judging criteria and plan-vs-challenge gaps: @docs/reto.md
+All user-facing text (game UI, messages, README) must be in English per Space Apps rules; code identifiers stay in Spanish.
 Team (5): Emanuel (physics + game logic + integration), Gonzalo (Pygame UI), Chambi (power/mass/cost functions), Justin (game design, mensajes.json, pitch), Piero (NASA data JSON, README, submission). Jhair left the team.
 
 ## UI rules (Pygame)
