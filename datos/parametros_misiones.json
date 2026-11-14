@@ -1,0 +1,292 @@
+[
+  {
+    "mision": "easy_cubesat",
+    "dificultad": "Easy",
+    "destino": "LEO",
+    "cohete": "Electron",
+    "masa_seca_kg": 20.0,
+    "isp_s": 220,
+    "eficiencia_panel": 0.28,
+    "musd_por_kg_propelente": 2.03,
+    "musd_por_m2_panel": 15.24,
+    "presupuesto_musd": 14.5,
+    "recursos": [
+      {
+        "clave": "estructura",
+        "unidad": "kg",
+        "minimo": 6.0,
+        "optimo": 8.5,
+        "musd_por_unidad": 1.0,
+        "falla": "explota",
+        "fuente": "https://www.nasa.gov/smallsat-institute/what-are-smallsats-and-cubesats/ | https://www.cubesat.org/cubesatinfo | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
+        "nota": "CubeSat 12U (masa seca 20.0 kg, ref. NASA) x fraccion estructural 25-30% = 6.0 kg min, 8.5 kg opt (+20% margen ESA). 1.0 M USD/kg: min $6.0 M, opt $8.5 M."
+      },
+      {
+        "clave": "propulsion",
+        "unidad": "m/s",
+        "minimo": 250,
+        "optimo": 400,
+        "musd_por_unidad": 0.02,
+        "falla": "no_llega",
+        "fuente": "https://ntrs.nasa.gov/api/citations/20205003834/downloads/CSMH%20-%20III-8%20-%20Propulsion%20System_For%20Book-%20200701_final.docx.pdf | https://rocketlabcorp.com/launch/electron",
+        "nota": "Propulsor quimico CubeSat Isp=220 s, m_seca=20 kg: min 250 m/s (2.46 kg prop, $5.0 M), opt 400 m/s (4.07 kg prop, $8.0 M). Equivale a $2.03 M/kg prop."
+      }
+    ],
+    "pistas": [
+      "En el despegue el cohete sufre vibraciones intensas: sin suficiente masa estructural la carga util colapsa.",
+      "El lanzador te deja en orbita baja, pero necesitas impulso propio para alcanzar y mantener tu altitud final."
+    ]
+  },
+  {
+    "mision": "normal_leo",
+    "dificultad": "Normal",
+    "destino": "LEO",
+    "cohete": "Falcon 9",
+    "masa_seca_kg": 140.0,
+    "isp_s": 320,
+    "eficiencia_panel": 0.28,
+    "musd_por_kg_propelente": 0.84,
+    "musd_por_m2_panel": 15.24,
+    "presupuesto_musd": 57.0,
+    "recursos": [
+      {
+        "clave": "estructura",
+        "unidad": "kg",
+        "minimo": 35.0,
+        "optimo": 45.0,
+        "musd_por_unidad": 0.4,
+        "falla": "explota",
+        "fuente": "https://www.nasa.gov/smallsat-institute/what-are-smallsats-and-cubesats/ | https://www.spacex.com/vehicles/falcon-9 | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
+        "nota": "SmallSat mediano (masa seca 140 kg) x 25% fraccion estructural = 35.0 kg min, 45.0 kg opt (+margen ESA 20%+). Costo 0.4 M USD/kg: min $14.0 M, opt $18.0 M."
+      },
+      {
+        "clave": "propulsion",
+        "unidad": "m/s",
+        "minimo": 400,
+        "optimo": 650,
+        "musd_por_unidad": 0.04,
+        "falla": "no_llega",
+        "fuente": "https://www.nasa.gov/wp-content/uploads/2025/02/soa-2024.pdf | https://www.spacex.com/vehicles/falcon-9",
+        "nota": "Motor bipropelente Isp=320 s, m_seca=140 kg: min 400 m/s (19.03 kg prop, $16.0 M), opt 650 m/s (32.22 kg prop, $26.0 M). Equivale a $0.84 M/kg prop."
+      },
+      {
+        "clave": "potencia",
+        "unidad": "W",
+        "minimo": 350,
+        "optimo": 550,
+        "musd_por_unidad": 0.04,
+        "falla": "se_apaga",
+        "fuente": "https://www.nasa.gov/wp-content/uploads/2025/02/soa-2024.pdf | https://www.cubesat.org/descriptions | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
+        "nota": "A 1.0 UA (S0=1361 W/m2, ef=0.28 DHV Tech): min 350 W (0.92 m2, $14.0 M), opt 550 W (1.44 m2, $22.0 M). Equivale a $15.24 M/m2 de panel."
+      }
+    ],
+    "pistas": [
+      "A 1.0 UA recibes 1361 W/m2 de luz solar, pero la nave entra en sombra terrestre y debe alimentar todos sus instrumentos.",
+      "Un cohete mas potente exige mayor masa estructural y mayor reserva de combustible para ajustar la orbita."
+    ]
+  },
+  {
+    "mision": "hard_mro_marte",
+    "dificultad": "Hard",
+    "destino": "órbita de Marte",
+    "cohete": "Falcon Heavy",
+    "masa_seca_kg": 1030.0,
+    "isp_s": 320,
+    "eficiencia_panel": 0.28,
+    "musd_por_kg_propelente": 0.012,
+    "musd_por_m2_panel": 8.21,
+    "presupuesto_musd": 125.0,
+    "recursos": [
+      {
+        "clave": "estructura",
+        "unidad": "kg",
+        "minimo": 375.0,
+        "optimo": 475.0,
+        "musd_por_unidad": 0.05,
+        "falla": "explota",
+        "fuente": "https://science.nasa.gov/missions/mars-reconnaissance-orbiter/ | https://www.esa.int/Enabling_Support/Operations/Mars_Express_operations | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
+        "nota": "Estructura de orbitador marciano (NASA MRO masa seca 1030 kg) con margen 20% ESA. 0.05 M USD/kg: min $18.75 M, opt $23.75 M."
+      },
+      {
+        "clave": "propulsion",
+        "unidad": "m/s",
+        "minimo": 5000,
+        "optimo": 5500,
+        "musd_por_unidad": 0.01,
+        "falla": "no_llega",
+        "fuente": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html | https://www.spacex.com/vehicles/falcon-heavy",
+        "nota": "Delta-v de la nave segun destinos.json (14400 - 9400 LEO = 5000 m/s) con Isp=320 s, m_seca=1030 kg. 0.01 M USD/(m/s): min $50.0 M, opt $55.0 M."
+      },
+      {
+        "clave": "potencia",
+        "unidad": "W",
+        "minimo": 550,
+        "optimo": 800,
+        "musd_por_unidad": 0.05,
+        "falla": "se_apaga",
+        "fuente": "https://science.nasa.gov/missions/mars-reconnaissance-orbiter/ | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
+        "nota": "En Marte (1.524 UA, 586 W/m2, ef=0.28): min 550 W (3.35 m2, $27.5 M), opt 800 W (4.88 m2, $40.0 M). Equivale a $8.21 M/m2."
+      },
+      {
+        "clave": "comunicaciones",
+        "unidad": "kbps",
+        "minimo": 30,
+        "optimo": 230,
+        "musd_por_unidad": 0.1,
+        "falla": "incomunicada",
+        "fuente": "https://descanso.jpl.nasa.gov/monograph/series13/DeepCommoOverall--141030A_ama.pdf | https://www.esa.int/Enabling_Support/Operations/Conjunction_over_engineers_wake_Mars_Express",
+        "nota": "Comunicaciones en espacio profundo (NASA JPL) + tasa real banda X ESA Mars Express (30-230 kbps). 0.1 M USD/kbps: min $3.0 M, opt $23.0 M."
+      }
+    ],
+    "pistas": [
+      "Marte esta a 1.524 UA del Sol: la energia solar que llega a los paneles es menos de la mitad que en la Tierra.",
+      "Enviar imagenes cientificas a mas de 225 millones de km requiere invertir en una antena de alta ganancia en banda X."
+    ]
+  },
+  {
+    "mision": "harder_perseverance",
+    "dificultad": "Harder",
+    "destino": "superficie de Marte",
+    "cohete": "Falcon Heavy",
+    "masa_seca_kg": 1900.0,
+    "isp_s": 450,
+    "eficiencia_panel": 0.30,
+    "musd_por_kg_propelente": 0.007,
+    "musd_por_m2_panel": 8.79,
+    "presupuesto_musd": 195.0,
+    "recursos": [
+      {
+        "clave": "estructura",
+        "unidad": "kg",
+        "minimo": 800.0,
+        "optimo": 980.0,
+        "musd_por_unidad": 0.025,
+        "falla": "explota",
+        "fuente": "https://www.jpl.nasa.gov/missions/ | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
+        "nota": "Estructura reforzada para entrada y descenso en Marte (masa seca 1900 kg + margen 20% ESA). 0.025 M USD/kg: min $20.0 M, opt $24.5 M."
+      },
+      {
+        "clave": "propulsion",
+        "unidad": "m/s",
+        "minimo": 9100,
+        "optimo": 9800,
+        "musd_por_unidad": 0.01,
+        "falla": "no_llega",
+        "fuente": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html | https://www.spacex.com/vehicles/falcon-heavy",
+        "nota": "Delta-v de la nave segun destinos.json (18500 - 9400 LEO = 9100 m/s) con motor Isp=450 s. 0.01 M USD/(m/s): min $91.0 M, opt $98.0 M."
+      },
+      {
+        "clave": "potencia",
+        "unidad": "W",
+        "minimo": 600,
+        "optimo": 850,
+        "musd_por_unidad": 0.05,
+        "falla": "se_apaga",
+        "fuente": "https://www.jpl.nasa.gov/missions/ | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
+        "nota": "Potencia en Marte (1.524 UA, ef=0.30) con margen 20% ESA: min 600 W ($30.0 M), opt 850 W ($42.5 M)."
+      },
+      {
+        "clave": "comunicaciones",
+        "unidad": "kbps",
+        "minimo": 40,
+        "optimo": 230,
+        "musd_por_unidad": 0.1,
+        "falla": "incomunicada",
+        "fuente": "https://descanso.jpl.nasa.gov/monograph/series13/DeepCommoOverall--141030A_ama.pdf | https://www.esa.int/Enabling_Support/Operations/Mars_Express_operations",
+        "nota": "Enlace desde superficie marciana (NASA JPL Deep Space + banda X ESA). 0.1 M USD/kbps: min $4.0 M, opt $23.0 M."
+      },
+      {
+        "clave": "datos",
+        "unidad": "puntos",
+        "minimo": 60,
+        "optimo": 95,
+        "musd_por_unidad": 0.3,
+        "falla": "sin_ciencia",
+        "fuente": "https://www.jpl.nasa.gov/missions/",
+        "nota": "Valor cientifico de camaras y espectrometros de superficie (NASA Perseverance). 0.3 M USD/punto: min $18.0 M, opt $28.5 M."
+      }
+    ],
+    "pistas": [
+      "Aterrizar en Marte requiere mucho mas delta-v y estructura que solo orbitarlo.",
+      "No basta con llegar vivo: si recortas demasiado en instrumentos cientificos, la mision no cumple su objetivo."
+    ]
+  },
+  {
+    "mision": "insane_artemis1",
+    "dificultad": "Insane",
+    "destino": "órbita lunar",
+    "cohete": "SLS block 1",
+    "masa_seca_kg": 10300.0,
+    "isp_s": 450,
+    "eficiencia_panel": 0.30,
+    "musd_por_kg_propelente": 0.005,
+    "musd_por_m2_panel": 20.42,
+    "presupuesto_musd": 256.0,
+    "recursos": [
+      {
+        "clave": "estructura",
+        "unidad": "kg",
+        "minimo": 4250.0,
+        "optimo": 4900.0,
+        "musd_por_unidad": 0.01,
+        "falla": "explota",
+        "fuente": "https://www.nasa.gov/humans-in-space/artemis/ | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
+        "nota": "Estructura de nave pesada Orion (masa seca 10 300 kg en Artemis I NASA) + margen 20% ESA. 0.01 M USD/kg: min $42.5 M, opt $49.0 M."
+      },
+      {
+        "clave": "propulsion",
+        "unidad": "m/s",
+        "minimo": 4000,
+        "optimo": 4500,
+        "musd_por_unidad": 0.02,
+        "falla": "no_llega",
+        "fuente": "https://www.nasa.gov/humans-in-space/artemis/ | https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
+        "nota": "Delta-v de la nave segun destinos.json (13400 - 9400 LEO = 4000 m/s) con motor criogenico Isp=450 s. 0.02 M USD/(m/s): min $80.0 M, opt $90.0 M."
+      },
+      {
+        "clave": "potencia",
+        "unidad": "W",
+        "minimo": 800,
+        "optimo": 1100,
+        "musd_por_unidad": 0.05,
+        "falla": "se_apaga",
+        "fuente": "https://www.nasa.gov/humans-in-space/artemis/ | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
+        "nota": "Demanda electrica de nave lunar completa a 1.0 UA (ef=0.30) + margen 20% ESA. 0.05 M USD/W: min $40.0 M, opt $55.0 M."
+      },
+      {
+        "clave": "comunicaciones",
+        "unidad": "kbps",
+        "minimo": 100,
+        "optimo": 512,
+        "musd_por_unidad": 0.05,
+        "falla": "incomunicada",
+        "fuente": "https://www.esa.int/gsp/ACT/doc/MAD/pub/ACT-RPR-MAD-2018-MARGO.pdf | https://descanso.jpl.nasa.gov/monograph/series13/DeepCommoOverall--141030A_ama.pdf",
+        "nota": "Enlace lunar de alta tasa (hasta 512 kbps segun ESA Deep-Space MARGO + NASA JPL). 0.05 M USD/kbps: min $5.0 M, opt $25.6 M."
+      },
+      {
+        "clave": "datos",
+        "unidad": "puntos",
+        "minimo": 70,
+        "optimo": 95,
+        "musd_por_unidad": 0.4,
+        "falla": "sin_ciencia",
+        "fuente": "https://www.nasa.gov/humans-in-space/artemis/",
+        "nota": "Instrumentacion y sensores de prueba de vuelo lunar (NASA Artemis I). 0.4 M USD/punto: min $28.0 M, opt $38.0 M."
+      },
+      {
+        "clave": "tiempo",
+        "unidad": "dias",
+        "minimo": 20,
+        "optimo": 26,
+        "musd_por_unidad": 1.0,
+        "falla": "fuera_de_tiempo",
+        "fuente": "https://www.nasa.gov/humans-in-space/artemis/",
+        "nota": "Autonomia operativa de la mision real Artemis I (25.5 dias en misiones.json). 1.0 M USD/dia: min $20.0 M, opt $26.0 M."
+      }
+    ],
+    "pistas": [
+      "Artemis I es una nave pesada de prueba lunar: requiere equilibrar los seis recursos a la vez.",
+      "La mision real dura casi cuatro semanas en orbita lunar; si recortas demasiado en tiempo o potencia, no logra completarse."
+    ]
+  }
+]
