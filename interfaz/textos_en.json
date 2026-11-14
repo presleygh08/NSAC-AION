@@ -45,7 +45,22 @@
     "aviso": "Capacities are maximum published values under different conditions, and costs come from different years. Use them as a reference, not as exact prices."
   },
 
-  "resultados": {
+  "parrilla": {
+    "titulo": "Mission grid",
+    "pendiente": "Coming soon: missions sorted by difficulty, from Easy to Insane."
+  },
+
+  "taller": {
+    "titulo": "2. Design workshop",
+    "pendiente": "Coming soon: split your budget between the rocket's resources."
+  },
+
+  "revision": {
+    "titulo": "3. Pre-launch review",
+    "pendiente": "Coming soon: we check that your plan fits the budget before launch."
+  },
+
+  "resultado": {
     "titulo": "4. Mission results",
     "puntaje": "Score",
     "sin_resultado": "No result yet. Launch a mission first."
