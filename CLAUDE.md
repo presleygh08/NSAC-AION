@@ -47,15 +47,19 @@ Known inconsistencies to watch for when joining data:
 - The README's destination list (which includes "superficie lunar") and some of its source URLs don't match the JSON files exactly. `datos/README.md` says sources were unified under one `fuente` key, but `lanzadores.json` still uses per-field `fuente_*`. Check the JSON before trusting either README.
 
 ## Team plan
+Game concept (v3: avatar, Easy–Insane grid, hidden minimum/optimal values, simulation outcomes, scoring): @docs/concepto-juego.md
+Team split and definition (v4: roles and file ownership, Emanuel↔Gonzalo contract, resources per difficulty, parametros_misiones.json format, schedule): @docs/reparto-v4.md
+If v3 and v4 conflict, follow v4. Both supersede older plan items (e.g. the green/yellow/red checklist) and plan-equipo-resumen.md.
 Roles, screens, function/data contract and the 48 h schedule: @docs/plan-equipo-resumen.md
 Official challenge statement, deliverables, judging criteria and plan-vs-challenge gaps: @docs/reto.md
 All user-facing text (game UI, messages, README) must be in English per Space Apps rules; code identifiers stay in Spanish.
-Team (5): Emanuel (physics + game logic + integration), Gonzalo (Pygame UI), Chambi (power/mass/cost functions), Justin (game design, mensajes.json, pitch), Piero (NASA data JSON, README, submission). Jhair left the team.
+Team (5, roles per v4): Gonzalo (Pygame UI: app.py, interfaz/), Emanuel (game architecture: juego.py, fisica.py, potencia_costo.py), Chambi (research: datos/parametros_misiones.json), Justin (game definition, mensajes.json, textos_en.json, pitch), Piero (visual design: assets/, README, submission).
 
 ## UI rules (Pygame)
 - The UI only calls functions from fisica.py / juego.py; no physics or game logic inside screens.
 - Game state lives in a dict in the main loop (not st.session_state).
-- Screens: inicio → objetivo → diseño de la nave → lanzador → resultados.
+- Screens (v4): avatar → parrilla (Easy–Insane) → objetivo (CML1) → presupuesto y pistas (CML2) → taller de reparto (CML3) → revisión (CML4, only budget) → simulación (4 failures + success) → resultados con revelado de mínimo/óptimo. See docs/reparto-v4.md.
+- Contract with juego.py (names fixed by Emanuel; until then use stubs with these names): cargar_misiones(), iniciar_mision(id), repartir(estado, recurso, dinero), presupuesto_restante(estado), revisar(estado), simular(estado), puntaje(estado), revelar(estado).
 - Result texts are read from datos/mensajes.json (keys: exito, delta_v_insuficiente,
   potencia_insuficiente, masa_excede_lanzador, presupuesto_excedido, falla_aleatoria).
 - Use the exact function names, JSON columns and message keys from the contract; if something doesn't fit, ask instead of inventing new names.
