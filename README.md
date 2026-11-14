@@ -153,6 +153,8 @@ Las fuentes están en cada archivo JSON y se resumen aquí. **Fecha de consulta:
 
 ### Formato de cita
 
+Adjuntar fuentes:
+
 Cada fuente se registra con: título, entidad, dirección web y fecha de consulta.
 
 ---
