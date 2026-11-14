@@ -1,0 +1,8 @@
+{
+  "exito": "Mission complete! Your ship reached {destino} and every limit held, with mass, power and cost in balance. Try another design: there is more than one way to succeed.",
+  "delta_v_insuficiente": "The mission stopped: this trip needs {dv_requerido_m_s} m/s of delta-v, but your ship only has {dv_disponible_m_s} m/s. Delta-v is the push the engines can give, and it depends on propellant and Isp. Try more propellant or an engine with higher Isp.",
+  "potencia_insuficiente": "The mission stopped: your ship needs {consumo_w} W but the panels give {generada_w} W. Sunlight gets weaker with distance, so far-away missions need bigger panels. Try a larger panel area or switch off one instrument.",
+  "masa_excede_lanzador": "The launch was cancelled: your ship weighs {m0_kg} kg and the {lanzador} can lift {capacidad_kg} kg to this destination. Propellant adds a lot of weight, and a heavier ship needs a stronger launcher. Try less propellant, a lighter ship or another launcher.",
+  "presupuesto_excedido": "The mission stopped before launch: it costs {costo_musd} M USD and your budget is {presupuesto_musd} M USD. Launcher, ship and instruments all add to the bill. Check which part costs the most and try a cheaper option.",
+  "falla_aleatoria": "Your design met every limit, but an unexpected failure hit the mission. Real missions face surprises too, which is why engineers keep extra margin. Try again with more margin, or run the same design once more."
+}
