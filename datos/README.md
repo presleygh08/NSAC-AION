@@ -3,7 +3,7 @@
 Este repositorio contiene los archivos de datos (`.json`) con los requerimientos técnicos y de presupuesto utilizados para el juego de gestión de misiones espaciales.
 
 ## Estructura de Datos
-Todos los archivos cumplen con el contrato de datos del equipo (Fase 2). Se han unificado las fuentes bajo la clave única `fuente` usando resúmenes descriptivos en lugar de enlaces directos.
+Todos los archivos cumplen con el contrato de datos del equipo establecido para la Fase 2. Se han unificado las fuentes bajo la clave única `fuente` utilizando resúmenes descriptivos de las instituciones y páginas en lugar de enlaces directos.
 
 ### Misiones de Referencia
 * **Artemis I**: NASA Artemis Program
@@ -22,3 +22,5 @@ Todos los archivos cumplen con el contrato de datos del equipo (Fase 2). Se han 
 * **Órbita Lunar**: NASA delta-v map
 * **Órbita de Marte**: NASA delta-v map
 * **Superficie de Marte**: NASA / JPL
+
+> **Nota técnica:** Todos los valores de Delta-V requeridos para cada destino están medidos tomando como punto de partida la **superficie de la Tierra**.

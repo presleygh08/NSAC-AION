@@ -5,10 +5,7 @@
     "capacidad_luna_kg": 30,
     "capacidad_marte_kg": null,
     "costo_musd": 7.5,
-    "fuente_leo": "https://rocketlabcorp.com/launch/electron",
-    "fuente_luna": "https://spacenews.com/rocket-lab-to-offer-lunar-missions-ground-station-services/" ,
-    "fuente_marte": null,
-    "fuente_costo": "https://www.newspace.im/launchers/rocket-lab"
+    "fuente": "Rocket Lab, SpaceNews, NewSpace Index"
   },
   {
     "nombre": "Falcon 9",
@@ -16,10 +13,7 @@
     "capacidad_luna_kg": null,
     "capacidad_marte_kg": 4020,
     "costo_musd": 67,
-    "fuente_leo": "https://www.spacex.com/vehicles/falcon-9",
-    "fuente_luna": null,
-    "fuente_marte": "https://www.spacex.com/vehicles/falcon-9",
-    "fuente_costo": "https://keeptrack.space/deep-dive/how-much-does-a-falcon-9-launch-cost"
+    "fuente": "SpaceX, KeepTrack"
   },
   {
     "nombre": "Falcon Heavy",
@@ -27,10 +21,7 @@
     "capacidad_luna_kg": 15460,
     "capacidad_marte_kg": 16800,
     "costo_musd": 97,
-    "fuente_leo": "https://www.spacex.com/vehicles/falcon-heavy",
-    "fuente_luna": "https://www.elonx.net/falcon-heavy-compendium/",
-    "fuente_marte": "https://www.spacex.com/vehicles/falcon-heavy",
-    "fuente_costo": "https://space.stackexchange.com/questions/26155/what-is-falcon-heavys-payload-capacity-to-trans-lunar-injection"
+    "fuente": "SpaceX, ElonX, Space Stack Exchange"
   },
   {
     "nombre": "Atlas V 551",
@@ -38,10 +29,7 @@
     "capacidad_luna_kg": null,
     "capacidad_marte_kg": null,
     "costo_musd": 153,
-    "fuente_leo": "https://www.ulalaunch.com/rockets/atlas-v",
-    "fuente_luna": null,
-    "fuente_marte": null,
-    "fuente_costo": "https://api.nextspaceflight.com/launches/details/6766"
+    "fuente": "ULA Launch, Next Spaceflight"
   },
   {
     "nombre": "SLS block 1",
@@ -49,9 +37,6 @@
     "capacidad_luna_kg": 27000,
     "capacidad_marte_kg": null,
     "costo_musd": 2200,
-    "fuente_leo": "https://www.nasa.gov/wp-content/uploads/2022/03/sls-5558-artemis-ii-sls-reference-guide-page-01.jpg",
-    "fuente_luna": "https://www.nasa.gov/wp-content/uploads/2022/03/sls-5558-artemis-ii-sls-reference-guide-page-01.jpg",
-    "fuente_marte": null,
-    "fuente_costo": "https://www.nasa.gov/wp-content/uploads/2022/03/sls-5558-artemis-ii-sls-reference-guide-page-01.jpg"
+    "fuente": "NASA SLS Reference Guide"
   }
-]   
+]
