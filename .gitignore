@@ -1,0 +1,10 @@
+# Preferencias personales de Claude Code (no se suben)
+CLAUDE.local.md
+
+# Configuración de PyCharm y archivos de Python
+.idea/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.DS_Store
