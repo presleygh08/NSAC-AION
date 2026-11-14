@@ -1,0 +1,26 @@
+[
+  {
+    "destino": "LEO",
+    "delta_v_m_s": 9400,
+    "distancia_ua": 1,
+    "fuente": "NASA Glenn / Basics of Space Flight"
+  },
+  {
+    "destino": "órbita lunar",
+    "delta_v_m_s": 13400,
+    "distancia_ua": 1,
+    "fuente": "NASA delta-v map"
+  },
+  {
+    "destino": "órbita de Marte",
+    "delta_v_m_s": 14400,
+    "distancia_ua": 1.524,
+    "fuente": "NASA delta-v map"
+  },
+  {
+    "destino": "superficie de Marte",
+    "delta_v_m_s": 18500,
+    "distancia_ua": 1.524,
+    "fuente": "NASA / JPL"
+  }
+]
