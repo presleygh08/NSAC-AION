@@ -1,0 +1,77 @@
+[
+  {
+    "mision": "easy_cubesat",
+    "destino": "LEO",
+    "cohete": "Electron",
+    "presupuesto_musd": null,
+    "recursos": [
+      {
+        "clave": "estructura",
+        "unidad": null,
+        "minimo": null,
+        "optimo": null,
+        "musd_por_unidad": null,
+        "falla": "explota",
+        "fuente": "",
+        "nota": "",
+        "ayuda": "minimo = fraccion de masa estructural x masa de la nave. optimo = minimo + margen de diseño. musd_por_unidad = M USD que cuesta cada unidad (p. ej. cada kg de estructura). Unidad sugerida: kg."
+      },
+      {
+        "clave": "propulsion",
+        "unidad": "m/s",
+        "minimo": null,
+        "optimo": null,
+        "musd_por_unidad": null,
+        "falla": "no_llega",
+        "fuente": "",
+        "nota": "",
+        "ayuda": "minimo = delta-v de la nave = delta_v(destino) - delta_v(LEO), de destinos.json. optimo = minimo + margen. musd_por_unidad = M USD por cada m/s (luego Emanuel lo cambia por propelente real con fisica.py)."
+      }
+    ],
+    "pistas": [],
+    "ayuda_presupuesto": "Debe cumplirse: suma(minimo x musd_por_unidad) <= presupuesto_musd < suma(optimo x musd_por_unidad). Sugerencia: minimos + 60 % de la diferencia."
+  },
+  {
+    "mision": "normal_leo",
+    "destino": "LEO",
+    "cohete": "Falcon 9",
+    "presupuesto_musd": null,
+    "recursos": [
+      {
+        "clave": "estructura",
+        "unidad": null,
+        "minimo": null,
+        "optimo": null,
+        "musd_por_unidad": null,
+        "falla": "explota",
+        "fuente": "",
+        "nota": "",
+        "ayuda": "Igual que en Easy, con la masa de la nave de esta mision."
+      },
+      {
+        "clave": "propulsion",
+        "unidad": "m/s",
+        "minimo": null,
+        "optimo": null,
+        "musd_por_unidad": null,
+        "falla": "no_llega",
+        "fuente": "",
+        "nota": "",
+        "ayuda": "Igual que en Easy, con el destino de esta mision."
+      },
+      {
+        "clave": "potencia",
+        "unidad": "W",
+        "minimo": null,
+        "optimo": null,
+        "musd_por_unidad": null,
+        "falla": "se_apaga",
+        "fuente": "",
+        "nota": "",
+        "ayuda": "minimo = suma de consumos de la nave (W). optimo = minimo + margen. musd_por_unidad = M USD por cada W (equivale a costo por m2 de panel / (S0/d^2 x eficiencia)). Distancia al Sol: destinos.json."
+      }
+    ],
+    "pistas": [],
+    "ayuda_presupuesto": "Misma condicion que Easy."
+  }
+]
