@@ -2,25 +2,25 @@
   {
     "nombre": "Artemis I",
     "destino": "órbita lunar",
-    "masa_kg": 25848.0,
-    "distancia_km": 450000.0,
+    "masa_kg": 25848,
+    "distancia_km": 450000,
     "duracion_dias": 25.5,
-    "fuente": "https://www.nasa.gov/humans-in-space/artemis/"
+    "fuente": "NASA Artemis Program"
   },
   {
     "nombre": "Mars Reconnaissance Orbiter",
     "destino": "órbita de Marte",
-    "masa_kg": 2180.0,
-    "distancia_km": 225000000.0,
-    "duracion_dias": 210.0,
-    "fuente": "https://science.nasa.gov/missions/mars-reconnaissance-orbiter/"
+    "masa_kg": 2180,
+    "distancia_km": 225000000,
+    "duracion_dias": 210,
+    "fuente": "NASA Science - MRO"
   },
   {
     "nombre": "Perseverance",
     "destino": "superficie de Marte",
     "masa_kg": 3800,
     "distancia_km": 471000000,
-    "duracion_dias": 203.0,
-    "fuente": "https://www.jpl.nasa.gov/missions/"
+    "duracion_dias": 203,
+    "fuente": "NASA JPL Missions"
   }
-]   
+]
