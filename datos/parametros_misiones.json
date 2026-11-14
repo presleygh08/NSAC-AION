@@ -4,6 +4,11 @@
     "dificultad": "Easy",
     "destino": "LEO",
     "cohete": "Electron",
+    "masa_seca_kg": 20.0,
+    "isp_s": 220,
+    "eficiencia_panel": 0.28,
+    "musd_por_kg_propelente": 2.03,
+    "musd_por_m2_panel": 15.24,
     "presupuesto_musd": 14.5,
     "recursos": [
       {
@@ -14,7 +19,7 @@
         "musd_por_unidad": 1.0,
         "falla": "explota",
         "fuente": "https://www.nasa.gov/smallsat-institute/what-are-smallsats-and-cubesats/ | https://www.cubesat.org/cubesatinfo | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
-        "nota": "CubeSat 12U (24 kg) x fraccion de masa estructural 25% = 6.0 kg minimo; optimo 8.5 kg con margen de diseno ESA (20%+). Costo 1.0 M USD/kg: min $6.0 M, opt $8.5 M."
+        "nota": "CubeSat 12U (masa seca 20.0 kg, ref. NASA) x fraccion estructural 25-30% = 6.0 kg min, 8.5 kg opt (+20% margen ESA). 1.0 M USD/kg: min $6.0 M, opt $8.5 M."
       },
       {
         "clave": "propulsion",
@@ -24,7 +29,7 @@
         "musd_por_unidad": 0.02,
         "falla": "no_llega",
         "fuente": "https://ntrs.nasa.gov/api/citations/20205003834/downloads/CSMH%20-%20III-8%20-%20Propulsion%20System_For%20Book-%20200701_final.docx.pdf | https://rocketlabcorp.com/launch/electron",
-        "nota": "Delta-v propio de CubeSat en LEO (ref. NASA SmallSat ~269 m/s) tras insercion a 9400 m/s por Electron (+2% residual ESA). 0.02 M USD/(m/s): min $5.0 M, opt $8.0 M."
+        "nota": "Propulsor quimico CubeSat Isp=220 s, m_seca=20 kg: min 250 m/s (2.46 kg prop, $5.0 M), opt 400 m/s (4.07 kg prop, $8.0 M). Equivale a $2.03 M/kg prop."
       }
     ],
     "pistas": [
@@ -37,6 +42,11 @@
     "dificultad": "Normal",
     "destino": "LEO",
     "cohete": "Falcon 9",
+    "masa_seca_kg": 140.0,
+    "isp_s": 320,
+    "eficiencia_panel": 0.28,
+    "musd_por_kg_propelente": 0.84,
+    "musd_por_m2_panel": 15.24,
     "presupuesto_musd": 57.0,
     "recursos": [
       {
@@ -47,7 +57,7 @@
         "musd_por_unidad": 0.4,
         "falla": "explota",
         "fuente": "https://www.nasa.gov/smallsat-institute/what-are-smallsats-and-cubesats/ | https://www.spacex.com/vehicles/falcon-9 | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
-        "nota": "SmallSat mediano (140 kg) x 25% fraccion estructural = 35.0 kg minimo; optimo 45.0 kg con margen ESA 20%+. Costo 0.4 M USD/kg: min $14.0 M, opt $18.0 M."
+        "nota": "SmallSat mediano (masa seca 140 kg) x 25% fraccion estructural = 35.0 kg min, 45.0 kg opt (+margen ESA 20%+). Costo 0.4 M USD/kg: min $14.0 M, opt $18.0 M."
       },
       {
         "clave": "propulsion",
@@ -57,7 +67,7 @@
         "musd_por_unidad": 0.04,
         "falla": "no_llega",
         "fuente": "https://www.nasa.gov/wp-content/uploads/2025/02/soa-2024.pdf | https://www.spacex.com/vehicles/falcon-9",
-        "nota": "Delta-v de posicionamiento orbital y desorbitado seguro en LEO (NASA SOA 2024 + Falcon 9). 0.04 M USD/(m/s): min $16.0 M, opt $26.0 M."
+        "nota": "Motor bipropelente Isp=320 s, m_seca=140 kg: min 400 m/s (19.03 kg prop, $16.0 M), opt 650 m/s (32.22 kg prop, $26.0 M). Equivale a $0.84 M/kg prop."
       },
       {
         "clave": "potencia",
@@ -67,7 +77,7 @@
         "musd_por_unidad": 0.04,
         "falla": "se_apaga",
         "fuente": "https://www.nasa.gov/wp-content/uploads/2025/02/soa-2024.pdf | https://www.cubesat.org/descriptions | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
-        "nota": "Potencia generada a 1.0 UA (S0=1361 W/m2 NASA, celdas triple union 28-30% DHV Technology, +20% margen ESA). 0.04 M USD/W: min $14.0 M, opt $22.0 M."
+        "nota": "A 1.0 UA (S0=1361 W/m2, ef=0.28 DHV Tech): min 350 W (0.92 m2, $14.0 M), opt 550 W (1.44 m2, $22.0 M). Equivale a $15.24 M/m2 de panel."
       }
     ],
     "pistas": [
@@ -80,6 +90,11 @@
     "dificultad": "Hard",
     "destino": "órbita de Marte",
     "cohete": "Falcon Heavy",
+    "masa_seca_kg": 1030.0,
+    "isp_s": 320,
+    "eficiencia_panel": 0.28,
+    "musd_por_kg_propelente": 0.012,
+    "musd_por_m2_panel": 8.21,
     "presupuesto_musd": 125.0,
     "recursos": [
       {
@@ -90,7 +105,7 @@
         "musd_por_unidad": 0.05,
         "falla": "explota",
         "fuente": "https://science.nasa.gov/missions/mars-reconnaissance-orbiter/ | https://www.esa.int/Enabling_Support/Operations/Mars_Express_operations | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
-        "nota": "Estructura de orbitador marciano (NASA MRO 2180 kg / ESA Mars Express) con fraccion estructural y margen 20% ESA. 0.05 M USD/kg: min $18.75 M, opt $23.75 M."
+        "nota": "Estructura de orbitador marciano (NASA MRO masa seca 1030 kg) con margen 20% ESA. 0.05 M USD/kg: min $18.75 M, opt $23.75 M."
       },
       {
         "clave": "propulsion",
@@ -100,7 +115,7 @@
         "musd_por_unidad": 0.01,
         "falla": "no_llega",
         "fuente": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html | https://www.spacex.com/vehicles/falcon-heavy",
-        "nota": "Delta-v de la nave segun destinos.json (14400 - 9400 LEO = 5000 m/s) para orbita de Marte. 0.01 M USD/(m/s): min $50.0 M, opt $55.0 M."
+        "nota": "Delta-v de la nave segun destinos.json (14400 - 9400 LEO = 5000 m/s) con Isp=320 s, m_seca=1030 kg. 0.01 M USD/(m/s): min $50.0 M, opt $55.0 M."
       },
       {
         "clave": "potencia",
@@ -110,7 +125,7 @@
         "musd_por_unidad": 0.05,
         "falla": "se_apaga",
         "fuente": "https://science.nasa.gov/missions/mars-reconnaissance-orbiter/ | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
-        "nota": "En Marte (1.524 UA, NASA MRO) la irradiancia solar cae al 43% (586 W/m2); aplica margen de potencia 20% ESA. 0.05 M USD/W: min $27.5 M, opt $40.0 M."
+        "nota": "En Marte (1.524 UA, 586 W/m2, ef=0.28): min 550 W (3.35 m2, $27.5 M), opt 800 W (4.88 m2, $40.0 M). Equivale a $8.21 M/m2."
       },
       {
         "clave": "comunicaciones",
@@ -133,6 +148,11 @@
     "dificultad": "Harder",
     "destino": "superficie de Marte",
     "cohete": "Falcon Heavy",
+    "masa_seca_kg": 1900.0,
+    "isp_s": 450,
+    "eficiencia_panel": 0.30,
+    "musd_por_kg_propelente": 0.007,
+    "musd_por_m2_panel": 8.79,
     "presupuesto_musd": 195.0,
     "recursos": [
       {
@@ -143,7 +163,7 @@
         "musd_por_unidad": 0.025,
         "falla": "explota",
         "fuente": "https://www.jpl.nasa.gov/missions/ | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
-        "nota": "Estructura reforzada para entrada y descenso en Marte (NASA Perseverance 3800 kg x ~21% + margen 20% ESA). 0.025 M USD/kg: min $20.0 M, opt $24.5 M."
+        "nota": "Estructura reforzada para entrada y descenso en Marte (masa seca 1900 kg + margen 20% ESA). 0.025 M USD/kg: min $20.0 M, opt $24.5 M."
       },
       {
         "clave": "propulsion",
@@ -153,7 +173,7 @@
         "musd_por_unidad": 0.01,
         "falla": "no_llega",
         "fuente": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html | https://www.spacex.com/vehicles/falcon-heavy",
-        "nota": "Delta-v de la nave segun destinos.json (18500 - 9400 LEO = 9100 m/s) para superficie de Marte. 0.01 M USD/(m/s): min $91.0 M, opt $98.0 M."
+        "nota": "Delta-v de la nave segun destinos.json (18500 - 9400 LEO = 9100 m/s) con motor Isp=450 s. 0.01 M USD/(m/s): min $91.0 M, opt $98.0 M."
       },
       {
         "clave": "potencia",
@@ -163,7 +183,7 @@
         "musd_por_unidad": 0.05,
         "falla": "se_apaga",
         "fuente": "https://www.jpl.nasa.gov/missions/ | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
-        "nota": "Potencia para rover e instrumentos cientificos en Marte (1.524 UA) con margen 20% ESA. 0.05 M USD/W: min $30.0 M, opt $42.5 M."
+        "nota": "Potencia en Marte (1.524 UA, ef=0.30) con margen 20% ESA: min 600 W ($30.0 M), opt 850 W ($42.5 M)."
       },
       {
         "clave": "comunicaciones",
@@ -196,6 +216,11 @@
     "dificultad": "Insane",
     "destino": "órbita lunar",
     "cohete": "SLS block 1",
+    "masa_seca_kg": 10300.0,
+    "isp_s": 450,
+    "eficiencia_panel": 0.30,
+    "musd_por_kg_propelente": 0.005,
+    "musd_por_m2_panel": 20.42,
     "presupuesto_musd": 256.0,
     "recursos": [
       {
@@ -206,7 +231,7 @@
         "musd_por_unidad": 0.01,
         "falla": "explota",
         "fuente": "https://www.nasa.gov/humans-in-space/artemis/ | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
-        "nota": "Estructura de nave pesada Orion (25 848 kg en Artemis I NASA x ~16.5% + margen 20% ESA). 0.01 M USD/kg: min $42.5 M, opt $49.0 M."
+        "nota": "Estructura de nave pesada Orion (masa seca 10 300 kg en Artemis I NASA) + margen 20% ESA. 0.01 M USD/kg: min $42.5 M, opt $49.0 M."
       },
       {
         "clave": "propulsion",
@@ -216,7 +241,7 @@
         "musd_por_unidad": 0.02,
         "falla": "no_llega",
         "fuente": "https://www.nasa.gov/humans-in-space/artemis/ | https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
-        "nota": "Delta-v de la nave segun destinos.json (13400 - 9400 LEO = 4000 m/s) para orbita lunar. 0.02 M USD/(m/s): min $80.0 M, opt $90.0 M."
+        "nota": "Delta-v de la nave segun destinos.json (13400 - 9400 LEO = 4000 m/s) con motor criogenico Isp=450 s. 0.02 M USD/(m/s): min $80.0 M, opt $90.0 M."
       },
       {
         "clave": "potencia",
@@ -226,7 +251,7 @@
         "musd_por_unidad": 0.05,
         "falla": "se_apaga",
         "fuente": "https://www.nasa.gov/humans-in-space/artemis/ | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
-        "nota": "Demanda electrica de nave lunar completa a 1.0 UA + margen 20% ESA. 0.05 M USD/W: min $40.0 M, opt $55.0 M."
+        "nota": "Demanda electrica de nave lunar completa a 1.0 UA (ef=0.30) + margen 20% ESA. 0.05 M USD/W: min $40.0 M, opt $55.0 M."
       },
       {
         "clave": "comunicaciones",
