@@ -8,6 +8,7 @@ Juego interactivo para el reto **Space Mission Design Game** del NASA Space Apps
 - Chambi Alcaraz, Bryan Will
 - Aguilar Mondragon, Justin Boris
 - Arista Vigo, Gian Piero.
+
 **Competencia:** 14 y 15 de noviembre de 2026.
 
 
