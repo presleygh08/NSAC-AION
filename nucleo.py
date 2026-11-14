@@ -21,6 +21,7 @@ from pathlib import Path
 CARPETA_DATOS = Path(__file__).parent / "datos"
 ARCHIVO_PARAMETROS = "parametros_misiones.json"
 
+FALLAS_VALIDAS = ["explota", "no_llega", "se_apaga", "incomunicada"]
 MARGEN_OPTIMO = 0.10   # un recurso es "óptimo" si está a ±10 % de su óptimo (Justin puede cambiarlo)
 TOLERANCIA = 1e-9      # evita errores de redondeo al comparar números decimales
 
@@ -194,6 +195,65 @@ def revelar(estado):
 
 
 # ---------------------------------------------------------------------------
+# Verificación de parametros_misiones.json (para Chambi y para el juego)
+# ---------------------------------------------------------------------------
+
+def _es_numero_positivo(x):
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and x > 0
+
+
+def verificar_parametros(m):
+    """Revisa los parámetros de UNA misión. Devuelve la lista de problemas
+    (vacía si está completa y es coherente). Una misión solo es jugable si
+    la lista está vacía."""
+    p = []
+    mid = m.get("mision", "?")
+    for campo in ("mision", "destino", "cohete"):
+        if not m.get(campo):
+            p.append(f"{mid}: falta '{campo}'")
+    if not _es_numero_positivo(m.get("presupuesto_musd")):
+        p.append(f"{mid}: falta 'presupuesto_musd' (número mayor que 0)")
+    recursos = m.get("recursos") or []
+    if not recursos:
+        p.append(f"{mid}: no hay recursos")
+    costo_min = costo_opt = 0.0
+    completos = True
+    for r in recursos:
+        c = r.get("clave", "?")
+        for campo in ("minimo", "optimo", "musd_por_unidad"):
+            if not _es_numero_positivo(r.get(campo)):
+                p.append(f"{mid}/{c}: falta '{campo}' (número mayor que 0)")
+                completos = False
+        for campo in ("unidad", "falla", "fuente"):
+            if not r.get(campo):
+                p.append(f"{mid}/{c}: falta '{campo}'")
+        if r.get("falla") and r["falla"] not in FALLAS_VALIDAS:
+            p.append(f"{mid}/{c}: 'falla' debe ser una de {FALLAS_VALIDAS}")
+        if completos and r["minimo"] > r["optimo"]:
+            p.append(f"{mid}/{c}: el mínimo ({r['minimo']}) supera al óptimo ({r['optimo']})")
+        if completos:
+            costo_min += r["minimo"] * r["musd_por_unidad"]
+            costo_opt += r["optimo"] * r["musd_por_unidad"]
+    if not m.get("pistas"):
+        p.append(f"{mid}: faltan 'pistas'")
+    # Condición de validez: costo(mínimos) <= presupuesto < costo(óptimos)
+    if completos and recursos and _es_numero_positivo(m.get("presupuesto_musd")):
+        pres = m["presupuesto_musd"]
+        if costo_min > pres + TOLERANCIA:
+            p.append(f"{mid}: IMPOSIBLE: los mínimos cuestan {costo_min:.2f} M USD y el presupuesto es {pres}")
+        if costo_opt <= pres:
+            p.append(f"{mid}: SIN DECISIÓN: los óptimos cuestan {costo_opt:.2f} M USD y el presupuesto ({pres}) alcanza para todos")
+    return p
+
+
+def verificar_archivo(ruta=None):
+    """Verifica todo parametros_misiones.json. Devuelve {id_mision: [problemas]}."""
+    ruta = Path(ruta) if ruta else CARPETA_DATOS / ARCHIVO_PARAMETROS
+    with open(ruta, encoding="utf-8") as f:
+        return {m.get("mision", "?"): verificar_parametros(m) for m in json.load(f)}
+
+
+# ---------------------------------------------------------------------------
 # Validación: ¿la misión tiene solución? (sección 7.2 del bosquejo)
 # ---------------------------------------------------------------------------
 
@@ -249,11 +309,13 @@ def _id_mision(m):
 
 
 def _ids_con_parametros(ruta=None):
+    """Ids de las misiones cuyos parámetros están COMPLETOS y válidos
+    (las que Chambi aún no termina salen como 'próximamente')."""
     ruta = Path(ruta) if ruta else CARPETA_DATOS / ARCHIVO_PARAMETROS
     if not ruta.exists():
         return set()
     with open(ruta, encoding="utf-8") as f:
-        return {_id_mision(m) for m in json.load(f)}
+        return {_id_mision(m) for m in json.load(f) if verificar_parametros(m) == []}
 
 
 def cargar_misiones(progreso=None, ruta_misiones=None, ruta_parametros=None):
@@ -320,7 +382,7 @@ def registrar_resultado(progreso, estado):
 
 MISION_PRUEBA = {
     "mision": "prueba", "destino": "LEO", "cohete": "Electron",
-    "presupuesto_musd": 10,
+    "presupuesto_musd": 7,
     "pistas": ["pista de prueba"],
     "recursos": [
         {"clave": "estructura", "unidad": "kg", "minimo": 20, "optimo": 30,
@@ -330,7 +392,7 @@ MISION_PRUEBA = {
     ],
 }
 # Costo del mínimo: 20*0.1 + 1000*0.004 = 2 + 4 = 6 M USD
-# Costo del óptimo: 30*0.1 + 1200*0.004 = 3 + 4.8 = 7.8 M USD  (presupuesto 10 > 7.8: es solo de prueba)
+# Costo del óptimo: 30*0.1 + 1200*0.004 = 3 + 4.8 = 7.8 M USD  (presupuesto 7: entre 6 y 7.8)
 
 
 def _mision_lista(estructura_musd, propulsion_musd):
@@ -341,14 +403,24 @@ def _mision_lista(estructura_musd, propulsion_musd):
 
 
 if __name__ == "__main__":
+    import sys
+    if "--verificar" in sys.argv:        # python nucleo.py --verificar [ruta.json]
+        ruta = sys.argv[sys.argv.index("--verificar") + 1:][:1]
+        for mid, problemas in verificar_archivo(ruta[0] if ruta else None).items():
+            print(f"[{'OK ' if not problemas else 'PENDIENTE'}] {mid}")
+            for x in problemas:
+                print("   -", x)
+        sys.exit()
+
     # 1. Reparto dentro del presupuesto y sobre los mínimos -> éxito
-    e = _mision_lista(2.5, 5.0)
+    e = _mision_lista(2.5, 4.5)
     assert revisar(e)["ok"]
     assert simular(e)["exito"]
     print("OK  éxito            -> puntaje", puntaje(e))
 
     # 2. Reparto en el óptimo exacto -> 100 puntos y 'óptimo'
     e = _mision_lista(3.0, 4.8)
+    e["presupuesto_musd"] = 10      # solo para esta prueba: el óptimo exacto no cabe en 7
     revisar(e); simular(e)
     info = revelar(e)
     assert info["puntaje"] == 100 and info["optimo"]
@@ -371,7 +443,7 @@ if __name__ == "__main__":
     # 5. Pasarse del presupuesto: la revisión lo detecta y no deja simular
     e = _mision_lista(6.0, 6.0)
     rev = revisar(e)
-    assert not rev["ok"] and abs(rev["exceso_musd"] - 2.0) < 1e-9
+    assert not rev["ok"] and abs(rev["exceso_musd"] - 5.0) < 1e-9
     try:
         simular(e)
         raise AssertionError("debió fallar")
@@ -383,7 +455,7 @@ if __name__ == "__main__":
     e = _mision_lista(2.0, 4.0)
     for fila in recursos_visibles(e):
         assert "minimo" not in fila and "optimo" not in fila
-    assert abs(presupuesto_restante(e) - 4.0) < 1e-9
+    assert abs(presupuesto_restante(e) - 1.0) < 1e-9
     print("OK  vista oculta     -> restante", presupuesto_restante(e))
 
     # 7. Validación de solución de la misión de prueba
@@ -400,7 +472,7 @@ if __name__ == "__main__":
             {"id": "normal_leo", "nombre": "LEO", "dificultad": "Normal", "destino": "LEO", "cohete": "Falcon 9"},
         ]), encoding="utf-8")
         # Solo Easy y Normal tienen parámetros (Hard = próximamente)
-        r_par.write_text(json.dumps([{"mision": "easy_cubesat"}, {"mision": "normal_leo"}]), encoding="utf-8")
+        r_par.write_text(json.dumps([dict(MISION_PRUEBA, mision="easy_cubesat"), dict(MISION_PRUEBA, mision="normal_leo")]), encoding="utf-8")
 
         def estados(prog):
             return {f["id"]: f["estado"] for f in cargar_misiones(prog, r_mis, r_par)}
@@ -413,7 +485,7 @@ if __name__ == "__main__":
         print("OK  parrilla nueva   ->", estados(prog))
 
         # Completar Easy (con la misión de prueba, id cambiado) desbloquea Normal
-        e = _mision_lista(2.5, 5.0)
+        e = _mision_lista(2.5, 4.5)
         e["mision"] = "easy_cubesat"
         revisar(e); simular(e)
         registrar_resultado(prog, e)
@@ -425,7 +497,7 @@ if __name__ == "__main__":
         e2 = _mision_lista(1.0, 1.0); e2["mision"] = "normal_leo"
         revisar(e2); simular(e2); registrar_resultado(prog, e2)
         assert "normal_leo" not in prog["completadas"]
-        e3 = _mision_lista(3.0, 4.8); e3["mision"] = "easy_cubesat"
+        e3 = _mision_lista(3.0, 4.8); e3["mision"] = "easy_cubesat"; e3["presupuesto_musd"] = 10
         revisar(e3); simular(e3); registrar_resultado(prog, e3)
         assert prog["completadas"]["easy_cubesat"] == 100
         print("OK  mejor puntaje    ->", prog["completadas"])
