@@ -2,16 +2,19 @@
 
 Juego interactivo para el reto **Space Mission Design Game** del NASA Space Apps Challenge 2026. El jugador diseña, gestiona y simula una misión espacial completa tomando decisiones de ingeniería con recursos limitados (masa, potencia, costo y capacidad del lanzador).
 
-**Equipo:** Emanuel, Jhair, Gonzalo, Chambi, Justin y Piero (Gian Piero Arista Vigo).
+**Equipo:** 
+- Gonzales Herrera, Emanuel Presley
+- Bejarano Gutierrez, William Gonzalo
+- Chambi Alcaraz, Bryan Will
+- Aguilar Mondragon, Justin Boris
+- Arista Vigo, Gian Piero.
 **Competencia:** 14 y 15 de noviembre de 2026.
 
-> Las secciones marcadas con **[COMPLETAR]** se llenan durante el evento, cuando el juego esté construido. La sección 4 (datos) ya está lista y es la referencia para quien use los archivos JSON.
-
----
 
 ## 1. Descripción
 
-**[COMPLETAR]** Resumen de 3 o 4 líneas: qué decide el jugador, qué restricciones enfrenta y cómo se explica el resultado (Justin).
+Juego donde el jugador diseña, gestiona y simula una misión espacial completa con recursos limitados. Lo que más premia: retroalimentación que explique POR QUÉ la misión falla o tiene éxito, un puntaje y varios caminos válidos.
+Mínimo viable: 2 misiones modelo (p. ej. orbitar la Luna y aterrizar en Marte) y 4–5 decisiones de diseño, con explicación clara del resultado.
 
 Misiones disponibles: **[COMPLETAR]** (misiones modelo definidas por Justin, por ejemplo orbitar la Luna y aterrizar en Marte).
 
