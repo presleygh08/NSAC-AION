@@ -201,13 +201,13 @@
       },
       {
         "clave": "datos",
-        "unidad": "puntos",
-        "minimo": 60,
-        "optimo": 95,
-        "musd_por_unidad": 0.3,
+        "unidad": "kg",
+        "minimo": 47.0,
+        "optimo": 59.0,
+        "musd_por_unidad": 0.45,
         "falla": "sin_ciencia",
-        "fuente": "https://www.jpl.nasa.gov/missions/",
-        "nota": "Valor cientifico de camaras y espectrometros de superficie (NASA Perseverance). 0.3 M USD/punto: min $18.0 M, opt $28.5 M."
+        "fuente": "https://www.rocketstem.org/2020/07/20/mars-2020-mission-overview/ | https://www.jpl.nasa.gov/news/press_kits/mars_2020/landing/mission/science",
+        "nota": "Masa de instrumentos cientificos. Optimo = carga cientifica real de Perseverance: 7 instrumentos, 59 kg (Mars 2020). Minimo = estimado (~80% del real: llevar 1-2 instrumentos menos sigue cumpliendo parte del objetivo). 0.45 M USD/kg (estimado): min $21.2 M, opt $26.6 M."
       }
     ],
     "pistas": [
@@ -270,13 +270,13 @@
       },
       {
         "clave": "datos",
-        "unidad": "puntos",
-        "minimo": 70,
-        "optimo": 95,
+        "unidad": "kg",
+        "minimo": 80.0,
+        "optimo": 98.0,
         "musd_por_unidad": 0.4,
         "falla": "sin_ciencia",
-        "fuente": "https://www.nasa.gov/humans-in-space/artemis/",
-        "nota": "Instrumentacion y sensores de prueba de vuelo lunar (NASA Artemis I). 0.4 M USD/punto: min $28.0 M, opt $38.0 M."
+        "fuente": "https://www.dlr.de/en/research-and-transfer/featured-topics/mission-moon/artemis-programme/the-mare-cosmic-radiation-experiment-on-board-artemis-i | https://www.nasa.gov/humans-in-space/artemis/",
+        "nota": "Masa de la carga cientifica de prueba. Optimo = experimento MARE real de Artemis I: maniquies Helga 36 kg + Zohar 62 kg con chaleco AstroRad = 98 kg (DLR). Minimo = estimado (~80%). 0.4 M USD/kg (estimado): min $32.0 M, opt $39.2 M."
       },
       {
         "clave": "tiempo",
