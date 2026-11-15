@@ -146,7 +146,7 @@
     "frase": "Equilibraste misiones reales con límites reales. Cada mínimo, margen y presupuesto con el que jugaste se basa en datos publicados por la NASA, la ESA, el DLR, Airbus, Cal Poly, SpaceX y Rocket Lab, o en estimaciones del equipo. Ya piensas como quien diseña misiones.",
     "equipo": "Equipo AION SPACE: Emanuel Gonzales, Gonzalo Bejarano, Bryan Chambi, Justin Aguilar, Piero Arista",
     "ia": "Hecho con Python y Pygame. Herramientas de IA (Claude, Claude Code) ayudaron con el código y la documentación.",
-    "estimaciones": "Los valores de fuentes oficiales se listan aquí y se citan en docs/auditoria-datos.md. Los valores mínimos, los costos por unidad y algunas masas son estimaciones del equipo para el juego, no cifras oficiales."
+    "estimaciones": "Los valores de fuentes oficiales se listan aquí y se citan en docs/data-sources.md. Los valores mínimos, los costos por unidad y algunas masas son estimaciones del equipo para el juego, no cifras oficiales."
   },
   "fuentes": {
     "cubesat_launch_initiative": "https://www.nasa.gov/smallsat-institute/recent-nasa-launches/",

@@ -1,26 +1,12 @@
-# Space Mission Design Game - Datos
+# Game data
 
-Este repositorio contiene los archivos de datos (`.json`) con los requerimientos técnicos y de presupuesto utilizados para el juego de gestión de misiones espaciales.
+| File | Contents |
+|---|---|
+| `parametros_misiones.json` | The 5 missions: launch vehicle, destination, budget, and for each resource its unit, hidden minimum and optimum, cost per unit, failure type, source and notes. Clues in English (`pistas`) and Spanish (`pistas_es`). |
+| `lanzadores.json` | Launch vehicles: capacity to LEO, Moon and Mars, and reference price. |
+| `destinos.json` | Destinations: delta-v from Earth's surface and distance from the Sun (AU). |
+| `mensajes.json` / `mensajes_es.json` | Result and failure explanations in English / Spanish. |
+| `dialogos_en.json` | AION dialogue lines. |
 
-## Estructura de Datos
-Todos los archivos cumplen con el contrato de datos del equipo establecido para la Fase 2. Se han unificado las fuentes bajo la clave única `fuente` utilizando resúmenes descriptivos de las instituciones y páginas en lugar de enlaces directos.
-
-### Misiones de Referencia
-* **Artemis I**: NASA Artemis Program
-* **Mars Reconnaissance Orbiter**: NASA Science - MRO
-* **Perseverance**: NASA JPL Missions
-
-### Lanzadores
-* **Electron**: Rocket Lab, SpaceNews, NewSpace Index
-* **Falcon 9**: SpaceX, KeepTrack
-* **Falcon Heavy**: SpaceX, ElonX, Space Stack Exchange
-* **Atlas V 551**: ULA Launch, Next Spaceflight
-* **SLS block 1**: NASA SLS Reference Guide
-
-### Destinos (Delta-V)
-* **LEO**: NASA Glenn / Basics of Space Flight
-* **Órbita Lunar**: NASA delta-v map
-* **Órbita de Marte**: NASA delta-v map
-* **Superficie de Marte**: NASA / JPL
-
-> **Nota técnica:** Todos los valores de Delta-V requeridos para cada destino están medidos tomando como punto de partida la **superficie de la Tierra**.
+Units go in the key suffix (`_kg`, `_m_s`, `_ua`, `_dias`, `_musd` = millions of USD). `null` means "no published data".
+Sources and verification status of every value: [../docs/data-sources.md](../docs/data-sources.md).

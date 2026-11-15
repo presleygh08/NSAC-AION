@@ -50,17 +50,17 @@ Known inconsistencies to watch for when joining data:
 
 ## Team plan
 Read these only when the task needs them (not loaded automatically):
-- `docs/reparto-v4.md` — team split and definition (v4: roles and file ownership, Emanuel↔Gonzalo contract, resources per difficulty, parametros_misiones.json format, schedule).
-- `docs/concepto-juego.md` — game concept (v3). If v3 and v4 conflict, follow v4. Both supersede older plan items (e.g. the green/yellow/red checklist) and `docs/plan-equipo-resumen.md` (old roles and 48 h schedule).
-- `docs/reto.md` — official challenge statement, deliverables, judging criteria and plan-vs-challenge gaps. Read it for README, demo, pitch or submission tasks.
+- `docs/team-notes/reparto-v4.md` — team split and definition (v4: roles and file ownership, Emanuel↔Gonzalo contract, resources per difficulty, parametros_misiones.json format, schedule).
+- `docs/team-notes/concepto-juego.md` — game concept (v3). If v3 and v4 conflict, follow v4. Both supersede older plan items (e.g. the green/yellow/red checklist) and `docs/team-notes/plan-equipo-resumen.md` (old roles and 48 h schedule).
+- `docs/team-notes/reto.md` — official challenge statement, deliverables, judging criteria and plan-vs-challenge gaps. Read it for README, demo, pitch or submission tasks.
 All user-facing text (game UI, messages, README) must be in English per Space Apps rules; code identifiers stay in Spanish.
 Team (5, roles per v4): Gonzalo (Pygame UI: app.py, interfaz/), Emanuel (game architecture: nucleo.py, fisica.py, potencia_costo.py), Chambi (research: datos/parametros_misiones.json), Justin (game definition, mensajes.json, textos_en.json, pitch), Piero (visual design: assets/, README, submission).
 
 ## UI rules (Pygame)
-- VERSION 3 decisions (override v2 and the spec where they conflict): @docs/v3-cambios.md — verified data and sources: docs/auditoria-datos.md.
-- VERSION 2 decisions (override the spec where they conflict): @docs/v2-cambios.md — English content for new screens is in interfaz/guia_misiones_en.json.
-- UI spec (screens, 16-bit style, lab with CML phases, simulation, results, priorities): @docs/especificacion-interfaz.md — follow it for everything visual.
-- Game logic API: @CONTRATO_API.md — the UI only calls functions of nucleo.py listed there (nucleo.py replaced juego.py, now juego_v1.py). During allocation never read estado["recursos"]; use recursos_visibles. Missing functions (cotizar, estrellas, faltante_pct, bonus por ahorro) are added directly to nucleo.py following docs/pedidos-emanuel.md.
+- VERSION 3 decisions (override v2 and the spec where they conflict): @docs/team-notes/v3-cambios.md — verified data and sources: docs/team-notes/auditoria-datos.md.
+- VERSION 2 decisions (override the spec where they conflict): @docs/team-notes/v2-cambios.md — English content for new screens is in interfaz/guia_misiones_en.json.
+- UI spec (screens, 16-bit style, lab with CML phases, simulation, results, priorities): @docs/team-notes/especificacion-interfaz.md — follow it for everything visual.
+- Game logic API: @docs/team-notes/CONTRATO_API.md — the UI only calls functions of nucleo.py listed there (nucleo.py replaced juego.py, now juego_v1.py). During allocation never read estado["recursos"]; use recursos_visibles. Missing functions (cotizar, estrellas, faltante_pct, bonus por ahorro) are added directly to nucleo.py following docs/team-notes/pedidos-emanuel.md.
 - Use `paso_dinero` for the − / + buttons, never a fixed step.
 - You may edit ANY file in the repo (nucleo.py, fisica.py, potencia_costo.py, datos/, docs, README) when needed to meet the spec or fix a bug. Rules: keep existing function names and data keys used by CONTRATO_API.md (only add), update CONTRATO_API.md when adding functions, rerun the module self-tests/pruebas.py and validar_mision after touching game logic, never invent NASA numbers (mark estimates as such), and list in your final summary which teammates' files you changed.
 - Files that stop being used are renamed with a _v1 suffix (not deleted).
