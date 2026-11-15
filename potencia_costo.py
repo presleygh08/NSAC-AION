@@ -47,4 +47,5 @@ if __name__ == "__main__":
     assert math.isclose(bal_ok, p_luna - 350, rel_tol=1e-6)
     assert math.isclose(c_mision, 149.0, rel_tol=1e-6)
 
+
     print(f"OK  potencia_luna={p_luna:.1f} W, potencia_marte={p_marte:.1f} W, balance={bal_ok:.1f} W, costo={c_mision:.1f} M$")
