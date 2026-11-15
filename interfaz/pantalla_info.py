@@ -2,22 +2,20 @@
 # Ficha de la misión (sección 3.4): descripción, objetivo, cohete, destino, recursos a
 # repartir y presupuesto. A la derecha, la misma foto de la parrilla, más grande.
 #
-# Descripción y objetivo: primero de parametros_misiones.json ("descripcion", "objetivo",
-# cuando Chambi/Justin los agreguen); si no están, de textos_en.json -> "misiones_texto"
-# (textos provisionales); si tampoco, "Coming soon".
+# Descripción y objetivo (v2, D10): de interfaz/guia_misiones_en.json -> misiones.<id>;
+# si no están, "Coming soon".
 
 import nucleo
 from interfaz import config, estilo, imagenes
-from interfaz.componentes import Boton, formatear_musd, nombre_destino, nombre_recurso
+from interfaz.componentes import (Boton, formatear_musd, info_mision, nombre_destino, nombre_mision,
+                                  nombre_recurso)
 
 
 def textos_mision(textos, parametros):
     """(descripcion, objetivo) en inglés, o "Coming soon" si aún no existen."""
     pendiente = textos["info"]["proximamente"]
-    respaldo = textos["misiones_texto"].get(parametros["mision"], {})
-    descripcion = parametros.get("descripcion") or respaldo.get("descripcion", pendiente)
-    objetivo = parametros.get("objetivo") or respaldo.get("objetivo", pendiente)
-    return descripcion, objetivo
+    mision = info_mision(textos, parametros["mision"])
+    return mision.get("descripcion", pendiente), mision.get("objetivo", pendiente)
 
 
 def datos_ficha(ui):
@@ -28,7 +26,8 @@ def datos_ficha(ui):
         # recursos_visibles (así nunca tocamos los mínimos ni los óptimos).
         visibles = nucleo.recursos_visibles(nucleo.iniciar_mision(parametros))
         ui["ficha"] = {"id": ui["mision_id"], "parametros": parametros,
-                       "claves": [r["clave"] for r in visibles]}
+                       "claves": [r["clave"] for r in visibles],
+                       "unidades": {r["clave"]: r["unidad"] for r in visibles}}
     return ui["ficha"]
 
 
@@ -43,7 +42,9 @@ def dibujar(sup, ui, textos):
     estilo.panel(sup, (16, 16, 340, 290))
     x = 28
     ancho = 316
-    estilo.texto(sup, ui["mision_nombre"], x, 26, config.LETRA_TITULO, config.AMARILLO)
+    # El nombre usa la letra más grande que quepa en el panel (v3, C)
+    estilo.texto_ajustado(sup, nombre_mision(textos, ui["mision_id"], ui["mision_nombre"]), x, 26,
+                          ancho, config.LETRA_TITULO, config.AMARILLO)
     y = 60
     estilo.texto(sup, t["descripcion"], x, y, config.LETRA_PEQUENA, config.CIAN)
     y = estilo.texto_multilinea(sup, descripcion, x, y + 15, ancho, config.LETRA_PEQUENA) + 6
@@ -56,16 +57,21 @@ def dibujar(sup, ui, textos):
         (t["recursos"], ", ".join(nombre_recurso(textos, c) for c in claves)),
         (t["presupuesto"], formatear_musd(parametros["presupuesto_musd"])),
     ]
+    # La columna de valores empieza después de la etiqueta más larga (en español son más
+    # largas: "Vehículo de lanzamiento:"), para que nunca se monten (v3, C).
+    columna = 0
+    for etiqueta, _ in filas:
+        columna = max(columna, estilo.fuente(config.LETRA_PEQUENA).size(etiqueta + ":")[0] + 8)
     for etiqueta, valor in filas:
         estilo.texto(sup, etiqueta + ":", x, y, config.LETRA_PEQUENA, config.CIAN)
-        y = estilo.texto_multilinea(sup, valor, x + 140, y, ancho - 140, config.LETRA_PEQUENA) + 4
+        y = estilo.texto_multilinea(sup, valor, x + columna, y, ancho - columna, config.LETRA_PEQUENA) + 4
 
     estilo.panel(sup, (370, 16, 254, 290))
     imagenes.dibujar_imagen_mision(sup, (378, 24, 238, 274), ui["mision_id"], parametros["destino"],
-                                   ui["mision_nombre"], ui["tiempo"])
+                                   nombre_mision(textos, ui["mision_id"], ui["mision_nombre"]), ui["tiempo"])
 
     return [
         Boton(textos["botones"]["atras"], 16, 318, 100, config.ALTO_BOTON, "volver_misiones"),
         Boton(textos["botones"]["correr"], 494, 314, 130, 32, "correr", color=config.ROJO,
-              tamano=config.LETRA_TITULO),
+              tamano=config.LETRA_TITULO, principal=True),
     ]

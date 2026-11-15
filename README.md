@@ -1,171 +1,145 @@
-# Space Mission Design Game
+# STAR FORGE — Space Mission Design Game
 
-Juego interactivo para el reto **Space Mission Design Game** del NASA Space Apps Challenge 2026. El jugador diseña, gestiona y simula una misión espacial completa tomando decisiones de ingeniería con recursos limitados (masa, potencia, costo y capacidad del lanzador).
+**A 16-bit educational game where you design real space missions on a limited budget.**
+Built by team **AION SPACE** for the **NASA Space Apps Challenge 2026** (Lima, Peru) — challenge: *Space Mission Design Game*.
 
-**Equipo:** 
-- Gonzales Herrera, Emanuel Presley
-- Bejarano Gutierrez, William Gonzalo
-- Chambi Alcaraz, Bryan Will
-- Aguilar Mondragon, Justin Boris
-- Arista Vigo, Gian Piero.
+![Title screen](docs/screenshots/01-title.png)
 
-**Competencia:** 14 y 15 de noviembre de 2026.
+## What is Star Forge?
 
+Real mission design is a balancing act: improving one subsystem always costs something else. Star Forge lets students aged 12–17
+experience that trade-off. Players pick a mission inspired by a real one (from a CubeSat in low Earth orbit to Artemis I), get its real
+launch vehicle and a limited budget, and split that budget across the spacecraft's resources: **structure, propulsion (delta-v), power,
+communications, science instruments and endurance**.
 
-## 1. Descripción
+The twist: **the minimum and optimal value of every resource is hidden.** Players only get clues (distance to the destination, sunlight
+available, launch loads) and must reason like engineers. The mission follows JPL's **Concept Maturity Levels (CML 1–4)** inside a walkable
+mission control room, and then the launch is simulated. If any resource ends up below its minimum, the mission fails in a specific way
+(the rocket breaks apart, never reaches its target, runs out of power or loses contact with Earth) and the game explains why.
 
-Juego donde el jugador diseña, gestiona y simula una misión espacial completa con recursos limitados. Lo que más premia: retroalimentación que explique POR QUÉ la misión falla o tiene éxito, un puntaje y varios caminos válidos.
-Mínimo viable: 2 misiones modelo (p. ej. orbitar la Luna y aterrizar en Marte) y 4–5 decisiones de diseño, con explicación clara del resultado.
+## Screenshots
 
-Misiones disponibles: **[COMPLETAR]** (misiones modelo definidas por Justin, por ejemplo orbitar la Luna y aterrizar en Marte).
+| | |
+|---|---|
+| ![Avatar creator](docs/screenshots/02-avatar.png) | ![Mission grid](docs/screenshots/03-missions.png) |
+| ![Mission briefing with AION](docs/screenshots/04-briefing.png) | ![Mission control room](docs/screenshots/05-mission-control.png) |
+| ![Launch](docs/screenshots/06-launch.png) | ![Mars orbit insertion](docs/screenshots/07-mars-orbit.png) |
+| ![Mission complete](docs/screenshots/08-results-success.png) | ![Mission failed](docs/screenshots/09-results-failure.png) |
 
-## 2. Cómo jugar
+## How to run
 
-**[COMPLETAR]** Flujo del juego (decidir, simular, ver el resultado y aprender) y descripción de las 5 pantallas: inicio, objetivo, diseño de la nave, lanzador y resultados.
-
-## 3. Cómo ejecutar
-
-Requisitos: Python 3 y las bibliotecas de `requirements.txt` (entre ellas Streamlit).
+Requirements: **Python 3.10 or newer** and **pygame 2.5+**. Works on macOS, Windows and Linux. No internet connection needed.
 
 ```bash
-pip install -r requirements.txt
-streamlit run app.py
+git clone https://github.com/presleygh08/NSAC-AION.git
+cd NSAC-AION
+python3 -m pip install -r requirements.txt
+python3 app.py
 ```
 
-Estructura prevista del repositorio (ajustar si cambia):
+On Windows use `python` instead of `python3`. If you have several Python versions, run the game with the one where pygame is installed
+(for example `python3.12 app.py`).
 
-```
-datos/              archivos JSON con los datos reales
-  lanzadores.json
-  misiones.json
-  destinos.json
-fisica.py           fórmulas físicas (Emanuel)
-juego.py            estado, fases, eventos y puntaje (Jhair)
-app.py              interfaz en Streamlit (Gonzalo)
-requirements.txt
-README.md
-```
+## How to play
 
-El juego funciona sin conexión: todos los datos están en `datos/`.
+1. **Enter your callsign** and create your **avatar** (body, skin tone, hair, eyes, accessory and clothes freely combinable).
+2. **Choose a mission.** Missions unlock in order: Easy → Normal → Hard → Harder → Insane.
+3. **Mission briefing with AION**, your robot assistant: what each resource means, why it matters and a real-world reference.
+4. **Mission control room** (walk with the arrow keys or WASD):
+   - **CML 1 – Cocktail Napkin:** confirm the goal, destination and launch vehicle at the computer. The hangar doors open.
+   - **CML 2 – Initial Feasibility:** read the mission clues; they stay stored in the archive.
+   - **CML 3 – Trade Space:** at each station, type the amount of a resource (kg, m/s, W, Mbps, days) and see its cost.
+     The total spent is never shown: keep track of your budget yourself.
+   - **CML 4 – Point Design:** the budget review only tells you whether you are over budget.
+5. **Launch.** The first seconds look the same for success and failure. Then the mission succeeds or fails because of its weakest resource.
+6. **Results.** Each resource is shown on a bar with zones (below minimum, acceptable, optimal, more than needed). Exact numbers are
+   revealed only when you earn 5 stars. **Try again** brings you back to CML 4 with your previous values.
 
----
-
-## 4. Datos
-
-Todos los datos se guardan en `datos/` como JSON (UTF-8). Cada dato numérico lleva su propia fuente. Los costos y capacidades son **valores de referencia para el juego**, no especificaciones contractuales.
-
-### 4.1 Convenciones
-
-| Convención | Detalle |
+| Key | Action |
 |---|---|
-| Unidades | Van en el nombre de la columna: `_kg`, `_m_s`, `_ua`, `_km`, `_dias`, `_musd` (millones de dólares). |
-| Decimales | Punto decimal (`7.5`, no `7,5`). |
-| `null` | Significa **dato no disponible o no publicado**. No significa "cero" ni "no puede". El código debe tratarlo como "este lanzador no tiene dato para ese destino" y no usarlo en cálculos. |
-| Nombres de destino | Se escriben igual en todos los archivos (por ejemplo, siempre `"Marte"`). |
-| Fuente por dato | Cada cifra tiene su columna `fuente_*`. Si el valor es `null`, su fuente también es `null`. |
-| Costos | No están ajustados por inflación y corresponden a años distintos. |
+| Arrows / WASD | Move |
+| E | Interact |
+| Enter | Confirm |
+| H | Ask AION |
+| M | Mute / unmute |
+| Esc | Pause menu (resume, restart, back to missions, main menu, language) |
 
-### 4.2 `lanzadores.json`
+The game starts in **English**; Spanish is available from the title screen (EN | ES) and from the pause menu.
 
-Columnas: `nombre`, `capacidad_leo_kg`, `capacidad_luna_kg`, `capacidad_marte_kg`, `costo_musd`, `fuente_leo`, `fuente_luna`, `fuente_marte`, `fuente_costo`.
+## Missions
 
-Lanzadores incluidos: Electron, Falcon 9, Falcon Heavy, Atlas V 551 y SLS Block 1.
+| Difficulty | Mission | Inspired by | Launch vehicle in game | Resources to balance | Budget |
+|---|---|---|---|---|---|
+| Easy | CubeSat to Low Earth Orbit | NASA CubeSat Launch Initiative | Electron | Structure, propulsion | $18M |
+| Normal | Exoplanet SmallSat to LEO | NASA Pandora (2026) | Falcon 9 | + power | $71M |
+| Hard | Mars Orbiter | NASA Mars Reconnaissance Orbiter | Falcon Heavy* | + communications | $155M |
+| Harder | Mars Rover | NASA Perseverance | Falcon Heavy* | + science instruments | $240M |
+| Insane | Moon Orbiter | NASA Artemis I | SLS Block 1 | + endurance | $305M |
 
-| Lanzador | LEO (kg) | Luna (kg) | Marte (kg) | Costo (M USD) |
-|---|---|---|---|---|
-| Electron | 300 | 30 | null | 7.5 |
-| Falcon 9 | 22 800 | null | 4 020 | 67 |
-| Falcon Heavy | 63 800 | 15 460 | 16 800 | 97 |
-| Atlas V 551 | 18 850 | null | null | 153 |
-| SLS Block 1 | 95 000 | 27 000 | null | 2 200 |
+\*The real MRO flew on an Atlas V 401 and Perseverance on an Atlas V 541. The game uses Falcon Heavy because its Mars capacity is published;
+the mission briefing says so.
 
-### 4.3 Qué referencia toma cada lanzador
+## The science inside
 
-**Las cifras no son comparables de forma directa**, porque cada fabricante las publica bajo condiciones distintas. Esta tabla indica qué significa cada valor.
+- **Propulsion** uses the Tsiolkovsky rocket equation with real specific impulse and dry mass (`fisica.py`).
+- **Solar power** scales with the distance to the Sun (1361 W/m² at Earth, 586 W/m² at Mars) (`potencia_costo.py`).
+  The Mars rover uses a nuclear power source (MMRTG) instead, like Perseverance.
+- **Minimums** come from physics or real mission requirements; **optimums** are real mission values with design margin.
+- **Every mission is validated:** the minimums fit in the budget, a 5-star design exists, and most "by eye" designs fail.
+  See [docs/validation.md](docs/validation.md).
+- **Score:** closeness to the optimal design plus a bonus for money saved, shown as 0–5 stars.
 
-| Lanzador | Referencia de LEO | Referencia de Luna | Referencia de Marte | Referencia de costo |
-|---|---|---|---|---|
-| **Electron** | Órbita baja de unos 500 km. | 30 kg a órbita lunar con la plataforma Photon, según un anuncio de 2019. Es una capacidad anunciada, no un vuelo demostrado con esa masa. | Sin dato (`null`). | Precio de lista aproximado, estimación de terceros. |
-| **Falcon 9** | Capacidad máxima con **vehículo desechable** (sin recuperar el cohete). Con aterrizaje en barcaza baja a unos 15 600 kg. | Sin dato (`null`). SpaceX no publica una cifra a la Luna. | Capacidad máxima con vehículo desechable. | Precio publicado aproximado; varía según la misión y el año. |
-| **Falcon Heavy** | Capacidad máxima con **vehículo desechable**. | "Más de" 15 460 kg a inyección translunar, con vehículo desechable. Con los tres propulsores recuperados baja a unos 8 000 kg. Fuente no oficial. | Capacidad máxima con vehículo desechable. | Precio publicado aproximado. |
-| **Atlas V 551** | "LEO-Reference" de ULA: órbita circular de 200 km con inclinación de 28,7°, configuración 551. | Sin dato (`null`). | Sin dato (`null`). Los estudios de NASA dan entre 4 925 y 5 150 kg según el año de lanzamiento, pero no hay una cifra de ULA con un C3 definido. | Estimación de terceros (sitios de seguimiento de lanzamientos). ULA no publica un precio. |
-| **SLS Block 1** | 95 t a LEO, cifra de NASA. | "Más de" 27 t a inyección translunar, en la **configuración tripulada con Orion**. | Sin dato (`null`). NASA no publica una cifra para el Block 1. | Solo el cohete (producción), según el Inspector General de NASA. Con Orion y sistemas de tierra, el lanzamiento sube a unos 4 100 M USD. |
+## NASA data and resources used
 
-Consecuencias para el juego:
+- [Concept Maturity Levels (JPL)](https://dataverse.jpl.nasa.gov/dataset.xhtml?persistentId=hdl:2014/44299) — structure of every mission (CML 1–4).
+- [NASA Mars Fact Sheet (NSSDC)](https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html) — solar irradiance and distance of Mars.
+- [Mars Reconnaissance Orbiter (NASA/JPL)](https://science.nasa.gov/missions/mars-reconnaissance-orbiter/) — dry mass, power and data rate.
+- [Mars 2020 Perseverance (NASA/JPL)](https://www.jpl.nasa.gov/news/press_kits/mars_2020/launch/quick_facts/) — rover mass, instruments and power source.
+- [Artemis I (NASA)](https://www.nasa.gov/humans-in-space/artemis/) — mission duration and profile.
+- [Space Launch System (NASA)](https://www.nasa.gov/humans-in-space/space-launch-system/the-great-escape-sls-provides-power-for-missions-to-the-moon-duzxi/) — SLS Block 1 capability.
+- [State-of-the-Art of Small Spacecraft Technology (NASA, 2024)](https://www.nasa.gov/wp-content/uploads/2025/02/soa-2024.pdf) and
+  [What are SmallSats and CubeSats (NASA)](https://www.nasa.gov/smallsat-institute/what-are-smallsats-and-cubesats/) — CubeSat and small-satellite values.
+- [NASA Image and Video Library](https://images.nasa.gov) — mission preview photos (pixelated in game; list in [assets/CREDITOS.md](assets/CREDITOS.md)).
 
-- Una misma masa puede "caber" en un lanzador según cómo se mida. Tratar las capacidades como **máximos teóricos**, no como garantías.
-- Un cohete con recuperación (reutilizable) lleva menos carga que las cifras de esta tabla. Si el juego quiere ser más realista, se puede aplicar un factor de reducción, que el equipo debe acordar y documentar.
-- Los costos de Atlas V y Electron son estimaciones y no contratos reales. El costo de SLS no incluye la nave.
-- El SLS no se vende comercialmente: está en el juego como lanzador de referencia para misiones de gran masa.
+Every value in the game, its source and whether it is verified or a team estimate: **[docs/data-sources.md](docs/data-sources.md)**.
 
-### 4.4 `destinos.json`
+## Other data and tools
 
-Columnas: `destino`, `delta_v_m_s`, `distancia_ua`, `fuente`.
-Destinos: LEO, órbita lunar, superficie lunar y Marte (los valores los aporta Emanuel con su fuente).
+ESA (design margins, Orion European Service Module), DLR (Artemis I MARE experiment), Rocket Lab (Electron), SpaceX (Falcon 9, Falcon Heavy),
+Cal Poly (CubeSat standard), [Python](https://www.python.org) and [pygame](https://www.pygame.org) (LGPL). All pixel art, the pixel font and
+all sounds are made in code by the team. Full list in [docs/data-sources.md](docs/data-sources.md) and [assets/CREDITOS.md](assets/CREDITOS.md).
 
-**[COMPLETAR]** Tabla con los valores finales.
+## Use of AI
 
-### 4.5 `misiones.json`
+AI tools (**Claude** and **Claude Code**, by Anthropic) were used to assist with code generation, debugging, translation and documentation.
+The game concept, game design decisions, data selection and validation were made by the team. No AI-generated images, video or audio
+are used in the game; all graphics and sounds are generated by our own code.
 
-Columnas: `nombre`, `destino`, `masa_kg`, `distancia_km`, `duracion_dias`, `fuente`.
-Se incluyen 3 misiones de referencia de NASA.
+## Project structure
 
-**[COMPLETAR]** Tabla con las misiones finales.
-
-### 4.6 Cómo leer los datos desde Python
-
-```python
-import json
-
-with open("datos/lanzadores.json", encoding="utf-8") as f:
-    lanzadores = json.load(f)
-
-for l in lanzadores:
-    luna = l["capacidad_luna_kg"]
-    if luna is None:
-        print(l["nombre"], "- sin dato para la Luna")
-    else:
-        print(l["nombre"], luna, "kg")
+```
+app.py                  entry point (main loop)
+nucleo.py               game core: missions, budget split, simulation, score (no graphics)
+fisica.py               rocket equation
+potencia_costo.py       solar power and cost functions
+jugar_consola.py        play the game core from the terminal (no graphics)
+revisar_textos.py       test mode: checks that no text overflows its box (EN and ES)
+datos/                  mission parameters, launch vehicles, destinations, messages (EN/ES)
+interfaz/               Pygame screens, sprites, sound, texts (EN/ES)
+assets/                 mission preview photos and credits
+docs/                   screenshots, data sources, validation; team-notes/ has internal planning notes (Spanish)
+archive/                earlier versions kept for reference (not used by the game)
 ```
 
----
+## Team AION SPACE
 
-## 5. Fuentes
+- Emanuel Presley Gonzales Herrera — game core, physics and integration
+- William Gonzalo Bejarano Gutierrez — user interface (Pygame)
+- Bryan Will Chambi Alcaraz — research and mission data
+- Justin Boris Aguilar Mondragon — game definition, content and pitch
+- Gian Piero Arista Vigo — visual design, README and submission
 
-Las fuentes están en cada archivo JSON y se resumen aquí. **Fecha de consulta: [COMPLETAR para cada fuente].**
+## License
 
-### Lanzadores
-
-| Lanzador | Dato | Fuente |
-|---|---|---|
-| Electron | LEO | https://rocketlabcorp.com/launch/electron |
-| Electron | Luna (30 kg) | SpaceNews, "Rocket Lab to offer lunar missions, ground station services", octubre de 2019 (https://spacenews.com/?p=94601) |
-| Electron | Costo | https://www.newspace.im/launchers/rocket-lab |
-| Falcon 9 | LEO y Marte | https://www.spacex.com/vehicles/falcon-9 |
-| Falcon 9 | Costo | https://keeptrack.space/deep-dive/how-much-does-a-falcon-9-launch-cost (fuente secundaria) |
-| Falcon Heavy | LEO y Marte | https://www.spacex.com/vehicles/falcon-heavy |
-| Falcon Heavy | Luna | https://www.elonx.net/falcon-heavy-compendium/ (recopilación no oficial) |
-| Falcon Heavy | Costo | **[COMPLETAR: reemplazar la fuente actual]** |
-| Atlas V 551 | LEO | Cuadernillo de misión de ULA, https://www.ulalaunch.com/docs/default-source/launch-booklets/STPIII_MOB_Final.pdf |
-| Atlas V 551 | Costo | https://api.nextspaceflight.com/launches/details/6766 (estimación de terceros) |
-| SLS Block 1 | LEO y Luna | Guía de referencia de SLS, NASA |
-| SLS Block 1 | Costo | Informe del Inspector General de NASA, https://oig.nasa.gov/docs/IG-22-003.pdf |
-
-### Formato de cita
-
-Adjuntar fuentes:
-
-Cada fuente se registra con: título, entidad, dirección web y fecha de consulta.
-
----
-
-## 6. Limitaciones y declaración de uso
-
-- Los valores son **de referencia** y pueden diferir de las cifras actuales de los fabricantes.
-- Varias fuentes de costo son secundarias o estimaciones de terceros, y están indicadas como tales.
-- Los datos en `null` no se rellenaron a propósito, porque no encontramos una fuente que los respalde.
-- **Material previo al evento:** antes del 14 de noviembre solo se prepararon datos, tablas, fórmulas y ejercicios de práctica. El juego completo se desarrolló durante el evento. **[COMPLETAR]** Lista de plantillas, bibliotecas y datos usados.
-
-## 7. Licencia
-
-**[COMPLETAR]** Licencia abierta elegida por el equipo (por ejemplo, MIT para el código y CC BY 4.0 para los datos).
+[MIT](LICENSE) for the code. NASA images are used under the [NASA media usage guidelines](https://www.nasa.gov/nasa-brand-center/images-and-media/)
+and do not imply NASA endorsement. Star Forge is not affiliated with or endorsed by NASA.

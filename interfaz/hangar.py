@@ -1,12 +1,14 @@
 # hangar.py
 # Hangar del laboratorio (sección 4.6 de la especificación): la "ventana" de la derecha.
 #   - El cohete de la misión, en pixel art, junto a su torre de lanzamiento.
-#   - Antes de CML 1 lo tapan unas cortinas que se abren hacia los lados (~1 s).
+#   - Antes de CML 1 lo tapan unas puertas metálicas que se deslizan hacia los lados (~1,5 s, v2).
 #   - Cada vez que el jugador confirma una estación, se reproduce una animación de
 #     ensamblaje de ~1,5 s con su herramienta (brazo robótico, manguera, grúa...).
 #     No bloquea al jugador: depende solo del tiempo, se dibuja cuadro a cuadro.
 #   - El cohete muestra qué partes ya se montaron, pero NO si alcanzan su mínimo
 #     (por ejemplo, el tanque siempre se ve lleno, sea cual sea la cantidad elegida).
+#   - v2 (punto 10): los paneles solares y la antena se montan PLEGADOS. Solo se abren en
+#     la simulación, al llegar a órbita (parámetro 'apertura': 0 = plegado, 1 = abierto).
 #
 # Todas las medidas son relativas a 'rect' (el recuadro del hangar) para poder moverlo.
 
@@ -140,8 +142,9 @@ def dibujar_propulsores(sup, m, color):
         pygame.draw.rect(sup, config.GRIS_OSCURO, (x + 2, m.y_tobera, 6, 6))  # tobera
 
 
-def dibujar_cohete(sup, m, nombre_cohete):
-    """Cuerpo del cohete con su estilo, sin partes montadas."""
+def dibujar_cohete(sup, m, nombre_cohete, con_nariz=True):
+    """Cuerpo del cohete con su estilo, sin partes montadas.
+    con_nariz=False: sin la cofia (la nave ya se separó en órbita)."""
     e = ESTILOS_COHETE.get(nombre_cohete, ESTILO_POR_DEFECTO)
     if e["propulsores"] is not None:
         dibujar_propulsores(sup, m, e["propulsores"])
@@ -157,7 +160,7 @@ def dibujar_cohete(sup, m, nombre_cohete):
     pygame.draw.rect(sup, e["cuerpo"], (m.izq, m.y_carga, ANCHO_COHETE, alto))
     pygame.draw.rect(sup, e["franja"], (m.izq, m.y_franja, ANCHO_COHETE, 4))
     # Nariz escalonada (15 escalones de 2 px)
-    for i in range(15):
+    for i in range(15 if con_nariz else 0):
         ancho = int(ANCHO_COHETE * (i + 1) / 15)
         pygame.draw.rect(sup, e["nariz"], (m.cx - ancho // 2, m.y_nariz + i * 2, ancho, 2))
     # Ventana del módulo de carga y ranura del tanque (vacía hasta cargar combustible)
@@ -183,9 +186,18 @@ def parte_propulsion(sup, m, nivel):
     pygame.draw.rect(sup, config.NARANJA, (m.cx - 3, m.y_motor - 4 - alto, 6, alto))
 
 
-def parte_potencia(sup, m, a):
-    """Paneles solares: 3 segmentos de 10 px a cada lado que se despliegan."""
-    largo = int(30 * a)
+def parte_potencia(sup, m, a, apertura=0.0):
+    """Paneles solares. a = avance del montaje (0 a 1); apertura = 0 plegados (una tira
+    angosta pegada a cada costado), 1 abiertos (3 segmentos de 10 px a cada lado)."""
+    if apertura <= 0:
+        alto = int(12 * a)                                       # la tira plegada "crece" al montarse
+        for lado in (-1, 1):
+            x = m.izq - 4 if lado == -1 else m.der + 1
+            if alto > 0:
+                pygame.draw.rect(sup, COLOR_BORDE_COHETE, (x - 1, m.y_paneles - 3, 5, alto + 2))
+                pygame.draw.rect(sup, config.AZUL, (x, m.y_paneles - 2, 3, alto))
+        return
+    largo = int(4 + 26 * apertura)
     for lado in (-1, 1):
         borde = m.izq if lado == -1 else m.der
         x = borde - largo if lado == -1 else borde
@@ -198,6 +210,31 @@ def parte_potencia(sup, m, a):
         pygame.draw.rect(sup, config.GRIS, (borde - 1 if lado == -1 else borde, m.y_paneles + 3, 2, 2))
 
 
+def parte_mmrtg(sup, m, a):
+    """v3 (A): fuente nuclear MMRTG (Harder, como Perseverance): un cilindro oscuro con aletas
+    pegado al costado izquierdo del módulo de carga. No tiene paneles, así que no se despliega.
+    a = avance del montaje (0 a 1): el cilindro "crece" mientras se monta."""
+    alto = int(16 * a)
+    if alto <= 0:
+        return
+    x = m.izq - 8
+    y = m.y_paneles - 3
+    pygame.draw.rect(sup, COLOR_BORDE_COHETE, (x - 1, y - 1, 9, alto + 2))
+    pygame.draw.rect(sup, config.GRIS_OSCURO, (x, y, 7, alto))
+    for yy in range(y + 2, y + alto - 1, 3):                     # aletas del radiador
+        pygame.draw.line(sup, config.GRIS_CLARO, (x - 2, yy), (x + 8, yy))
+    if a >= 1:
+        pygame.draw.rect(sup, config.NARANJA, (x + 2, y + alto // 2 - 1, 3, 2))   # núcleo tibio
+
+
+def dibujar_potencia(sup, m, a, apertura=0.0, tipo="solar"):
+    """Paneles solares o, si tipo == "mmrtg", el generador nuclear (v3, A)."""
+    if tipo == "mmrtg":
+        parte_mmrtg(sup, m, a)
+    else:
+        parte_potencia(sup, m, a, apertura)
+
+
 def dibujar_antena(sup, x, y):
     """Antena parabólica: plato (semicírculo) con su receptor. (x, y) = base del plato."""
     pygame.draw.circle(sup, config.GRIS_CLARO, (int(x), int(y) - 6), 7, draw_top_right=True,
@@ -207,10 +244,21 @@ def dibujar_antena(sup, x, y):
     pygame.draw.rect(sup, config.ROJO, (int(x) - 1, int(y) - 14, 2, 2))
 
 
-def parte_comunicaciones(sup, m):
+def dibujar_antena_plegada(sup, x, y):
+    """Antena plegada: el plato cerrado y acostado junto a su poste. (x, y) = base."""
+    pygame.draw.rect(sup, COLOR_BORDE_COHETE, (int(x) - 1, int(y) - 6, 9, 5))
+    pygame.draw.rect(sup, config.GRIS_CLARO, (int(x), int(y) - 5, 7, 3))
+    pygame.draw.rect(sup, config.ROJO, (int(x) + 6, int(y) - 5, 1, 1))
+
+
+def parte_comunicaciones(sup, m, apertura=0.0):
+    """Antena: plegada (apertura < 0.5) o abierta con su plato."""
     x, y = m.pos_antena
     pygame.draw.rect(sup, config.GRIS, (x, y - 2, 2, 4))              # poste
-    dibujar_antena(sup, x + 1, y - 2)
+    if apertura < 0.5:
+        dibujar_antena_plegada(sup, x - 4, y)
+    else:
+        dibujar_antena(sup, x + 1, y - 2)
 
 
 def dibujar_caja(sup, x, y):
@@ -285,11 +333,11 @@ def grua(sup, m, x_carro, y_gancho):
 
 
 def antena_bajando(sup, m, a):
-    """La grúa baja la antena desde la viga hasta su soporte."""
+    """La grúa baja la antena (plegada) desde la viga hasta su soporte."""
     x, y_final = m.pos_antena
-    y = mezcla(m.y_grua + 20, y_final - 2, a)
-    grua(sup, m, x + 1, y - 14)
-    dibujar_antena(sup, x + 1, y)
+    y = mezcla(m.y_grua + 20, y_final, a)
+    grua(sup, m, x - 1, y - 6)
+    dibujar_antena_plegada(sup, x - 4, y)
 
 
 def caja_con_grua(sup, m, a):
@@ -365,7 +413,7 @@ def dibujar_partes_y_animaciones(sup, m, lab, tiempo):
         if a["propulsion"] < 1:
             manguera(sup, m, a["propulsion"], tiempo)
     if "potencia" in a:
-        parte_potencia(sup, m, a["potencia"])
+        dibujar_potencia(sup, m, a["potencia"], 0.0, lab.get("tipo_potencia", "solar"))   # plegados (v2)
     if "comunicaciones" in a:
         if a["comunicaciones"] < 1:
             antena_bajando(sup, m, a["comunicaciones"])
@@ -396,28 +444,31 @@ def dibujar_partes_y_animaciones(sup, m, lab, tiempo):
             chispas(sup, x, y, tiempo, pasado / 0.3)
 
 
-def dibujar_partes_finales(sup, m, claves):
-    """Partes ya montadas (estado final, sin herramientas) de las claves dadas."""
+def dibujar_partes_finales(sup, m, claves, apertura=0.0, tipo_potencia="solar"):
+    """Partes ya montadas (estado final, sin herramientas) de las claves dadas.
+    apertura: 0 = paneles y antena plegados, 1 = abiertos.
+    tipo_potencia: "solar" (paneles) o "mmrtg" (generador nuclear, v3)."""
     if "estructura" in claves:
         parte_estructura(sup, m, 4)
     if "propulsion" in claves:
         parte_propulsion(sup, m, 1)
     if "potencia" in claves:
-        parte_potencia(sup, m, 1)
+        dibujar_potencia(sup, m, 1, apertura, tipo_potencia)
     if "comunicaciones" in claves:
-        parte_comunicaciones(sup, m)
+        parte_comunicaciones(sup, m, apertura)
     if "datos" in claves:
         parte_datos(sup, m)
     if "tiempo" in claves:
         parte_tiempo(sup, m, 3)
 
 
-def dibujar_cohete_mision(sup, cx, suelo, nombre_cohete, claves):
+def dibujar_cohete_mision(sup, cx, suelo, nombre_cohete, claves, apertura=0.0, con_nariz=True,
+                          tipo_potencia="solar"):
     """El cohete de la misión con las partes que el jugador montó (lo usa la simulación).
     cx = centro; suelo = y de la base. Devuelve sus Medidas."""
     m = Medidas(cx, suelo)
-    dibujar_cohete(sup, m, nombre_cohete)
-    dibujar_partes_finales(sup, m, claves)
+    dibujar_cohete(sup, m, nombre_cohete, con_nariz)
+    dibujar_partes_finales(sup, m, claves, apertura, tipo_potencia)
     return m
 
 
@@ -426,18 +477,21 @@ ANCHO_IMAGEN = 100
 ALTO_IMAGEN = 220
 
 
-def imagen_cohete(nombre_cohete, claves):
+def imagen_cohete(nombre_cohete, claves, apertura=0.0, con_nariz=True, tipo_potencia="solar"):
     """El cohete de la misión dibujado en una imagen transparente de 100x220 px
     (para moverlo o romperlo en pedazos en la simulación). Devuelve (imagen, medidas):
-    las medidas están en coordenadas de la imagen; la base queda en y = ALTO_IMAGEN - 8."""
+    las medidas están en coordenadas de la imagen; la base queda en y = ALTO_IMAGEN - 8.
+    apertura: 0 = paneles y antena plegados (despegue), 1 = abiertos (en órbita).
+    con_nariz=False: sin la cofia (para recortar la nave ya separada)."""
     imagen = pygame.Surface((ANCHO_IMAGEN, ALTO_IMAGEN), pygame.SRCALPHA)
-    m = dibujar_cohete_mision(imagen, ANCHO_IMAGEN // 2, ALTO_IMAGEN - 8, nombre_cohete, claves)
+    m = dibujar_cohete_mision(imagen, ANCHO_IMAGEN // 2, ALTO_IMAGEN - 8, nombre_cohete, claves,
+                              apertura, con_nariz, tipo_potencia)
     return imagen, m
 
 
 def dibujar(sup, rect, lab, nombre_cohete, tiempo, apertura, texto_hangar):
     """Dibuja todo el hangar en 'rect'.
-    apertura: 0 = cortinas cerradas, 1 = abiertas (la calcula el laboratorio)."""
+    apertura: 0 = puertas cerradas, 1 = abiertas (la calcula el laboratorio)."""
     m = medidas_hangar(rect)
     pygame.draw.rect(sup, config.NEGRO, rect)
     recorte_anterior = sup.get_clip()
@@ -449,9 +503,8 @@ def dibujar(sup, rect, lab, nombre_cohete, tiempo, apertura, texto_hangar):
     dibujar_cohete(sup, m, nombre_cohete)
     dibujar_partes_y_animaciones(sup, m, lab, tiempo)
 
-    # Cortinas con su barra arriba
-    sprites.dibujar_cortinas(sup, m.interior, apertura)
-    pygame.draw.rect(sup, config.GRIS_CLARO, (m.interior.x, m.interior.y, m.interior.w, 3))
+    # Puertas metálicas del hangar (v2, punto 17): se deslizan hacia los lados
+    sprites.dibujar_puertas_hangar(sup, m.interior, apertura, tiempo)
 
     sup.set_clip(recorte_anterior)
     pygame.draw.rect(sup, config.COLOR_BORDE, rect, 2)

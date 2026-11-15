@@ -7,7 +7,8 @@ import pygame
 
 import nucleo
 from interfaz import config, estilo, imagenes, sprites
-from interfaz.componentes import (Boton, formatear_musd, nombre_destino, posicion_mouse,
+from interfaz.componentes import (Boton, formatear_musd, nombre_destino, nombre_dificultad, nombre_mision,
+                                  posicion_mouse,
                                   traducir)
 
 X_LISTA = 300
@@ -45,12 +46,14 @@ def dibujar_fila(sup, textos, fila, y, elegida):
     estilo.panel(sup, rect, fondo, borde)
 
     color_texto = config.COLOR_TEXTO_SUAVE if bloqueada else config.COLOR_TEXTO
-    estilo.texto(sup, fila["nombre"], rect.x + 8, rect.y + 5, config.LETRA_NORMAL, color_texto)
+    estilo.texto_ajustado(sup, nombre_mision(textos, fila["id"], fila["nombre"]), rect.x + 8, rect.y + 5,
+                          rect.w - 16, config.LETRA_NORMAL, color_texto)
     # Etiqueta de dificultad (gris si está bloqueada)
     color_dif = config.COLORES_DIFICULTAD.get(fila["dificultad"], config.BLANCO)
     if bloqueada:
         color_dif = config.GRIS
-    estilo.texto(sup, fila["dificultad"], rect.x + 8, rect.y + 25, config.LETRA_PEQUENA, color_dif)
+    estilo.texto(sup, nombre_dificultad(textos, fila["dificultad"]), rect.x + 8, rect.y + 25,
+                 config.LETRA_PEQUENA, color_dif)
 
     # Estado abajo a la derecha (en la misma línea que la dificultad, para no chocar
     # con los nombres largos de arriba).
@@ -76,8 +79,9 @@ def dibujar_previsualizacion(sup, ui, textos, fila):
     t = textos["misiones"]
     estilo.panel(sup, (20, 62, 260, 236))
     imagenes.dibujar_imagen_mision(sup, (30, 72, 240, 130), fila["id"], fila["destino"],
-                                   fila["nombre"], ui["tiempo"])
-    estilo.texto(sup, fila["nombre"], 30, 210, config.LETRA_NORMAL, config.AMARILLO)
+                                   nombre_mision(textos, fila["id"], fila["nombre"]), ui["tiempo"])
+    estilo.texto_ajustado(sup, nombre_mision(textos, fila["id"], fila["nombre"]), 30, 210, 244,
+                          config.LETRA_NORMAL, config.AMARILLO)
     estilo.texto(sup, t["destino"] + ": " + nombre_destino(textos, fila["destino"]), 30, 232,
                  config.LETRA_PEQUENA)
     estilo.texto(sup, t["cohete"] + ": " + str(fila["cohete"]), 30, 250, config.LETRA_PEQUENA)
@@ -112,5 +116,5 @@ def dibujar(sup, ui, textos):
     se_puede = nucleo.puede_jugar(ui["progreso"], ui["mision_vista"])
     botones.append(Boton(textos["botones"]["atras"], 20, 316, 100, config.ALTO_BOTON, "ir_avatar"))
     botones.append(Boton(textos["botones"]["siguiente"], 520, 316, 100, config.ALTO_BOTON,
-                         "ir_info", activo=se_puede, color=config.VERDE))
+                         "ir_info", activo=se_puede, color=config.VERDE, principal=True))
     return botones

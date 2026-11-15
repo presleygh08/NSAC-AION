@@ -1,0 +1,256 @@
+{
+  "titulo_ventana": "STAR FORGE - Juego de diseño de misiones espaciales",
+
+  "botones": {
+    "jugar": "Jugar",
+    "aleatorio": "Al azar",
+    "continuar": "Continuar",
+    "atras": "Atrás",
+    "siguiente": "Siguiente",
+    "correr": "Iniciar",
+    "confirmar": "Confirmar",
+    "cancelar": "Cancelar",
+    "aceptar": "Aceptar",
+    "confirmar_lanzamiento": "Confirmar lanzamiento",
+    "creditos": "Créditos",
+    "reintentar": "Reintentar",
+    "volver_misiones": "Volver a misiones",
+    "cerrar": "Cerrar",
+    "fuentes": "Fuentes",
+    "anterior": "Anterior"
+  },
+
+  "idioma": {
+    "en": "EN",
+    "es": "ES",
+    "etiqueta": "Language / Idioma"
+  },
+
+  "inicio": {
+    "titulo": "STAR FORGE",
+    "subtitulo": "Juego de diseño de misiones espaciales",
+    "pide_nombre": "Escribe tu indicativo:",
+    "ayuda": "Presiona Enter o haz clic en Jugar"
+  },
+
+  "avatar": {
+    "titulo": "Crea tu avatar",
+    "vista_lab": "En el laboratorio",
+    "ayuda": "Combina lo que quieras: cada opción sirve para cualquier cuerpo.",
+    "categorias": {
+      "cuerpo": "Cuerpo",
+      "piel": "Tono de piel",
+      "pelo": "Cabello",
+      "color_pelo": "Color de cabello",
+      "ojos": "Ojos",
+      "color_ojos": "Color de ojos",
+      "accesorio": "Accesorio",
+      "polo": "Parte de arriba",
+      "pantalon": "Parte de abajo"
+    },
+    "opciones": {
+      "cuerpo": ["Cuerpo 1", "Cuerpo 2", "Cuerpo 3"],
+      "pelo": ["Corto", "Largo", "Rizado", "Afro", "Trenzas", "Rapado", "Calvo"],
+      "ojos": ["Redondos", "Rasgados", "Grandes", "Somnolientos"],
+      "accesorio": ["Ninguno", "Lentes", "Gorra", "Audífonos", "Pañuelo", "Casco espacial", "Gorro navideño"],
+      "polo": ["Polo azul", "Polo a rayas", "Sudadera", "Chaqueta", "Traje de vuelo"],
+      "pantalon": ["Jeans + zapatillas", "Pantalón + botas", "Shorts + zapatillas", "Pantalón deportivo", "Traje de vuelo + botas"]
+    }
+  },
+
+  "misiones": {
+    "titulo": "Elige tu misión",
+    "ayuda": "Empieza por Fácil para dominar el reparto. Cada misión completada desbloquea la siguiente.",
+    "estados": {
+      "disponible": "Disponible",
+      "completada": "Completada",
+      "bloqueada": "Bloqueada",
+      "proximamente": "Próximamente"
+    },
+    "mejor_puntaje": "Mejor",
+    "destino": "Destino",
+    "cohete": "Vehículo de lanzamiento",
+    "presupuesto": "Presupuesto"
+  },
+
+  "dificultades": {
+    "Easy": "Fácil",
+    "Normal": "Normal",
+    "Hard": "Difícil",
+    "Harder": "Muy difícil",
+    "Insane": "Extrema"
+  },
+
+  "info": {
+    "descripcion": "Descripción",
+    "objetivo": "Objetivo",
+    "cohete": "Vehículo de lanzamiento",
+    "destino": "Destino",
+    "recursos": "Recursos por equilibrar",
+    "presupuesto": "Presupuesto",
+    "proximamente": "Próximamente"
+  },
+
+  "_nota_v2": "Los nombres de misiones, descripciones, recursos, AION y créditos vienen de interfaz/guia_misiones_es.json.",
+
+  "didactica": {
+    "recursos": "Recursos de esta misión",
+    "referencia": "Referencia",
+    "pagina": "{n}/{total}"
+  },
+
+  "pausa": {
+    "titulo": "Pausa",
+    "reanudar": "Continuar",
+    "reiniciar": "Reiniciar misión",
+    "misiones": "Volver a misiones",
+    "menu": "Menú principal"
+  },
+
+  "laboratorio": {
+    "presupuesto": "Presupuesto",
+    "interactuar": "[E] Interactuar",
+    "ayuda_mover": "WASD: mover  E: usar  H: AION  M: sonido  Esc: pausa",
+    "hablar_aion": "[E] Hablar con AION",
+    "faq_titulo": "Pregúntale a AION",
+    "faq_elegir": "Elige una pregunta:",
+    "reloj": "MET",
+    "hangar": "HANGAR",
+    "computadora": "Terminal",
+    "archivo": "Archivo",
+    "estaciones": "Estaciones de control",
+    "npc_nombre": "AION",
+    "fases": {
+      "cml1": {
+        "titulo": "Nivel de madurez del concepto 1: Servilleta",
+        "texto": "¡Te damos la bienvenida, {nombre}! Ve a la terminal y confirma tu misión."
+      },
+      "cml2": {
+        "titulo": "Nivel de madurez del concepto 2: Factibilidad inicial",
+        "texto": "¡Buen trabajo, {nombre}! Ahora estudia las condiciones de la misión."
+      },
+      "cml3": {
+        "titulo": "Nivel de madurez del concepto 3: Espacio de compromisos",
+        "texto": "Visita cada estación y asigna tus recursos. Usa las pistas del archivo."
+      },
+      "cml4": {
+        "titulo": "Nivel de madurez del concepto 4: Diseño puntual",
+        "texto": "Ve al archivo (! morado) para la revisión del presupuesto. Aún puedes editar las estaciones."
+      }
+    },
+    "briefing": {
+      "titulo": "Resumen de la misión",
+      "meta": "Objetivo",
+      "destino": "Destino",
+      "cohete": "Vehículo de lanzamiento"
+    },
+    "pistas": {
+      "titulo": "Actualización de información",
+      "guardadas": "Tus pistas quedan guardadas en el archivo. Visita el ! verde cuando quieras para revisarlas.",
+      "archivo_titulo": "Archivo: pistas de la misión"
+    },
+    "estacion": {
+      "cantidad": "Cantidad",
+      "costo": "Costo",
+      "invalido": "Escribe un número válido",
+      "actual": "Actual"
+    },
+    "revision": {
+      "titulo": "Revisión del presupuesto",
+      "ok": "Los costos están dentro del presupuesto asignado.",
+      "aviso_ok": "Una vez que confirmes el lanzamiento, ya no podrás cambiar tu diseño.",
+      "excedido": "El costo total supera el presupuesto asignado. Ajusta tus recursos."
+    }
+  },
+
+  "simulacion": {
+    "cuenta": ["T-3", "T-2", "T-1", "¡IGNICIÓN!"],
+    "frases": {
+      "despegue": "T-3, 2, 1... ¡Ignición! Motores a empuje máximo. Veamos si tus números resisten.",
+      "explota": "¡Alerta estructural! Las cargas del lanzamiento superaron a la estructura.",
+      "no_llega": "¡Corte de motores demasiado pronto! No hay delta-v suficiente para llegar al objetivo.",
+      "se_apaga": "¡Baterías en cero! La nave gastó más energía de la que entregó su sistema de potencia.",
+      "incomunicada": "Llegamos... ¡pero nuestra señal no alcanza la Tierra!",
+      "sin_ciencia": "La nave sobrevivió, pero sin suficientes instrumentos científicos no cumplió su objetivo.",
+      "fuera_de_tiempo": "La nave se quedó sin autonomía antes de completar el plan de la misión.",
+      "exito": "¡Misión cumplida! Piensas como quien diseña misiones reales."
+    },
+    "orbita_objetivo": "Órbita objetivo",
+    "iconos": {
+      "sin_energia": "ENERGÍA 0%",
+      "sin_senal": "SIN SEÑAL",
+      "sin_datos": "SIN DATOS",
+      "sin_tiempo": "SIN TIEMPO"
+    }
+  },
+
+  "resultados": {
+    "exito": "¡Misión cumplida!",
+    "optimo": "¡Diseño óptimo!",
+    "puntaje": "Puntaje",
+    "presupuesto_usado": "Presupuesto usado",
+    "ahorrado": "ahorrado",
+    "fallas": "Recursos bajo su mínimo",
+    "revelado": "Lo que necesitaba cada recurso",
+    "leyenda_min": "Mín",
+    "leyenda_optimo": "Óptimo",
+    "siguiente_estrella": "Siguiente estrella con {pts} puntos",
+    "columnas": {
+      "recurso": "Recurso",
+      "valor": "Tu valor",
+      "minimo": "Mínimo",
+      "optimo": "Óptimo",
+      "puntos": "Puntos",
+      "pista": "Pista"
+    },
+    "revelado_parcial": "Qué tan cerca estuvo cada recurso (las cifras exactas se ven con 5 estrellas)",
+    "titulos_falla": {
+      "explota": "El cohete se desarmó",
+      "no_llega": "La nave no llegó a su destino",
+      "se_apaga": "La nave se quedó sin energía",
+      "incomunicada": "La nave perdió contacto con la Tierra",
+      "sin_ciencia": "La misión no cumplió su objetivo científico",
+      "fuera_de_tiempo": "La misión se quedó sin tiempo"
+    },
+    "falla_generica": "Misión fallida"
+  },
+
+  "creditos": {
+    "fuentes_titulo": "Fuentes y estimaciones",
+    "estimaciones_titulo": "Sobre los números",
+    "pagina": "Página {n}/{total}"
+  },
+
+  "notificaciones": {
+    "bienvenida": "Estas son las misiones de la estación. Empieza por Fácil para dominar el reparto del presupuesto. Cada misión que completes desbloquea un nuevo reto de ingeniería real.",
+    "desbloqueo": "¡Gran trabajo, {nombre}! Nueva misión desbloqueada: {mision}.",
+    "reintento": "¡No te rindas, {nombre}! Revisa la pista de cada recurso e inténtalo de nuevo.",
+    "depuracion": "Depuración: todas las misiones desbloqueadas."
+  },
+
+  "recursos": {
+    "estructura": "Estructura",
+    "propulsion": "Propulsión (delta-v)",
+    "potencia": "Potencia",
+    "comunicaciones": "Comunicaciones",
+    "datos": "Instrumentos científicos",
+    "tiempo": "Autonomía"
+  },
+
+  "unidades": {
+    "dias": "días",
+    "puntos": "puntos",
+    "kg": "kg",
+    "m/s": "m/s",
+    "W": "W",
+    "kbps": "kbps",
+    "Mbps": "Mbps"
+  },
+
+  "destinos": {
+    "LEO": "Órbita terrestre baja (LEO)",
+    "órbita lunar": "Órbita lunar",
+    "órbita de Marte": "Órbita de Marte",
+    "superficie de Marte": "Superficie de Marte"
+  }
+}

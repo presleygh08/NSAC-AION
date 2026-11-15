@@ -1,0 +1,191 @@
+{
+  "_nota": "Espejo en español de guia_misiones_en.json (v3, E). Español neutro latinoamericano. Mismas claves; si falta una, el juego usa la inglesa. Las 'pistas_referencia' dan rangos, nunca el mínimo exacto.",
+  "misiones": {
+    "easy_cubesat": {
+      "nombre": "CubeSat a órbita terrestre baja",
+      "inspirada_en": "Inspirada en los CubeSats que la NASA lanza con su CubeSat Launch Initiative",
+      "descripcion": "Un CubeSat del tamaño de una caja de zapatos viaja en un cohete pequeño a la órbita terrestre baja. La CubeSat Launch Initiative de la NASA ha lanzado más de 150 CubeSats construidos por universidades y escuelas.",
+      "objetivo": "Resiste las vibraciones del lanzamiento y usa tu propio propulsor pequeño para llegar a tu órbita final.",
+      "cohete": "Electron (Rocket Lab): un vehículo de lanzamiento pequeño que lleva hasta unos 300 kg a la órbita terrestre baja. Sus motores Rutherford usan bombas eléctricas alimentadas por baterías.",
+      "pistas_referencia": {
+        "estructura": "En los satélites pequeños, la estructura suele ser entre un cuarto y un tercio de la masa seca. La masa seca de este CubeSat es de 20 kg.",
+        "propulsion": "Los propulsores de CubeSat suelen dar unos cientos de m/s de delta-v: suficiente para subir y mantener una órbita, no para salir de la Tierra."
+      }
+    },
+    "normal_leo": {
+      "nombre": "SmallSat de exoplanetas a LEO",
+      "inspirada_en": "Inspirada en el satélite pequeño Pandora de la NASA (lanzado en un vuelo compartido de Falcon 9, 11 ene 2026)",
+      "descripcion": "Un satélite científico pequeño va a una órbita terrestre baja heliosíncrona para observar estrellas lejanas y sus planetas, como Pandora de la NASA. Ahora necesita paneles solares para mantener sus instrumentos funcionando.",
+      "objetivo": "Llega a tu órbita y genera suficiente electricidad para toda la misión, incluso cuando el satélite pasa por la sombra de la Tierra.",
+      "cohete": "Falcon 9 (SpaceX): lleva hasta 22 800 kg a la órbita terrestre baja y su primera etapa aterriza para reutilizarse. Los satélites pequeños comparten el viaje en misiones de vuelo compartido.",
+      "pistas_referencia": {
+        "estructura": "La estructura es más o menos un cuarto de la masa seca. La masa seca de este satélite es de 140 kg.",
+        "propulsion": "Un satélite de este tamaño necesita unos cientos de m/s para ajustar y mantener su órbita durante años.",
+        "potencia": "Cerca de la Tierra, la luz solar aporta 1361 W por metro cuadrado y las buenas celdas solares convierten cerca del 28 % en electricidad. Los satélites de este tamaño suelen necesitar unos cientos de watts."
+      }
+    },
+    "hard_mro_marte": {
+      "nombre": "Orbitador de Marte",
+      "inspirada_en": "Inspirada en el Mars Reconnaissance Orbiter (MRO) de la NASA",
+      "descripcion": "Una nave grande viaja a Marte y se queda en órbita para fotografiar la superficie y retransmitir a la Tierra los datos de los rovers, como MRO, que despegó el 12 ago 2005 y entró en órbita de Marte el 10 mar 2006.",
+      "objetivo": "Llega a la órbita de Marte, mantén tus instrumentos con energía con una luz solar más débil y envía tus datos a cientos de millones de kilómetros.",
+      "cohete": "Falcon Heavy (SpaceX): tres núcleos de Falcon 9 unidos, capaz de enviar hasta 16 800 kg hacia Marte. El MRO real voló en un Atlas V 401; este juego usa Falcon Heavy porque su capacidad hacia Marte está publicada.",
+      "pistas_referencia": {
+        "estructura": "La estructura de un orbitador grande puede ser más de un tercio de su masa seca. La masa seca de este orbitador es de 1030 kg.",
+        "propulsion": "Pasar de la órbita terrestre baja a la órbita de Marte requiere varios miles de m/s de delta-v: muchas veces más que quedarse cerca de la Tierra.",
+        "potencia": "En Marte (a 1.52 UA del Sol) la luz solar es de solo unos 586 W por metro cuadrado, menos de la mitad que en la Tierra. Aun así, los paneles solares de un orbitador grande entregan del orden de un kilowatt.",
+        "comunicaciones": "Los orbitadores modernos de Marte, con grandes antenas de alta ganancia, pueden enviar datos a la Tierra a varios megabits por segundo (Mbps) en banda X."
+      }
+    },
+    "harder_perseverance": {
+      "nombre": "Rover de Marte",
+      "inspirada_en": "Inspirada en el rover Perseverance de la NASA (Mars 2020)",
+      "descripcion": "Un rover del tamaño de un auto debe sobrevivir a la entrada, descenso y aterrizaje en Marte y luego explorar con sus instrumentos científicos, como Perseverance, que despegó el 30 jul 2020 y aterrizó en el cráter Jezero el 18 feb 2021.",
+      "objetivo": "Aterriza de forma segura en la superficie, dale energía al rover, mantén el contacto con la Tierra y lleva suficientes instrumentos científicos para cumplir la misión.",
+      "cohete": "Falcon Heavy (SpaceX). El Perseverance real voló en un Atlas V 541; este juego usa Falcon Heavy porque su capacidad hacia Marte está publicada.",
+      "pistas_referencia": {
+        "estructura": "Aterrizar exige una estructura reforzada: escudo térmico, cubierta trasera y etapa de descenso, además del propio rover.",
+        "propulsion": "La entrada, descenso y aterrizaje (EDL) en Marte requiere miles de m/s más de delta-v que solo orbitarlo.",
+        "potencia": "Perseverance no usa paneles solares: un generador termoeléctrico de radioisótopos multimisión (MMRTG) da del orden de cien watts, de día y de noche, y las baterías cubren los picos.",
+        "comunicaciones": "Un rover en la superficie se comunica con la Tierra a decenas o unos cientos de kbps, a menudo retransmitiendo por medio de orbitadores.",
+        "datos": "La carga científica de un rover pesa decenas de kilogramos. El Perseverance real lleva siete instrumentos científicos."
+      }
+    },
+    "insane_artemis1": {
+      "nombre": "Orbitador lunar",
+      "inspirada_en": "Inspirada en la misión Artemis I de la NASA",
+      "descripcion": "Una cápsula pesada sin tripulación vuela alrededor de la Luna para probar todo lo que necesitarán futuros astronautas, como Artemis I, que despegó el 16 nov 2022 y amerizó el 11 dic 2022.",
+      "objetivo": "Equilibra los seis recursos a la vez: llega a la órbita lunar, mantén la energía y el contacto, lleva tus instrumentos de prueba y dura toda la misión.",
+      "cohete": "SLS Block 1 (Space Launch System de la NASA): el vehículo de lanzamiento de Artemis I, capaz de llevar unos 95 000 kg a la órbita terrestre baja y 27 000 kg hacia la Luna.",
+      "pistas_referencia": {
+        "estructura": "Una cápsula tripulada es pesada: su estructura debe proteger toda la nave, incluido el escudo térmico para el regreso a la Tierra. La masa seca de esta nave es de unos 10 300 kg.",
+        "propulsion": "Llegar a la órbita lunar desde la órbita terrestre baja requiere unos pocos miles de m/s de delta-v (inyección translunar más inserción en órbita lunar).",
+        "potencia": "El Módulo de Servicio Europeo de Orion despliega cuatro alas de paneles solares que generan del orden de diez kilowatts.",
+        "comunicaciones": "Los enlaces desde la Luna pueden llegar a cientos de kbps.",
+        "datos": "Artemis I llevó dos maniquíes de torso que medían radiación (el experimento MARE) para estudiar la dosis que recibirían futuros astronautas.",
+        "tiempo": "La misión real Artemis I duró casi cuatro semanas."
+      }
+    }
+  },
+  "recursos": {
+    "estructura": {
+      "nombre": "Estructura",
+      "unidad": "kg",
+      "que_es": "El armazón y los paneles que mantienen unida la nave.",
+      "por_que_importa": "Durante el lanzamiento el cohete vibra y empuja con varias veces la gravedad de la Tierra. Con poca estructura la nave se desarma; con demasiada desperdicias masa y dinero."
+    },
+    "propulsion": {
+      "nombre": "Propulsión (delta-v)",
+      "unidad": "m/s",
+      "que_es": "El delta-v es cuánto puede cambiar tu nave su velocidad con su propio motor y propelente.",
+      "por_que_importa": "Cada destino cuesta un cierto delta-v. Si te quedas corto, nunca llegas a tu órbita o planeta objetivo. Más propelente también significa más masa que empujar (ecuación del cohete)."
+    },
+    "potencia": {
+      "nombre": "Potencia",
+      "unidad": "W",
+      "que_es": "La potencia eléctrica disponible para todos los sistemas de la nave, de paneles solares o, en algunos rovers, de una fuente de radioisótopos (MMRTG).",
+      "por_que_importa": "La luz solar se debilita cuanto más lejos estás del Sol, y en la sombra de un planeta no recibes nada. Sin potencia suficiente la nave se apaga."
+    },
+    "comunicaciones": {
+      "nombre": "Comunicaciones",
+      "unidad": "kbps",
+      "que_es": "Qué tan rápido puede la nave enviar datos a la Tierra, en kilobits (kbps) o megabits (Mbps) por segundo.",
+      "por_que_importa": "La señal se debilita con la distancia. Una misión que no puede enviar sus datos a casa se pierde, aunque la nave esté bien."
+    },
+    "datos": {
+      "nombre": "Instrumentos científicos",
+      "unidad": "kg",
+      "que_es": "La masa de los instrumentos científicos a bordo: cámaras, espectrómetros y sensores.",
+      "por_que_importa": "Son la razón de volar. Si los recortas demasiado, la nave llega pero la misión no cumple su objetivo."
+    },
+    "tiempo": {
+      "nombre": "Autonomía",
+      "unidad": "días",
+      "que_es": "Cuántos días puede seguir operando la nave (consumibles, baterías y vida útil de los sistemas).",
+      "por_que_importa": "Si la nave no dura lo que pide el plan de la misión, se queda sin tiempo antes de terminar."
+    }
+  },
+  "pantalla_didactica": {
+    "titulo": "Resumen de la misión con AION",
+    "intro": "Antes de diseñar, repasemos con qué cuentas.",
+    "regla_presupuesto": "Tu presupuesto alcanza para un gran diseño, pero solo si lo gastas con cuidado: gastar de más en un recurso deja menos para los demás.",
+    "boton": "¡A diseñar!"
+  },
+  "aion_faq": [
+    {
+      "pregunta": "¿Qué es el delta-v?",
+      "respuesta": "Es el cambio total de velocidad que tu motor puede darle a tu nave. Cada destino necesita una cantidad: Marte necesita mucho más que la órbita terrestre baja."
+    },
+    {
+      "pregunta": "¿Por qué la nave necesita estructura?",
+      "respuesta": "El lanzamiento sacude fuerte al cohete y lo empuja con varias veces la gravedad de la Tierra. La estructura mantiene todo en una pieza."
+    },
+    {
+      "pregunta": "¿Por qué hay menos energía en Marte?",
+      "respuesta": "La luz solar se dispersa al viajar. Marte está 1.52 veces más lejos del Sol que la Tierra, así que cada panel solar recibe menos de la mitad de la luz. Esa es una razón por la que Perseverance usa un MMRTG."
+    },
+    {
+      "pregunta": "¿Por qué es más difícil comunicarse de lejos?",
+      "respuesta": "Las señales de radio se debilitan con la distancia. Las misiones lejanas necesitan antenas de alta ganancia más grandes o más potencia de transmisión para enviar los mismos datos."
+    },
+    {
+      "pregunta": "¿Cómo se calcula mi puntaje?",
+      "respuesta": "Si todos los recursos superan su mínimo, completas la misión. Luego sumas más puntos cuanto más cerca esté cada recurso de su valor óptimo, más un bono por el dinero que no gastaste."
+    },
+    {
+      "pregunta": "¿Algún consejo para ahorrar?",
+      "respuesta": "Lee las pistas, empieza por el recurso que puede arruinar primero la misión y no sobredimensiones: pasar del óptimo cuesta dinero y no da puntos extra."
+    },
+    {
+      "pregunta": "¿Qué es un nivel de madurez del concepto?",
+      "respuesta": "El Jet Propulsion Laboratory (JPL) de la NASA usa los niveles de madurez del concepto (CML) para llevar una misión desde una primera idea (CML 1) hasta un diseño detallado. Tú sigues los mismos pasos en el laboratorio."
+    }
+  ],
+  "creditos_finales": {
+    "titulo": "¡Campaña completada!",
+    "frase": "Equilibraste misiones reales con límites reales. Cada mínimo, margen y presupuesto con el que jugaste se basa en datos publicados por la NASA, la ESA, el DLR, Airbus, Cal Poly, SpaceX y Rocket Lab, o en estimaciones del equipo. Ya piensas como quien diseña misiones.",
+    "equipo": "Equipo AION SPACE: Emanuel Gonzales, Gonzalo Bejarano, Bryan Chambi, Justin Aguilar, Piero Arista",
+    "ia": "Hecho con Python y Pygame. Herramientas de IA (Claude, Claude Code) ayudaron con el código y la documentación.",
+    "estimaciones": "Los valores de fuentes oficiales se listan aquí y se citan en docs/data-sources.md. Los valores mínimos, los costos por unidad y algunas masas son estimaciones del equipo para el juego, no cifras oficiales."
+  },
+  "fuentes": {
+    "cubesat_launch_initiative": "https://www.nasa.gov/smallsat-institute/recent-nasa-launches/",
+    "pandora": "https://www.nasa.gov/blogs/smallsatellites/2026/01",
+    "mro": "https://science.nasa.gov/missions/mars-reconnaissance-orbiter/",
+    "perseverance_quick_facts": "https://www.jpl.nasa.gov/news/press_kits/mars_2020/launch/quick_facts/",
+    "artemis": "https://www.nasa.gov/humans-in-space/artemis/",
+    "lanzadores": "datos/lanzadores.json",
+    "destinos": "datos/destinos.json",
+    "perseverance_payload": "https://www.rocketstem.org/2020/07/20/mars-2020-mission-overview/",
+    "mare_artemis1": "https://www.dlr.de/en/research-and-transfer/featured-topics/mission-moon/artemis-programme/the-mare-cosmic-radiation-experiment-on-board-artemis-i",
+    "mars_fact_sheet": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html",
+    "mro_spacecraft_jpl": "https://webarchive.library.unt.edu/web/20090813145340/http://mars.jpl.nasa.gov/mro/mission/sc.html",
+    "mro_power_comms_nssdca": "https://www.planetary.org/mission-spending/mro-spending",
+    "orion_esm_airbus": "https://www.airbus.com/en/products-services/space/space-exploration/moon-missions/orion-european-service-module",
+    "sls": "https://www.nasa.gov/humans-in-space/space-launch-system/the-great-escape-sls-provides-power-for-missions-to-the-moon-duzxi/",
+    "artemis1_splashdown": "https://www.nasa.gov/?p=285100",
+    "falcon_heavy": "https://new.spacex.com/vehicles/falcon-heavy",
+    "electron": "https://rocketlabcorp.com/news/updates/rocket-lab-increases-electron-payload-capacity-enabling-interplanetary-missions-and-reusability/",
+    "mmrtg": "https://rps.nasa.gov/power-and-thermal-systems/power-systems/current/"
+  },
+  "fuentes_etiquetas": {
+    "cubesat_launch_initiative": "NASA CubeSat Launch Initiative",
+    "pandora": "Blog de satélites pequeños de la NASA (Pandora)",
+    "mro": "NASA Mars Reconnaissance Orbiter",
+    "perseverance_quick_facts": "NASA/JPL: datos rápidos de Mars 2020",
+    "artemis": "NASA Artemis",
+    "lanzadores": "Datos de vehículos de lanzamiento (archivo del juego)",
+    "destinos": "Delta-v de los destinos (archivo del juego)",
+    "perseverance_payload": "Resumen de la misión Mars 2020 (RocketSTEM)",
+    "mare_artemis1": "DLR: experimento MARE en Artemis I",
+    "mars_fact_sheet": "NASA NSSDCA: ficha técnica de Marte",
+    "mro_spacecraft_jpl": "NASA/JPL: la nave MRO (archivo)",
+    "mro_power_comms_nssdca": "MRO: potencia y tasa de datos (Planetary Society)",
+    "orion_esm_airbus": "Airbus: Módulo de Servicio Europeo de Orion",
+    "sls": "NASA Space Launch System",
+    "artemis1_splashdown": "NASA: amerizaje de Artemis I",
+    "falcon_heavy": "SpaceX Falcon Heavy",
+    "electron": "Rocket Lab: capacidad de carga de Electron",
+    "mmrtg": "NASA: sistemas de energía de radioisótopos (MMRTG)"
+  }
+}

@@ -1,27 +1,36 @@
 {
-  "titulo_ventana": "Rocket Run - Space Mission Design Game",
+  "titulo_ventana": "STAR FORGE - Space Mission Design Game",
 
   "botones": {
-    "jugar": "PLAY",
-    "aleatorio": "RANDOM",
-    "continuar": "CONTINUE",
-    "atras": "BACK",
-    "siguiente": "NEXT",
-    "correr": "RUN",
-    "confirmar": "CONFIRM",
-    "cancelar": "CANCEL",
-    "aceptar": "ACCEPT",
-    "confirmar_lanzamiento": "CONFIRM LAUNCH",
-    "saltar": "SKIP",
-    "reintentar": "TRY AGAIN",
-    "volver_misiones": "BACK TO MISSIONS"
+    "jugar": "Play",
+    "aleatorio": "Random",
+    "continuar": "Continue",
+    "atras": "Back",
+    "siguiente": "Next",
+    "correr": "Run",
+    "confirmar": "Confirm",
+    "cancelar": "Cancel",
+    "aceptar": "Accept",
+    "confirmar_lanzamiento": "Confirm launch",
+    "creditos": "Credits",
+    "reintentar": "Try again",
+    "volver_misiones": "Back to missions",
+    "cerrar": "Close",
+    "fuentes": "Sources",
+    "anterior": "Previous"
+  },
+
+  "idioma": {
+    "en": "EN",
+    "es": "ES",
+    "etiqueta": "Language / Idioma"
   },
 
   "inicio": {
-    "titulo": "ROCKET RUN",
+    "titulo": "STAR FORGE",
     "subtitulo": "Space Mission Design Game",
     "pide_nombre": "Enter your callsign:",
-    "ayuda": "Press ENTER or click PLAY"
+    "ayuda": "Press Enter or click Play"
   },
 
   "avatar": {
@@ -41,9 +50,9 @@
     },
     "opciones": {
       "cuerpo": ["Body 1", "Body 2", "Body 3"],
-      "pelo": ["Short", "Long", "Curly", "Afro", "Braids", "Buzz", "Bald"],
+      "pelo": ["Short", "Long", "Curly", "Afro", "Braids", "Buzz cut", "Bald"],
       "ojos": ["Round", "Narrow", "Wide", "Sleepy"],
-      "accesorio": ["None", "Glasses", "Cap", "Headphones", "Headscarf", "Space helmet"],
+      "accesorio": ["None", "Glasses", "Cap", "Headphones", "Headscarf", "Space helmet", "Santa hat"],
       "polo": ["Blue tee", "Striped tee", "Hoodie", "Jacket", "Flight suit"],
       "pantalon": ["Jeans + sneakers", "Pants + boots", "Shorts + sneakers", "Joggers", "Flight suit + boots"]
     }
@@ -51,7 +60,7 @@
 
   "misiones": {
     "titulo": "Choose your mission",
-    "ayuda": "Start with Easy to master the budget split. Each mission you complete unlocks a new one.",
+    "ayuda": "Start with Easy to master the budget split. Each mission you complete unlocks the next one.",
     "estados": {
       "disponible": "Available",
       "completada": "Completed",
@@ -60,41 +69,57 @@
     },
     "mejor_puntaje": "Best",
     "destino": "Destination",
-    "cohete": "Rocket",
+    "cohete": "Launch vehicle",
     "presupuesto": "Budget"
+  },
+
+  "dificultades": {
+    "Easy": "Easy",
+    "Normal": "Normal",
+    "Hard": "Hard",
+    "Harder": "Harder",
+    "Insane": "Insane"
   },
 
   "info": {
     "descripcion": "Description",
     "objetivo": "Objective",
-    "cohete": "Rocket",
+    "cohete": "Launch vehicle",
     "destino": "Destination",
     "recursos": "Resources to balance",
     "presupuesto": "Budget",
     "proximamente": "Coming soon"
   },
 
-  "misiones_texto_nota": "PROVISIONAL texts until Chambi/Justin add 'descripcion' and 'objetivo' in English to parametros_misiones.json.",
-  "misiones_texto": {
-    "easy_cubesat": {
-      "descripcion": "A small CubeSat rides a light rocket to low Earth orbit. Small satellites like this are how many students and universities reach space.",
-      "objetivo": "Survive the launch and use your own thruster to reach your final orbit."
-    },
-    "normal_leo": {
-      "descripcion": "A bigger satellite heads to low Earth orbit. Now it also needs solar panels to keep its systems running.",
-      "objetivo": "Reach your orbit and generate enough power for the whole mission."
-    }
+  "_nota_v2": "Mission names, descriptions, resources, AION and credits come from interfaz/guia_misiones_en.json.",
+
+  "didactica": {
+    "recursos": "Resources of this mission",
+    "referencia": "Reference",
+    "pagina": "{n}/{total}"
+  },
+
+  "pausa": {
+    "titulo": "Paused",
+    "reanudar": "Resume",
+    "reiniciar": "Restart mission",
+    "misiones": "Back to missions",
+    "menu": "Main menu"
   },
 
   "laboratorio": {
     "presupuesto": "Budget",
     "interactuar": "[E] Interact",
-    "ayuda_mover": "Arrows/WASD: move   E: interact   Esc: close",
+    "ayuda_mover": "WASD: move  E: interact  H: ask AION  M: sound  Esc: pause",
+    "hablar_aion": "[E] Talk to AION",
+    "faq_titulo": "Ask AION",
+    "faq_elegir": "Choose a question:",
+    "reloj": "MET",
     "hangar": "HANGAR",
     "computadora": "Computer",
     "archivo": "Archive",
     "estaciones": "Control stations",
-    "npc_nombre": "Flight Director",
+    "npc_nombre": "AION",
     "fases": {
       "cml1": {
         "titulo": "Concept Maturity Level 1: Cocktail Napkin",
@@ -115,9 +140,9 @@
     },
     "briefing": {
       "titulo": "Mission briefing",
-      "meta": "Goal",
+      "meta": "Objective",
       "destino": "Destination",
-      "cohete": "Rocket"
+      "cohete": "Launch vehicle"
     },
     "pistas": {
       "titulo": "Update information",
@@ -131,35 +156,25 @@
       "actual": "Current"
     },
     "revision": {
-      "titulo": "BUDGET REVIEW",
+      "titulo": "Budget review",
       "ok": "Costs are within the assigned budget.",
-      "aviso_ok": "After launch confirmation you can't change your design.",
+      "aviso_ok": "Once you confirm the launch, you can't change your design.",
       "excedido": "The total cost exceeds the assigned budget. Adjust your resources."
     }
-  },
-
-  "explicacion_recursos": {
-    "estructura": "The frame that holds the ship together during the violent launch.",
-    "propulsion": "How much your ship can change its speed with its own engine.",
-    "potencia": "Electricity from the solar panels for all the ship's systems.",
-    "comunicaciones": "How fast the ship can send data back to Earth.",
-    "datos": "Scientific value of the instruments on board.",
-    "tiempo": "How long the ship can keep working."
   },
 
   "simulacion": {
     "cuenta": ["T-3", "T-2", "T-1", "IGNITION!"],
     "frases": {
-      "despegue": "T-3, 2, 1... Ignition! Engines at full power. Let's see if your numbers hold.",
-      "explota": "Structural alert! The vibration was stronger than the ship.",
-      "no_llega": "Engines cut off too early! Not enough delta-v to reach the target.",
-      "se_apaga": "Batteries at zero! We used more energy than we generated.",
+      "despegue": "T-3, 2, 1... Ignition! Engines at full thrust. Let's see if your numbers hold.",
+      "explota": "Structural alert! The launch loads were too much for the structure.",
+      "no_llega": "Engine cutoff too early! Not enough delta-v to reach the target.",
+      "se_apaga": "Batteries at zero! The spacecraft used more energy than its power system supplied.",
       "incomunicada": "We made it... but our signal can't reach Earth!",
-      "sin_ciencia": "The ship survived, but without enough instruments or time we missed the goal.",
-      "fuera_de_tiempo": "The ship survived, but without enough instruments or time we missed the goal.",
+      "sin_ciencia": "The spacecraft survived, but without enough science instruments it missed its objective.",
+      "fuera_de_tiempo": "The spacecraft ran out of endurance before the mission plan was complete.",
       "exito": "Mission accomplished! You think like a real mission designer."
     },
-    "ayuda_saltar": "SPACE to skip",
     "orbita_objetivo": "Target orbit",
     "iconos": {
       "sin_energia": "POWER 0%",
@@ -177,8 +192,6 @@
     "ahorrado": "saved",
     "fallas": "Resources below their minimum",
     "revelado": "What each resource needed",
-    "de_necesarios": "{valor} of {minimo} needed",
-    "faltante": "{pct}% missing",
     "leyenda_min": "Min",
     "leyenda_optimo": "Optimal",
     "siguiente_estrella": "Next star at {pts} points",
@@ -188,28 +201,30 @@
       "minimo": "Minimum",
       "optimo": "Optimal",
       "puntos": "Points",
-      "faltante": "Missing"
+      "pista": "Hint"
     },
-    "etiquetas_faltante": {
-      "poco": "Just short",
-      "medio": "Short",
-      "mucho": "Far below"
-    },
+    "revelado_parcial": "How close each resource was (exact numbers unlock with 5 stars)",
     "titulos_falla": {
       "explota": "The rocket broke apart",
-      "no_llega": "The ship didn't reach its destination",
-      "se_apaga": "The ship ran out of power",
-      "incomunicada": "The ship lost contact with Earth",
-      "sin_ciencia": "The mission missed its science goal",
+      "no_llega": "The spacecraft didn't reach its destination",
+      "se_apaga": "The spacecraft ran out of power",
+      "incomunicada": "The spacecraft lost contact with Earth",
+      "sin_ciencia": "The mission missed its science objective",
       "fuera_de_tiempo": "The mission ran out of time"
     },
     "falla_generica": "Mission failed"
   },
 
+  "creditos": {
+    "fuentes_titulo": "Sources and estimates",
+    "estimaciones_titulo": "About the numbers",
+    "pagina": "Page {n}/{total}"
+  },
+
   "notificaciones": {
     "bienvenida": "Here are the station's missions. Start with Easy to master the budget split. Each mission you complete unlocks a new real engineering challenge.",
     "desbloqueo": "Great work, {nombre}! New mission unlocked: {mision}.",
-    "reintento": "Don't give up, {nombre}! Check the revealed minimums and try again.",
+    "reintento": "Don't give up, {nombre}! Check the hint for each resource and try again.",
     "depuracion": "Debug: all missions unlocked."
   },
 
@@ -218,17 +233,22 @@
     "propulsion": "Propulsion (delta-v)",
     "potencia": "Power",
     "comunicaciones": "Communications",
-    "datos": "Science data",
-    "tiempo": "Time"
+    "datos": "Science instruments",
+    "tiempo": "Endurance"
   },
 
   "unidades": {
     "dias": "days",
-    "puntos": "points"
+    "puntos": "points",
+    "kg": "kg",
+    "m/s": "m/s",
+    "W": "W",
+    "kbps": "kbps",
+    "Mbps": "Mbps"
   },
 
   "destinos": {
-    "LEO": "Low Earth Orbit",
+    "LEO": "Low Earth orbit (LEO)",
     "órbita lunar": "Lunar orbit",
     "órbita de Marte": "Mars orbit",
     "superficie de Marte": "Mars surface"

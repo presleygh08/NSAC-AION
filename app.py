@@ -1,8 +1,9 @@
 # app.py
-# Punto de entrada del juego. Ejecutar con:  python3.12 app.py
+# Punto de entrada de STAR FORGE. Ejecutar con:  python3.12 app.py
 #
 # Aquí están:
-#   1. La lectura de los textos en inglés (interfaz/textos_en.json).
+#   1. La lectura de los textos en inglés (interfaz/textos_en.json y, desde la v2,
+#      interfaz/guia_misiones_en.json, que queda en textos["guia"]).
 #   2. El diccionario "ui" con el estado de la interfaz.
 #   3. aplicar_accion(): qué pasa cuando se clica cada botón. Solo llama a
 #      funciones de nucleo.py (ver CONTRATO_API.md); aquí no hay reglas del juego.
@@ -11,10 +12,12 @@
 # Estilo 16 bits: todo se dibuja en una superficie pequeña de 640x360 ("lienzo") y
 # al final se agranda ESCALA veces a la ventana real, sin suavizar.
 #
-# Flujo de pantallas:
-#   inicio -> avatar -> misiones -> info_mision -> laboratorio -> simulacion -> resultados
-#                          ^                                                     |
-#                          +-------------- "Back to missions" / "Try again" -----+
+# Flujo de pantallas (v2):
+#   inicio -> avatar -> misiones -> info_mision -> didactica -> laboratorio -> simulacion -> resultados
+#     |                    ^                                                                  |
+#     +-> creditos         +------------------ "Back to missions" / "Try again" -------------+
+#   En el laboratorio y en la pantalla didáctica, Esc abre el menú de pausa (interfaz/pausa.py).
+#   Enter activa el botón principal de cada pantalla o ventana.
 
 import json
 import random
@@ -23,10 +26,11 @@ import sys
 import pygame
 
 import nucleo
-from interfaz import config, sprites
+from interfaz import config, sonido, sprites
 from interfaz import (pantalla_inicio, pantalla_avatar, pantalla_misiones, pantalla_info,
-                      laboratorio, simulacion, resultados, notificaciones)
-from interfaz.componentes import CajaTexto
+                      pantalla_didactica, laboratorio, simulacion, resultados, notificaciones,
+                      pausa, pantalla_creditos)
+from interfaz.componentes import CajaTexto, boton_principal, nombre_mision
 
 # Qué módulo dibuja cada pantalla.
 PANTALLAS = {
@@ -34,25 +38,66 @@ PANTALLAS = {
     "avatar": pantalla_avatar,
     "misiones": pantalla_misiones,
     "info_mision": pantalla_info,
+    "didactica": pantalla_didactica,
     "laboratorio": laboratorio,
     "simulacion": simulacion,
     "resultados": resultados,
+    "creditos": pantalla_creditos,
 }
+
+# Pantallas donde Esc abre el menú de pausa.
+PANTALLAS_CON_PAUSA = ("laboratorio", "didactica")
 
 
 # ---------------------------------------------------------------------------
 # 1. Textos
 # ---------------------------------------------------------------------------
 
-def cargar_textos():
-    """Lee textos_en.json. encoding="utf-8" porque hay tildes (órbita)."""
-    with open(config.RUTA_TEXTOS, encoding="utf-8") as archivo:
+def cargar_json(ruta):
+    """Lee un archivo JSON. encoding="utf-8" porque hay tildes (órbita)."""
+    with open(ruta, encoding="utf-8") as archivo:
         return json.load(archivo)
 
 
-# Los textos se leen una sola vez al empezar. aplicar_accion los usa para los
-# mensajes del asistente.
-textos_juego = cargar_textos()
+def mezclar(base, extra):
+    """Copia de 'base' con los valores de 'extra' encima (v3, E). Si en 'extra' falta
+    una clave, queda la de 'base': así un texto sin traducir sale en inglés y nunca
+    se muestra la clave cruda. Entra en los diccionarios de adentro (recursiva)."""
+    resultado = dict(base)
+    for clave in extra:
+        if isinstance(base.get(clave), dict) and isinstance(extra[clave], dict):
+            resultado[clave] = mezclar(base[clave], extra[clave])
+        else:
+            resultado[clave] = extra[clave]
+    return resultado
+
+
+def cargar_textos(idioma="en"):
+    """textos_en.json + la guía de la v2 dentro de textos["guia"].
+    Con idioma "es" (v3, E) se ponen encima textos_es.json y guia_misiones_es.json."""
+    textos = cargar_json(config.RUTA_TEXTOS)
+    textos["guia"] = cargar_json(config.RUTA_GUIA)
+    if idioma == "es":
+        textos_es = cargar_json(config.RUTA_TEXTOS_ES)
+        textos_es["guia"] = cargar_json(config.RUTA_GUIA_ES)
+        textos = mezclar(textos, textos_es)
+    return textos
+
+
+# Los textos se leen al empezar (en inglés). aplicar_accion los usa para los
+# mensajes del asistente. Al cambiar de idioma se cambia el CONTENIDO de este mismo
+# diccionario, así todas las pantallas lo ven al instante.
+textos_juego = cargar_textos(config.IDIOMA_INICIAL)
+
+
+def cambiar_idioma(ui, idioma):
+    """Cambia el idioma al instante, sin reiniciar la misión (v3, E)."""
+    nuevos = cargar_textos(idioma)
+    textos_juego.clear()
+    textos_juego.update(nuevos)
+    ui["idioma"] = idioma
+    if pygame.display.get_init() and pygame.display.get_surface() is not None:
+        pygame.display.set_caption(textos_juego["titulo_ventana"])
 
 
 # ---------------------------------------------------------------------------
@@ -63,6 +108,7 @@ def crear_ui():
     """Diccionario con todo lo que la interfaz necesita recordar."""
     return {
         "pantalla": "inicio",                 # qué pantalla se ve
+        "idioma": config.IDIOMA_INICIAL,      # "en" o "es" (v3, E)
         "tiempo": 0.0,                        # segundos desde que empezó el juego (animaciones)
         "jugador": {"nombre": config.NOMBRE_POR_DEFECTO, "avatar": sprites.avatar_inicial()},
         "caja_nombre": CajaTexto(config.ANCHO // 2 - 80, 164, 160, 24,
@@ -79,16 +125,33 @@ def crear_ui():
         "notificaciones": [],                 # cola de mensajes del asistente (notificaciones.py)
         "vio_bienvenida": False,              # la bienvenida de la parrilla sale una sola vez
         "aviso_parrilla": None,               # mensaje para cuando se vuelva a la parrilla
+        "pagina_didactica": 0,                # página de recursos en la pantalla didáctica
+        "pausa": False,                       # True = menú de pausa abierto
+        "ver_creditos": False,                # True = se acaba de completar la última misión
+        "creditos_vuelta": "inicio",          # a qué pantalla se vuelve desde los créditos
     }
 
 
 def empezar_mision(ui):
-    """Crea una misión nueva de ui["mision_id"] (también sirve para "Try again")."""
+    """Crea una misión nueva de ui["mision_id"], desde CML 1 y sin nada repartido."""
     parametros = nucleo.cargar_parametros(ui["mision_id"])
     ui["estado"] = nucleo.iniciar_mision(parametros)
-    ui["lab"] = laboratorio.nuevo_lab()
+    ui["lab"] = laboratorio.nuevo_lab(ui["estado"].get("tipo_potencia", "solar"))
     ui["sim"] = None
     ui["revelado"] = None
+    ui["pausa"] = False
+
+
+def reintentar_mision(ui):
+    """TRY AGAIN (v2 punto 2 + v3 B): misión nueva, cada estación conserva la cantidad
+    que el jugador escribió antes (se rehace con cotizar + repartir) y el laboratorio
+    continúa directo en CML 4 (sin repetir CML 1-3 ni la pantalla didáctica)."""
+    escrito = {}
+    if ui["lab"] is not None:
+        escrito = dict(ui["lab"]["escrito"])
+    empezar_mision(ui)
+    laboratorio.conservar_reparto(ui["lab"], ui["estado"], escrito, ui["tiempo"])
+    laboratorio.preparar_cml4(ui["lab"], ui["estado"], ui["tiempo"])
 
 
 def elegir_mision(ui, mision_id):
@@ -105,13 +168,41 @@ def avatar_aleatorio(avatar):
         avatar[categoria] = random.randrange(sprites.CANTIDAD_OPCIONES[categoria])
 
 
+def ir_a_misiones(ui):
+    """Vuelve a la parrilla y, si hay, muestra el aviso pendiente del asistente."""
+    ui["pantalla"] = "misiones"
+    ui["pausa"] = False
+    if ui["aviso_parrilla"] is not None:         # "New mission unlocked" o un consejo
+        texto, expresion = ui["aviso_parrilla"]
+        notificaciones.mostrar_notificacion(ui, texto, expresion)
+        ui["aviso_parrilla"] = None
+
+
+def ir_a_creditos(ui, vuelta):
+    """Pantalla de créditos; 'vuelta' es la pantalla a la que se vuelve después."""
+    ui["creditos_t0"] = ui["tiempo"]
+    ui["creditos_pagina"] = 0                # v3 (G): 0 = créditos, 1... = fuentes
+    ui["creditos_vuelta"] = vuelta
+    ui["pantalla"] = "creditos"
+
+
 # ---------------------------------------------------------------------------
 # 3. Qué hace cada botón (o tecla)
 # ---------------------------------------------------------------------------
 
 def aplicar_accion(ui, accion, valor):
     """Cambia "ui" según la acción. "valor" es el dato extra del botón."""
-    # Primero, las acciones propias del laboratorio (ventanas, estaciones, fases).
+    # Cambio de idioma (v3, E): botones EN | ES del inicio y opción del menú de pausa.
+    if accion == "idioma":
+        cambiar_idioma(ui, valor)
+        return
+    if accion == "pausa_idioma":
+        siguiente = config.IDIOMAS[(config.IDIOMAS.index(ui["idioma"]) + 1) % len(config.IDIOMAS)]
+        cambiar_idioma(ui, siguiente)           # el menú de pausa sigue abierto
+        return
+    # Primero, el menú de pausa (si está abierto) y las acciones propias del laboratorio.
+    if pausa.aplicar(ui, accion):
+        return
     if ui["pantalla"] == "laboratorio" and laboratorio.aplicar(ui, accion, valor):
         return
 
@@ -156,16 +247,30 @@ def aplicar_accion(ui, accion, valor):
             ui["pantalla"] = "info_mision"
 
     elif accion == "volver_misiones":
-        ui["pantalla"] = "misiones"
-        if ui["aviso_parrilla"] is not None:         # "New mission unlocked" o un consejo
-            texto, expresion = ui["aviso_parrilla"]
-            notificaciones.mostrar_notificacion(ui, texto, expresion)
-            ui["aviso_parrilla"] = None
+        # Al completar la última misión (Insane), primero se ven los créditos.
+        if ui["pantalla"] == "resultados" and ui["ver_creditos"]:
+            ui["ver_creditos"] = False
+            ir_a_creditos(ui, "misiones")
+        else:
+            ir_a_misiones(ui)
 
     elif accion == "cerrar_notificacion":
         notificaciones.cerrar(ui)
 
     elif accion == "correr":
+        # RUN: primero la pantalla didáctica con AION (v2, punto 3)
+        ui["pagina_didactica"] = 0
+        ui["pausa"] = False
+        ui["pantalla"] = "didactica"
+
+    elif accion == "pagina_didactica":
+        ui["pagina_didactica"] = ui["pagina_didactica"] + valor     # valor = -1 o +1
+
+    elif accion == "volver_info":
+        ui["pantalla"] = "info_mision"
+
+    elif accion == "empezar_diseno":
+        # LET'S DESIGN: misión nueva y al laboratorio
         empezar_mision(ui)
         ui["pantalla"] = "laboratorio"
 
@@ -175,12 +280,32 @@ def aplicar_accion(ui, accion, valor):
         ui["sim"] = simulacion.nueva_sim(resultado, ui["tiempo"])
         ui["pantalla"] = "simulacion"
 
-    elif accion == "saltar_simulacion":
-        ir_a_resultados(ui)
-
     elif accion == "reintentar":
-        empezar_mision(ui)
+        reintentar_mision(ui)
         ui["pantalla"] = "laboratorio"
+
+    elif accion == "ver_creditos":
+        ir_a_creditos(ui, ui["pantalla"])
+
+    elif accion == "creditos_pagina":
+        ui["creditos_pagina"] = valor            # v3 (G): páginas de fuentes
+
+    elif accion == "salir_creditos":
+        if ui["creditos_vuelta"] == "misiones":
+            ir_a_misiones(ui)
+        else:
+            ui["pantalla"] = ui["creditos_vuelta"]
+
+    # Acciones del menú de pausa que cambian de pantalla (pausa.aplicar ya lo cerró)
+    elif accion == "pausa_reiniciar":
+        empezar_mision(ui)                    # desde CML 1, sin conservar nada
+        ui["pantalla"] = "laboratorio"
+
+    elif accion == "pausa_misiones":
+        ir_a_misiones(ui)
+
+    elif accion == "pausa_menu":
+        ui["pantalla"] = "inicio"             # el progreso se mantiene
 
 
 def desbloquear_todo(ui):
@@ -200,19 +325,23 @@ def misiones_jugables(ui):
 def ir_a_resultados(ui):
     """Revela y registra el resultado UNA sola vez (así el progreso se guarda aunque
     luego pulse "Try again")."""
-    ui["revelado"] = nucleo.revelar(ui["estado"])
+    ui["revelado"] = nucleo.revelar(ui["estado"], idioma=ui["idioma"])
     antes = misiones_jugables(ui)
     nucleo.registrar_resultado(ui["progreso"], ui["estado"])
-    nuevas = [fila for fila in nucleo.cargar_misiones(ui["progreso"])
+    parrilla = nucleo.cargar_misiones(ui["progreso"])
+    nuevas = [fila for fila in parrilla
               if fila["estado"] == "disponible" and fila["id"] not in antes]
     # Qué dirá el asistente al volver a la parrilla
     t = textos_juego["notificaciones"]
     if nuevas:
-        ui["aviso_parrilla"] = (t["desbloqueo"].replace("{mision}", nuevas[0]["nombre"]), "sorprendido")
+        nombre = nombre_mision(textos_juego, nuevas[0]["id"], nuevas[0]["nombre"])
+        ui["aviso_parrilla"] = (t["desbloqueo"].replace("{mision}", nombre), "sorprendido")
     elif not ui["revelado"]["exito"]:
         ui["aviso_parrilla"] = (t["reintento"], "preocupado")
     else:
         ui["aviso_parrilla"] = None
+    # Completar la última misión de la parrilla (Insane) lleva a los créditos (v2, punto 13)
+    ui["ver_creditos"] = ui["revelado"]["exito"] and ui["mision_id"] == parrilla[-1]["id"]
     ui["resultados_t0"] = ui["tiempo"]       # para animar estrellas y puntaje
     ui["pantalla"] = "resultados"
 
@@ -221,33 +350,73 @@ def ir_a_resultados(ui):
 # 4. Bucle principal
 # ---------------------------------------------------------------------------
 
+def es_enter(evento):
+    return evento.key in (pygame.K_RETURN, pygame.K_KP_ENTER)
+
+
+def tecla_pausa(ui, evento):
+    """Esc abre o cierra el menú de pausa. Devuelve True si la tecla ya se usó."""
+    if ui["pantalla"] not in PANTALLAS_CON_PAUSA:
+        return False
+    if ui["pausa"]:
+        if evento.key == pygame.K_ESCAPE:
+            ui["pausa"] = False
+        return not es_enter(evento)           # Enter sigue: activa "Resume" (botón principal)
+    if evento.key == pygame.K_ESCAPE:
+        # En el laboratorio, Esc solo pausa si no hay una ventana abierta.
+        if ui["pantalla"] == "laboratorio" and ui["lab"]["ventana"] is not None:
+            return False
+        ui["pausa"] = True
+        return True
+    return False
+
+
+def procesar_tecla(ui, evento, botones):
+    """Una tecla. Devuelve True si cambió algo (los botones del cuadro ya no sirven)."""
+    if config.DEPURACION and evento.key == config.TECLA_DESBLOQUEAR:
+        desbloquear_todo(ui)                     # F2: tecla de depuración (ver config.py)
+        return False
+    if evento.key == pygame.K_m and ui["pantalla"] != "inicio":
+        sonido.alternar_silencio()               # M: silencio (v2, D11). En inicio se escribe el nombre.
+        return False
+    if tecla_pausa(ui, evento):
+        return True
+    if es_enter(evento) and notificaciones.hay_notificacion(ui):
+        notificaciones.cerrar(ui)                # Enter también cierra la notificación de AION
+    # Algunas pantallas usan el teclado (nombre, cantidades, E).
+    modulo = PANTALLAS[ui["pantalla"]]
+    if not ui["pausa"] and hasattr(modulo, "tecla"):
+        respuesta = modulo.tecla(ui, evento)
+        if respuesta is not None:
+            aplicar_accion(ui, respuesta[0], respuesta[1])
+            return True
+    # Enter = botón principal de la pantalla o ventana (v2, punto 5)
+    if es_enter(evento):
+        boton = boton_principal(botones)
+        if boton is not None:
+            aplicar_accion(ui, boton.accion, boton.valor)
+            return True
+    return False
+
+
 def procesar_eventos(ui, botones):
     """Lee mouse y teclado. Devuelve False si el jugador cerró la ventana."""
-    hubo_clic = False     # tras un clic la pantalla puede cambiar y los botones ya no sirven
+    hubo_cambio = False     # tras un clic la pantalla puede cambiar y los botones ya no sirven
     for evento in pygame.event.get():
         if evento.type == pygame.QUIT:
             return False
-        if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1 and not hubo_clic:
+        if hubo_cambio:
+            continue
+        if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
             # button == 1 es el clic izquierdo. La posición se pasa a coordenadas 640x360.
             posicion = (evento.pos[0] // config.ESCALA, evento.pos[1] // config.ESCALA)
             for boton in botones:
                 if boton.fue_clicado(posicion):
                     aplicar_accion(ui, boton.accion, boton.valor)
-                    hubo_clic = True
+                    hubo_cambio = True
                     break   # solo un botón por clic
-        elif evento.type == pygame.KEYDOWN and config.DEPURACION and evento.key == config.TECLA_DESBLOQUEAR:
-            desbloquear_todo(ui)                     # F2: tecla de depuración (ver config.py)
-        elif evento.type == pygame.KEYDOWN and evento.key in (pygame.K_RETURN, pygame.K_KP_ENTER) \
-                and ui["pantalla"] != "inicio" and notificaciones.hay_notificacion(ui):
-            notificaciones.cerrar(ui)               # Enter cierra la notificación del asistente
         elif evento.type == pygame.KEYDOWN:
-            # Algunas pantallas usan el teclado (nombre, cantidades, Esc, Espacio).
-            modulo = PANTALLAS[ui["pantalla"]]
-            if hasattr(modulo, "tecla"):
-                respuesta = modulo.tecla(ui, evento)
-                if respuesta is not None:
-                    aplicar_accion(ui, respuesta[0], respuesta[1])
-                    hubo_clic = True
+            hubo_cambio = procesar_tecla(ui, evento, botones)
     return True
 
 
@@ -268,8 +437,35 @@ def direccion_teclado():
     return dx, dy
 
 
+def dibujar_cuadro(lienzo, ui, textos, dx=0, dy=0, dt=0.0):
+    """Un cuadro completo: actualiza, dibuja la pantalla y devuelve sus botones.
+    Está separado de main() para poder probar el juego sin ventana."""
+    # Las pantallas con movimiento (el laboratorio) se actualizan cada cuadro, salvo en pausa.
+    modulo = PANTALLAS[ui["pantalla"]]
+    if hasattr(modulo, "actualizar") and not ui["pausa"]:
+        modulo.actualizar(ui, dx, dy, dt)
+
+    botones = modulo.dibujar(lienzo, ui, textos)
+    for boton in botones:
+        boton.dibujar(lienzo)
+    if ui["pausa"]:
+        # Con la pausa abierta solo sirven sus botones.
+        botones = pausa.dibujar(lienzo, ui, textos)
+        for boton in botones:
+            boton.dibujar(lienzo)
+    sprites.dibujar_parlante(lienzo, config.ANCHO - 14, 3, sonido.silenciado())   # M = silencio
+    # La notificación del asistente va encima de todo; su botón se revisa primero.
+    botones = notificaciones.dibujar(lienzo, ui, textos) + botones
+
+    # Si la animación de la simulación terminó, pasamos a resultados.
+    if ui["pantalla"] == "simulacion" and ui["sim"]["terminada"]:
+        ir_a_resultados(ui)
+    return botones
+
+
 def main():
     pygame.init()
+    sonido.iniciar()      # sonidos generados por código; si no hay audio, el juego sigue mudo
     textos = textos_juego
     ventana = pygame.display.set_mode((config.ANCHO * config.ESCALA, config.ALTO * config.ESCALA))
     pygame.display.set_caption(textos["titulo_ventana"])
@@ -285,24 +481,11 @@ def main():
         # a) Leer lo que hizo el jugador.
         jugando = procesar_eventos(ui, botones)
 
-        # b) Las pantallas con movimiento (el laboratorio) se actualizan cada cuadro.
-        modulo = PANTALLAS[ui["pantalla"]]
-        if hasattr(modulo, "actualizar"):
-            dx, dy = direccion_teclado()
-            modulo.actualizar(ui, dx, dy, dt)
+        # b) Actualizar y dibujar la pantalla actual en el lienzo de 640x360.
+        dx, dy = direccion_teclado()
+        botones = dibujar_cuadro(lienzo, ui, textos, dx, dy, dt)
 
-        # c) Dibujar la pantalla actual en el lienzo de 640x360.
-        botones = PANTALLAS[ui["pantalla"]].dibujar(lienzo, ui, textos)
-        for boton in botones:
-            boton.dibujar(lienzo)
-        # La notificación del asistente va encima de todo; su botón se revisa primero.
-        botones = notificaciones.dibujar(lienzo, ui, textos) + botones
-
-        # d) Si la animación de la simulación terminó, pasamos a resultados.
-        if ui["pantalla"] == "simulacion" and ui["sim"]["terminada"]:
-            ir_a_resultados(ui)
-
-        # e) Agrandar el lienzo a la ventana (sin suavizar) y mostrarlo.
+        # c) Agrandar el lienzo a la ventana (sin suavizar) y mostrarlo.
         pygame.transform.scale(lienzo, ventana.get_size(), ventana)
         pygame.display.flip()
         dt = min(reloj.tick(config.FPS) / 1000, config.DT_MAXIMO)    # ms -> s, con tope

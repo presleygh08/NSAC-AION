@@ -5,7 +5,8 @@
 #   - CajaTexto: una caja donde el jugador escribe (nombre o número)
 #   - dibujar_ventana(): ventana modal (cuadro de diálogo) con título
 #   - crear_selector(): flechas ◀ ▶ para elegir una opción
-#   - dibujar_hud_presupuesto(): "Budget left: $X / $Y"
+#   - dibujar_hud_presupuesto(): "Budget: $Y" + indicador verde/rojo (sin cifras)
+#   - boton_principal(): el botón que se activa con Enter
 #   - funciones para dar formato a números y buscar traducciones
 
 import pygame
@@ -30,11 +31,14 @@ class Boton:
     visible: si es False no se dibuja (zona clicable sobre algo que dibujó la pantalla,
              por ejemplo una fila de la parrilla o un marcador del laboratorio).
     icono:  "izquierda" o "derecha" dibuja un triángulo ◀ ▶ en vez de texto.
+    principal: si es True, la tecla Enter hace lo mismo que clicarlo (v2, punto 5).
     """
 
     def __init__(self, texto, x, y, ancho, alto, accion, valor=None, activo=True,
-                 color=config.COLOR_BOTON, tamano=config.LETRA_NORMAL, visible=True, icono=None):
+                 color=config.COLOR_BOTON, tamano=config.LETRA_NORMAL, visible=True, icono=None,
+                 principal=False):
         self.texto = texto
+        self.principal = principal
         self.icono = icono
         self.visible = visible
         self.rect = pygame.Rect(x, y, ancho, alto)
@@ -71,6 +75,14 @@ class Boton:
     def fue_clicado(self, posicion):
         """True si el botón está activo y la posición (x, y) del clic cae dentro de él."""
         return self.activo and self.rect.collidepoint(posicion)
+
+
+def boton_principal(botones):
+    """El primer botón principal, visible y activo de la lista (o None). Enter lo activa."""
+    for boton in botones:
+        if boton.principal and boton.visible and boton.activo:
+            return boton
+    return None
 
 
 def dibujar_flecha(sup, cx, cy, direccion, color):
@@ -144,7 +156,11 @@ def dibujar_ventana(sup, rect, titulo, color_titulo=config.CIAN):
 
     r = pygame.Rect(rect)
     estilo.panel(sup, r, config.COLOR_PANEL, config.COLOR_BORDE)
-    estilo.texto(sup, titulo, r.x + 10, r.y + 6, config.LETRA_NORMAL, color_titulo)
+    # Título: si es largo (p. ej. "Revisión del presupuesto: <misión>") baja a letra pequeña,
+    # centrado en la franja de arriba (v3, C)
+    tamano = estilo.tamano_que_cabe(titulo, r.w - 20, config.LETRA_NORMAL)
+    alto = estilo.fuente(tamano).size("A")[1]
+    estilo.texto_ajustado(sup, titulo, r.x + 10, r.y + 4 + (22 - alto) // 2, r.w - 20, tamano, color_titulo)
     pygame.draw.line(sup, config.COLOR_BORDE, (r.x + 6, r.y + 28), (r.right - 7, r.y + 28))
     return r.y + 36
 
@@ -170,12 +186,17 @@ def crear_muestras(sup, botones, x, y, colores, elegido, categoria):
     return x + len(colores) * (lado + 4)
 
 
-def dibujar_hud_presupuesto(sup, textos, total, x, y):
-    """HUD fijo: 'Budget: $Y.YM' (el presupuesto ASIGNADO a la misión).
-    Regla de dificultad (especificación 4.1): durante el reparto NUNCA se muestra cuánto
-    se lleva gastado ni cuánto queda; el jugador suma mentalmente lo que gasta."""
+def dibujar_hud_presupuesto(sup, textos, total, x, y, cabe=True):
+    """HUD fijo: 'Budget: $Y.YM' (el presupuesto ASIGNADO a la misión) y, a su lado, un
+    cuadrito de color SIN cifras (v2, D1): verde si lo repartido cabe en el presupuesto,
+    rojo si se pasó. 'cabe' sale de nucleo.dentro_del_presupuesto(estado).
+    Nunca se muestra cuánto se lleva gastado, cuánto queda ni el exceso."""
     contenido = textos["laboratorio"]["presupuesto"] + ": " + formatear_musd(total)
-    estilo.texto(sup, contenido, x, y, config.LETRA_PEQUENA, config.AMARILLO)
+    rect = estilo.texto(sup, contenido, x, y, config.LETRA_PEQUENA, config.AMARILLO)
+    color = config.VERDE if cabe else config.ROJO
+    cuadro = pygame.Rect(rect.right + 6, y, 8, 8)
+    pygame.draw.rect(sup, config.NEGRO, cuadro.inflate(2, 2))
+    pygame.draw.rect(sup, color, cuadro)
 
 
 # ---------------------------------------------------------------------------
@@ -193,7 +214,11 @@ def formatear_numero(x):
 
 
 def formatear_musd(x, decimales=2):
-    """Millones de USD como en la especificación: 14.5 -> '$14.5M', -1.5 -> '-$1.5M'."""
+    """Millones de USD como en la especificación: 14.5 -> '$14.5M', -1.5 -> '-$1.5M'.
+    Cifras absurdas (más de 99 999 M USD, p. ej. un delta-v gigante) se muestran como
+    '>$99999M' para que el texto quepa en su cuadro (v3, C)."""
+    if x > 99999:
+        return ">$99999M"
     contenido = ("%." + str(decimales) + "f") % abs(x)     # "14.50"
     if "." in contenido:
         contenido = contenido.rstrip("0").rstrip(".")      # "14.50" -> "14.5"
@@ -213,9 +238,41 @@ def texto_valor(textos, valor, unidad):
     return formatear_numero(valor) + " " + traducir(textos["unidades"], unidad)
 
 
+def info_recurso(textos, clave):
+    """Ficha del recurso en guia_misiones_en.json (nombre, unidad, que_es, por_que_importa),
+    o {} si no está."""
+    return textos.get("guia", {}).get("recursos", {}).get(clave, {})
+
+
 def nombre_recurso(textos, clave):
-    """Nombre del recurso en inglés, p. ej. 'Propulsion (delta-v)'."""
-    return traducir(textos["recursos"], clave)
+    """Nombre del recurso en inglés (v2, D12: de la guía), p. ej. 'Endurance'."""
+    return info_recurso(textos, clave).get("nombre") or traducir(textos["recursos"], clave)
+
+
+def unidad_recurso(textos, clave, unidad):
+    """Unidad del recurso en el idioma del juego. v3: manda la unidad de los DATOS
+    (Hard usa Mbps y las demás kbps), traducida (dias -> days / días). Solo si no viene
+    ninguna se usa la de la guía."""
+    if unidad:
+        return traducir(textos["unidades"], unidad)
+    return info_recurso(textos, clave).get("unidad", "")
+
+
+def info_mision(textos, mision_id):
+    """Textos de la misión en la guía (nombre, inspirada_en, descripcion, objetivo, cohete,
+    pistas_referencia), o {} si no está."""
+    return textos.get("guia", {}).get("misiones", {}).get(mision_id, {})
+
+
+def nombre_mision(textos, mision_id, respaldo=""):
+    """Nombre de la misión en el idioma del juego (de la guía); si no está, 'respaldo'
+    (el nombre en inglés que da nucleo.cargar_misiones)."""
+    return info_mision(textos, mision_id).get("nombre") or respaldo
+
+
+def nombre_dificultad(textos, dificultad):
+    """'Easy' -> 'Easy' / 'Fácil' según el idioma (v3, E)."""
+    return traducir(textos.get("dificultades", {}), dificultad)
 
 
 def nombre_destino(textos, destino):

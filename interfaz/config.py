@@ -102,6 +102,13 @@ ESCALA_FUENTE = {
 # Así los archivos se encuentran aunque ejecutes el juego desde otra carpeta.
 RUTA_PROYECTO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RUTA_TEXTOS = os.path.join(RUTA_PROYECTO, "interfaz", "textos_en.json")
+# Contenido en inglés de la v2 (misiones, recursos, AION, créditos): docs/v2-cambios.md
+RUTA_GUIA = os.path.join(RUTA_PROYECTO, "interfaz", "guia_misiones_en.json")
+# v3 (E): textos en español. Si falta una clave en español se usa la inglesa.
+RUTA_TEXTOS_ES = os.path.join(RUTA_PROYECTO, "interfaz", "textos_es.json")
+RUTA_GUIA_ES = os.path.join(RUTA_PROYECTO, "interfaz", "guia_misiones_es.json")
+IDIOMA_INICIAL = "en"      # el juego siempre abre en inglés
+IDIOMAS = ["en", "es"]
 RUTA_FUENTES = os.path.join(RUTA_PROYECTO, "assets", "fuentes")
 RUTA_IMAGENES_MISIONES = os.path.join(RUTA_PROYECTO, "assets", "misiones")
 
@@ -113,9 +120,14 @@ ALTO_BOTON = 24
 MAX_LETRAS_NOMBRE = 12
 NOMBRE_POR_DEFECTO = "Cadet"
 
-# --- Resultados: etiqueta según cuánto le faltó al recurso para su mínimo (%) ---
-FALTANTE_POCO = 10       # menos de 10 %  -> "Just short"
-FALTANTE_MEDIO = 30      # 10 a 30 %      -> "Short";  más de 30 % -> "Far below"
+# --- Resultados (v2, D3): color de cada zona de la barra de un recurso ---
+# (la zona la decide nucleo.revelar; aquí solo el color)
+COLORES_ZONA = {
+    "bajo_minimo": ROJO,      # bajo el mínimo
+    "aceptable": AMARILLO,    # completa, pero lejos del óptimo
+    "optimo": VERDE,          # a ±10 % del óptimo
+    "exceso": NARANJA,        # más de lo necesario
+}
 
 # --- Laboratorio: el avatar camina ---
 VELOCIDAD_JUGADOR = 80       # píxeles por segundo (constante)
@@ -123,13 +135,16 @@ RADIO_INTERACCION = 20       # a esta distancia de un marcador aparece "[E] Inte
 DT_MAXIMO = 0.05             # tope del tiempo de un cuadro (si el juego se traba, no "salta")
 
 # --- Hangar (segundos) ---
-DURACION_CORTINAS = 1.0      # las cortinas se abren al confirmar CML 1
+DURACION_CORTINAS = 1.5      # las puertas del hangar se abren al confirmar CML 1 (v2)
 DURACION_ENSAMBLAJE = 1.5    # animación de cada recurso al confirmar su estación
 
 # --- Simulación (segundos) ---
-DURACION_COMUN = 5.0     # cuenta regresiva + despegue (igual para éxito y falla)
-DURACION_FINAL = 3.5     # rama de éxito o de falla
-DURACION_FINAL_LEJOS = 5.0   # Marte y Luna: viaje + llegada
+# v2 (D7): la simulación NUNCA se puede saltar y dura 12-15 s en total.
+DURACION_COMUN = 6.0         # cuenta regresiva + despegue (igual para éxito y falla)
+DURACION_FINAL = 6.5         # rama de éxito o de falla (LEO, y la explosión)
+DURACION_FINAL_LEJOS = 8.0   # Marte y Luna: viaje + llegada
+VELOCIDAD_FINAL = 0.75       # las ramas se animan un poco más lento (1 = velocidad original)
+SEGUNDOS_POR_CUENTA = 1.0    # cada número de la cuenta regresiva (T-3, T-2, T-1, IGNITION)
 
 # --- Notificaciones del asistente ---
 DURACION_NOTIFICACION = 6.0  # segundos que queda en pantalla (o hasta un clic / Enter)

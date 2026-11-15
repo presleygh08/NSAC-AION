@@ -130,6 +130,11 @@ def iniciar_mision(parametros):
         "cohete": parametros["cohete"],
         "presupuesto_musd": parametros["presupuesto_musd"],
         "pistas": list(parametros.get("pistas", [])),
+        # v3 (E): las mismas pistas en español (si la misión no las trae, se usan las inglesas)
+        "pistas_es": list(parametros.get("pistas_es") or parametros.get("pistas", [])),
+        # v3 (A): de dónde sale la potencia: "solar" (paneles) o "mmrtg" (generador nuclear,
+        # Harder). La interfaz lo usa para dibujar paneles o el MMRTG.
+        "tipo_potencia": parametros.get("tipo_potencia", "solar"),
         "recursos": parametros["recursos"],     # incluye mínimos y óptimos: NO mostrarlos
         "reparto": {r["clave"]: 0.0 for r in parametros["recursos"]},   # M USD por recurso
         "fase": "reparto",                      # reparto, simulacion, resultado
@@ -230,6 +235,12 @@ def presupuesto_restante(estado):
     return estado["presupuesto_musd"] - gasto_total(estado)
 
 
+def dentro_del_presupuesto(estado):
+    """True si lo repartido cabe en el presupuesto (misma tolerancia que revisar).
+    La usa el indicador de color del HUD (v2, D1): verde/rojo, sin mostrar cifras."""
+    return gasto_total(estado) - estado["presupuesto_musd"] <= TOLERANCIA
+
+
 PASOS_DINERO = [10, 5, 4, 2.5, 2, 1, 0.5, 0.25, 0.1]    # M USD, de mayor a menor
 
 
@@ -239,7 +250,7 @@ def paso_dinero(estado):
       1. divide exacto el presupuesto (se puede gastar todo);
       2. da al menos 25 pasos;
       3. permite comprar TODOS los mínimos sin pasarse del presupuesto.
-    Un paso fijo no sirve: con pasos de 5 M USD, Easy (14.5 M USD) sería imposible,
+    Un paso fijo no sirve: con pasos de 5 M USD, Easy (con 14.5 M USD) habría sido imposible,
     porque sus mínimos cuestan ~11 y habría que gastar 15.
     Usar: repartir(estado, clave, round(dinero_actual + paso_dinero(estado), 6))."""
     pres = estado["presupuesto_musd"]
@@ -257,6 +268,41 @@ def paso_dinero(estado):
             if divide(p) and pres / p >= min_pasos and alcanza(p):
                 return float(p)
     return 0.1
+
+
+# Presupuesto sugerido (v2, D2, 15 nov): el presupuesto alcanza para TODOS los óptimos
+# con un 5 % de margen, así las 5 estrellas sí se pueden lograr. El reto sigue: el jugador
+# no ve cuánto lleva gastado, gastar de más en un recurso deja menos para otro y el bonus
+# premia ahorrar.
+MARGEN_PRESUPUESTO = 1.05       # presupuesto >= 1.05 x costo de los óptimos
+TOPE_PRESUPUESTO = 1.10         # más que 1.10 x costo de los óptimos ya es "demasiado fácil"
+
+
+def _redondeo_presupuesto(valor):
+    """Escalón 'redondo' para un presupuesto de ese tamaño (M USD)."""
+    if valor < 50:
+        return 0.5
+    if valor < 100:
+        return 1
+    return 5
+
+
+def presupuesto_sugerido(parametros):
+    """Menor valor 'redondo' (múltiplo de 0.5, 1 o 5 según el tamaño) que sea
+    >= MARGEN_PRESUPUESTO x Σ costo(óptimos) y que dé al menos 25 pasos con paso_dinero.
+    Devuelve M USD (float)."""
+    par = preparar_parametros(parametros)
+    suma_opt = sum(costo_de(r, r["optimo"]) for r in par["recursos"])
+    objetivo = MARGEN_PRESUPUESTO * suma_opt
+    escalon = _redondeo_presupuesto(objetivo)
+    candidato = math.ceil(objetivo / escalon - 1e-9) * escalon
+    for _ in range(1000):                   # sube de escalón en escalón hasta que sirva
+        prueba = dict(par, presupuesto_musd=float(candidato))
+        estado = iniciar_mision(prueba)
+        if candidato / paso_dinero(estado) >= 25:
+            return float(candidato)
+        candidato = candidato + escalon
+    return float(candidato)
 
 
 def recursos_visibles(estado):
@@ -324,6 +370,9 @@ def simular(estado):
 # presupuesto_musd. Un campo desconocido se deja tal cual (no rompe el juego).
 
 ARCHIVO_MENSAJES = "mensajes.json"
+# v3 (E): textos en español. Si falta una clave en español se usa la inglesa.
+ARCHIVOS_MENSAJES = {"en": "mensajes.json", "es": "mensajes_es.json"}
+IDIOMA_POR_DEFECTO = "en"
 
 FALLA_A_MENSAJE = {"no_llega": "delta_v_insuficiente", "se_apaga": "potencia_insuficiente"}
 
@@ -343,6 +392,22 @@ UNIDADES_EN = {"dias": "days", "puntos": "points"}
 # Lo mismo con los destinos (en los datos están en español).
 DESTINOS_EN = {"LEO": "LEO", "órbita lunar": "lunar orbit", "órbita de Marte": "Mars orbit",
                "superficie de Marte": "the surface of Mars"}
+# v3 (E): lo mismo en español (los datos ya están en español, solo se ajusta el texto).
+UNIDADES_ES = {"dias": "días", "puntos": "puntos"}
+DESTINOS_ES = {"LEO": "la órbita terrestre baja (LEO)", "órbita lunar": "la órbita lunar",
+               "órbita de Marte": "la órbita de Marte", "superficie de Marte": "la superficie de Marte"}
+
+
+def _destino_texto(destino, idioma):
+    """Destino para los mensajes, en el idioma pedido."""
+    tabla = DESTINOS_ES if idioma == "es" else DESTINOS_EN
+    return tabla.get(destino, destino)
+
+
+def _unidad_texto(unidad, idioma):
+    """Unidad para los mensajes, en el idioma pedido (dias -> days / días)."""
+    tabla = UNIDADES_ES if idioma == "es" else UNIDADES_EN
+    return tabla.get(unidad, unidad)
 
 
 class _Campos(dict):
@@ -356,13 +421,24 @@ def _num(x):
     return str(int(round(x))) if abs(x - round(x)) < 0.05 else f"{x:.1f}"
 
 
-def cargar_mensajes(ruta=None):
-    """Lee datos/mensajes.json. Devuelve {} si el archivo no existe."""
-    ruta = Path(ruta) if ruta else CARPETA_DATOS / ARCHIVO_MENSAJES
+def _leer_mensajes(ruta):
+    """Lee un archivo de mensajes. Devuelve {} si no existe."""
     if not ruta.exists():
         return {}
     with open(ruta, encoding="utf-8") as f:
         return json.load(f)
+
+
+def cargar_mensajes(ruta=None, idioma=IDIOMA_POR_DEFECTO):
+    """Lee datos/mensajes.json (idioma "en", por defecto) o datos/mensajes_es.json ("es").
+    En español, cada clave que falte se toma del archivo inglés (nunca queda vacía).
+    Si se pasa 'ruta', se lee solo ese archivo. Devuelve {} si el archivo no existe."""
+    if ruta:
+        return _leer_mensajes(Path(ruta))
+    mensajes = _leer_mensajes(CARPETA_DATOS / ARCHIVO_MENSAJES)
+    if idioma != "en" and idioma in ARCHIVOS_MENSAJES:
+        mensajes.update(_leer_mensajes(CARPETA_DATOS / ARCHIVOS_MENSAJES[idioma]))
+    return mensajes
 
 
 def mensaje(clave, mensajes=None, **datos):
@@ -373,19 +449,19 @@ def mensaje(clave, mensajes=None, **datos):
     return plantilla.format_map(_Campos(datos))
 
 
-def mensajes_fallas(estado, mensajes=None):
+def mensajes_fallas(estado, mensajes=None, idioma=IDIOMA_POR_DEFECTO):
     """Una entrada por CADA recurso que quedó bajo su mínimo, todas con el mismo peso:
     [{'clave': 'propulsion', 'falla': 'no_llega', 'mensaje': texto}, ...].
-    Lista vacía si hubo éxito. Solo después de simular()."""
+    Lista vacía si hubo éxito. Solo después de simular(). idioma: "en" o "es" (v3)."""
     if estado["fase"] != "resultado":
         raise ValueError("Primero hay que simular")
-    mensajes = mensajes if mensajes is not None else cargar_mensajes()
+    mensajes = mensajes if mensajes is not None else cargar_mensajes(idioma=idioma)
     salida = []
     for clave in estado["resultado"]["bajo_minimo"]:
         r = _buscar_recurso(estado, clave)
         valor = valor_recurso(estado, clave)
-        datos = {"destino": DESTINOS_EN.get(estado["destino"], estado["destino"]), "lanzador": estado["cohete"],
-                 "recurso": clave, "unidad": UNIDADES_EN.get(r["unidad"], r["unidad"]),
+        datos = {"destino": _destino_texto(estado["destino"], idioma), "lanzador": estado["cohete"],
+                 "recurso": clave, "unidad": _unidad_texto(r["unidad"], idioma),
                  "valor": _num(valor),
                  "minimo": _num(r["minimo"]), "optimo": _num(r["optimo"]),
                  "dv_requerido_m_s": _num(r["minimo"]), "dv_disponible_m_s": _num(valor),
@@ -396,17 +472,17 @@ def mensajes_fallas(estado, mensajes=None):
     return salida
 
 
-def mensaje_resultado(estado, mensajes=None):
+def mensaje_resultado(estado, mensajes=None, idioma=IDIOMA_POR_DEFECTO):
     """Texto explicativo del resultado (lo usa revelar). Solo después de simular().
     Éxito: el mensaje "exito". Falla: los mensajes de TODAS las fallas, uno por
     párrafo, en el orden del JSON (para mostrarlos por separado, usar mensajes_fallas)."""
     if estado["fase"] != "resultado":
         raise ValueError("Primero hay que simular")
-    mensajes = mensajes if mensajes is not None else cargar_mensajes()
+    mensajes = mensajes if mensajes is not None else cargar_mensajes(idioma=idioma)
     if estado["resultado"]["exito"]:
-        return mensaje("exito", mensajes, destino=DESTINOS_EN.get(estado["destino"], estado["destino"]),
+        return mensaje("exito", mensajes, destino=_destino_texto(estado["destino"], idioma),
                        lanzador=estado["cohete"])
-    return "\n\n".join(f["mensaje"] for f in mensajes_fallas(estado, mensajes))
+    return "\n\n".join(f["mensaje"] for f in mensajes_fallas(estado, mensajes, idioma))
 
 
 def mensaje_presupuesto(estado, mensajes=None):
@@ -557,7 +633,39 @@ def puntaje_maximo(parametros, intentos=15000, semilla=0):
     return round(mejor)
 
 
-def revelar(estado):
+# Zonas de cada recurso en resultados (v2, D3): la interfaz pinta una barra con zonas y
+# una pista, SIN cifras de mínimo ni óptimo (salvo con 5 estrellas).
+#   bajo_minimo -> valor < mínimo
+#   aceptable   -> entre el mínimo y el óptimo − MARGEN_OPTIMO
+#   optimo      -> a ±MARGEN_OPTIMO del óptimo
+#   exceso      -> más que óptimo + MARGEN_OPTIMO
+PISTAS_ZONA = {
+    "bajo_minimo": "Needs much more",
+    "aceptable": "Needs a bit more",
+    "optimo": "Close to optimal",
+    "exceso": "More than needed",
+}
+# v3 (E): las mismas pistas en español
+PISTAS_ZONA_ES = {
+    "bajo_minimo": "Necesita mucho más",
+    "aceptable": "Necesita un poco más",
+    "optimo": "Cerca del óptimo",
+    "exceso": "Más de lo necesario",
+}
+
+
+def zona_recurso(valor, minimo, optimo):
+    """'bajo_minimo', 'aceptable', 'optimo' o 'exceso' (ver PISTAS_ZONA)."""
+    if valor < minimo - TOLERANCIA:
+        return "bajo_minimo"
+    if abs(valor - optimo) <= MARGEN_OPTIMO * optimo + TOLERANCIA:
+        return "optimo"
+    if valor > optimo:
+        return "exceso"
+    return "aceptable"
+
+
+def revelar(estado, idioma=IDIOMA_POR_DEFECTO):
     """Datos para la pantalla de resultados: por recurso, lo elegido, el mínimo,
     el óptimo, sus puntos y si quedó bajo el mínimo / cerca del óptimo.
     Devuelve: {'puntaje', 'exito', 'optimo', 'falla', 'fallas', 'mensaje',
@@ -573,13 +681,17 @@ def revelar(estado):
                    (None si falló o ya tiene 5)
       'ahorro_musd' -> M USD sin gastar; 'presupuesto_usado_pct' -> % del presupuesto gastado
       En cada recurso, 'faltante_pct' -> cuánto le faltó para el mínimo, en %
-                   (0 si no quedó bajo el mínimo)."""
+                   (0 si no quedó bajo el mínimo); 'zona' -> 'bajo_minimo', 'aceptable',
+                   'optimo' o 'exceso'; 'pista' -> texto de esa zona (PISTAS_ZONA).
+      idioma (v3): "en" (por defecto) o "es": idioma de 'mensaje', 'fallas' y 'pista'."""
     if estado["fase"] != "resultado":
         raise ValueError("Primero hay que simular")
     filas = []
     for r in estado["recursos"]:
         valor = valor_recurso(estado, r["clave"])
+        zona = zona_recurso(valor, r["minimo"], r["optimo"])
         filas.append({
+            "zona": zona, "pista": (PISTAS_ZONA_ES if idioma == "es" else PISTAS_ZONA)[zona],
             "clave": r["clave"], "unidad": r["unidad"], "valor": valor,
             "minimo": r["minimo"], "optimo": r["optimo"],
             "puntos": round(puntos_recurso(valor, r["optimo"])),
@@ -599,8 +711,8 @@ def revelar(estado):
     return {"puntaje": pts, "exito": exito,
             "optimo": es_optimo(estado),
             "falla": estado["resultado"]["falla"],
-            "fallas": mensajes_fallas(estado),
-            "mensaje": mensaje_resultado(estado),
+            "fallas": mensajes_fallas(estado, idioma=idioma),
+            "mensaje": mensaje_resultado(estado, idioma=idioma),
             "estrellas": n_estrellas,
             "siguiente_estrella_pts": siguiente,
             "ahorro_musd": ahorro(estado),
@@ -686,13 +798,16 @@ def verificar_parametros(m):
         p.append(f"{mid}: faltan 'pistas'")
     if "estrellas" in m and not _umbrales_validos(m["estrellas"]):
         p.append(f"{mid}: 'estrellas' debe ser [puntaje_2, puntaje_3, puntaje_4, puntaje_5] de menor a mayor, <= 100")
-    # Condición de validez: costo(mínimos) <= presupuesto < costo(óptimos)
+    # Condición de validez (v2, D2): costo(mínimos) <= presupuesto <= TOPE x costo(óptimos).
+    # Desde la v2 el presupuesto SÍ alcanza para los óptimos (5 estrellas posibles); solo se
+    # avisa si es tan grande que ya no hay que pensar (ver presupuesto_sugerido).
     if completos and recursos and _es_numero_positivo(m.get("presupuesto_musd")):
         pres = m["presupuesto_musd"]
         if costo_min > pres + TOLERANCIA:
             p.append(f"{mid}: IMPOSIBLE: los mínimos cuestan {costo_min:.2f} M USD y el presupuesto es {pres}")
-        if costo_opt <= pres:
-            p.append(f"{mid}: SIN DECISIÓN: los óptimos cuestan {costo_opt:.2f} M USD y el presupuesto ({pres}) alcanza para todos")
+        if pres > TOPE_PRESUPUESTO * costo_opt + TOLERANCIA:
+            p.append(f"{mid}: DEMASIADO FÁCIL: el presupuesto ({pres}) supera {TOPE_PRESUPUESTO} x "
+                     f"el costo de los óptimos ({costo_opt:.2f} M USD)")
     return p
 
 
@@ -822,7 +937,8 @@ def validar_mision_fina(parametros, pasos=None):
     sobrante = pres - suma_min
     salida = {"mision": par["mision"], "presupuesto": pres, "suma_minimos": suma_min,
               "suma_optimos": suma_opt, "sobrante_musd": sobrante,
-              "sobrante_pct": 100 * sobrante / pres, "tradeoff": suma_min <= pres < suma_opt,
+              "sobrante_pct": 100 * sobrante / pres,
+              "tradeoff": suma_min <= pres <= TOPE_PRESUPUESTO * suma_opt + TOLERANCIA,   # v2 (D2)
               "recursos": n, "pasos": pasos}
     if sobrante < 0:
         salida.update(completable=False, margen_ok=False,
@@ -874,7 +990,8 @@ def validar_mision_fina(parametros, pasos=None):
             partes.append(f"subir presupuesto_musd de {pres} a {suma_min / (1 - MARGEN_SOBRANTE_MIN):.2f} M USD "
                           f"(sobrante del 10 %)")
         if not salida["tradeoff"]:
-            partes.append(f"bajar presupuesto_musd por debajo de Σ óptimos = {suma_opt:.2f} M USD")
+            partes.append(f"bajar presupuesto_musd a {TOPE_PRESUPUESTO} x Σ óptimos = "
+                          f"{TOPE_PRESUPUESTO * suma_opt:.2f} M USD o menos (sugerido: {presupuesto_sugerido(parametros)})")
         if info["estrellas"] < ESTRELLAS_MAX:
             partes.append("las 5 estrellas no son alcanzables: revisar presupuesto u óptimos")
         sugerencia = "; ".join(partes)
@@ -1190,9 +1307,9 @@ if __name__ == "__main__":
         repartir(e, r["clave"], costo_de(r, r["minimo"]) * (0.5 if r["clave"] in ("datos", "tiempo") else 1.01))
     revisar(e); simular(e)
     textos_fallas = " ".join(f["mensaje"] for f in mensajes_fallas(e))
-    assert "days" in textos_fallas and "points" in textos_fallas, textos_fallas
+    assert "days" in textos_fallas and "40 kg" in textos_fallas, textos_fallas   # datos en kg desde D8
     assert " dias" not in textos_fallas and " puntos" not in textos_fallas
-    print("OK  unidades en inglés -> days, points")
+    print("OK  unidades en inglés -> days, kg")
     e = iniciar_mision(arte)
     for r in preparar_parametros(arte)["recursos"]:
         repartir(e, r["clave"], costo_de(r, r["minimo"]) * 1.01)
@@ -1203,8 +1320,9 @@ if __name__ == "__main__":
     # 18. Presupuesto excedido: revisar trae el mensaje con el gasto y el presupuesto
     e = iniciar_mision(easy)
     repartir(e, "estructura", 10.0); repartir(e, "propulsion", 10.0)
+    assert not dentro_del_presupuesto(e)           # D1: indicador rojo
     rev = revisar(e)
-    assert not rev["ok"] and "20" in rev["mensaje"] and "14.5" in rev["mensaje"] and "{" not in rev["mensaje"]
+    assert not rev["ok"] and "20" in rev["mensaje"] and "18" in rev["mensaje"] and "{" not in rev["mensaje"]
     e = iniciar_mision(easy)
     repartir(e, "estructura", 8.5); repartir(e, "propulsion", 6.0)
     assert revisar(e)["mensaje"] is None
@@ -1271,11 +1389,13 @@ if __name__ == "__main__":
     assert verificar_parametros(dict(easy, estrellas=[60, 70, 80, 90])) == []
 
     # 23. revelar trae estrellas, cuánto falta para la siguiente, ahorro y % usado
-    info = jugar(easy, estructura=6.0, propulsion=5.0)       # justo los mínimos: se aprueba, 1 estrella
-    assert info["exito"] and info["estrellas"] == 1 and info["siguiente_estrella_pts"] == 72, info["puntaje"]
-    assert abs(info["ahorro_musd"] - 3.5) < 1e-9 and abs(info["presupuesto_usado_pct"] - 11 / 14.5 * 100) < 1e-9
-    info = jugar(easy, estructura=8.5, propulsion=6.0)       # todo el presupuesto, buen reparto
-    assert info["puntaje"] == 87 and info["estrellas"] == 5 and info["siguiente_estrella_pts"] is None
+    info = jugar(easy, estructura=6.0, propulsion=5.0)       # justo los mínimos: se aprueba con 1-2 estrellas
+    assert info["exito"] and info["estrellas"] == estrellas_de(info["puntaje"]) in (1, 2), info["puntaje"]
+    assert info["siguiente_estrella_pts"] == ESTRELLAS_UMBRALES[info["estrellas"] - 1]
+    assert abs(info["ahorro_musd"] - 7.0) < 1e-9 and abs(info["presupuesto_usado_pct"] - 11 / 18 * 100) < 1e-9
+    info = jugar(easy, estructura=8.5, propulsion=cotizar(iniciar_mision(easy), "propulsion", 400))
+    assert info["optimo"] and info["estrellas"] == 5 and info["siguiente_estrella_pts"] is None   # D2: los óptimos caben
+    info = jugar(easy, estructura=8.5, propulsion=9.5)       # todo el presupuesto (18)
     assert info["ahorro_musd"] == 0 and abs(info["presupuesto_usado_pct"] - 100) < 1e-9
     assert puntos_recurso(12.0, 8.5) < puntos_recurso(8.5, 8.5) == 100        # pasarse del óptimo resta
     print("OK  estrellas         -> mínimos 1, buen reparto 5")
@@ -1284,7 +1404,7 @@ if __name__ == "__main__":
     e = iniciar_mision(easy)
     repartir(e, "estructura", 6.0); repartir(e, "propulsion", 5.0)
     revisar(e); simular(e)
-    assert puntaje(e) == round(puntaje_cercania(e) + 15 * 3.5 / 14.5) > round(puntaje_cercania(e))
+    assert puntaje(e) == round(puntaje_cercania(e) + 15 * 7.0 / 18) > round(puntaje_cercania(e))
     assert jugar(easy, estructura=3.0, propulsion=1.0)["puntaje"] == 0      # ahorró mucho pero falló
     assert estrellas(e) == revelar(e)["estrellas"]
     print("OK  bonus por ahorro  -> mínimos:", round(puntaje_cercania(e)), "+ bonus =", puntaje(e))
@@ -1311,6 +1431,28 @@ if __name__ == "__main__":
     assert math.isclose(filas["estructura"]["faltante_pct"], 50) and filas["propulsion"]["faltante_pct"] == 0
     print("OK  faltante_pct      -> 3 kg de 6 kg mínimos = 50 %")
 
+    # 23e. v2 (D3): zona y pista por recurso, sin depender de las cifras
+    assert [zona_recurso(v, 6, 8.5) for v in (3, 6.5, 8.5, 9.3, 12)] == \
+        ["bajo_minimo", "aceptable", "optimo", "optimo", "exceso"]
+    info = jugar(easy, estructura=3.0, propulsion=9.0)
+    filas = {f["clave"]: f for f in info["recursos"]}
+    assert filas["estructura"]["zona"] == "bajo_minimo" and filas["estructura"]["pista"] == "Needs much more"
+    assert all(f["pista"] == PISTAS_ZONA[f["zona"]] for f in info["recursos"])
+    print("OK  zonas y pistas    ->", {c: f["pista"] for c, f in filas.items()})
+
+    # 23f. v2 (D1 y D2): indicador del presupuesto y presupuesto sugerido de cada misión
+    e = iniciar_mision(easy)
+    assert dentro_del_presupuesto(e)
+    repartir(e, "estructura", 18.0)
+    assert dentro_del_presupuesto(e)            # justo el presupuesto: cabe
+    repartir(e, "propulsion", 0.5)
+    assert not dentro_del_presupuesto(e)
+    for mid in ("easy_cubesat", "normal_leo", "hard_mro_marte", "harder_perseverance", "insane_artemis1"):
+        par = cargar_parametros(mid)
+        suma_opt = sum(costo_de(r, r["optimo"]) for r in par["recursos"])
+        assert presupuesto_sugerido(par) == par["presupuesto_musd"] >= MARGEN_PRESUPUESTO * suma_opt, mid
+    print("OK  presupuesto v2    -> cada misión usa presupuesto_sugerido (>= 1.05 x óptimos)")
+
     # 24. Las 5 estrellas deben ser alcanzables en cada nivel
     maximos = {}
     for mid in IDS_NIVELES:
@@ -1328,7 +1470,7 @@ if __name__ == "__main__":
 
     # ---- Paso de los botones − y + ----
     esperado = {"easy_cubesat": 0.5, "normal_leo": 1, "hard_mro_marte": 5,
-                "harder_perseverance": 5, "insane_artemis1": 4}
+                "harder_perseverance": 5, "insane_artemis1": 5}
     for mid, paso in esperado.items():
         e = iniciar_mision(cargar_parametros(mid))
         p = paso_dinero(e)
@@ -1337,10 +1479,45 @@ if __name__ == "__main__":
         # con ese paso se compran todos los mínimos sin pasarse del presupuesto
         assert sum(math.ceil(costo_de(r, r["minimo"]) / p - 1e-9) * p for r in e["recursos"]) \
             <= e["presupuesto_musd"] + 1e-9
-    # con un paso fijo de 5, Easy sería imposible: 6->10 kg de estructura + 5 de propulsión = 15 > 14.5
+    # con un paso fijo de 5, Easy sería imposible: 6->10 kg de estructura + 5 de propulsión = 15 (Easy tenía 14.5)
     e = iniciar_mision(cargar_parametros("easy_cubesat"))
-    assert sum(math.ceil(costo_de(r, r["minimo"]) / 5 - 1e-9) * 5 for r in e["recursos"]) > 14.5
+    assert sum(math.ceil(costo_de(r, r["minimo"]) / 5 - 1e-9) * 5 for r in e["recursos"]) == 15
     print("OK  paso del dinero   ->", esperado)
+
+    # ---- v3 (A): datos corregidos con fuentes oficiales ----
+    hard = cargar_parametros("hard_mro_marte")
+    com = [r for r in hard["recursos"] if r["clave"] == "comunicaciones"][0]
+    assert com["unidad"] == "Mbps" and com["optimo"] == 6.0
+    pot = [r for r in hard["recursos"] if r["clave"] == "potencia"][0]
+    assert pot["optimo"] == 1000 and pot["fisica"]["tipo"] == "potencia"        # MRO: solar, 1000 W en Marte
+    rover = cargar_parametros("harder_perseverance")
+    pot = [r for r in rover["recursos"] if r["clave"] == "potencia"][0]
+    assert "fisica" not in pot and pot["optimo"] == 110                          # MMRTG: cálculo lineal
+    e = iniciar_mision(rover)
+    assert e["tipo_potencia"] == "mmrtg" and iniciar_mision(hard)["tipo_potencia"] == "solar"
+    assert abs(cotizar(e, "potencia", 110) - 110 * pot["musd_por_unidad"]) < 1e-9
+    artemis = cargar_parametros("insane_artemis1")
+    pot = [r for r in artemis["recursos"] if r["clave"] == "potencia"][0]
+    assert pot["optimo"] == 11200                                                # Orion ESM ~11.2 kW
+    print("OK  datos v3          -> MRO 1000 W y 6 Mbps, Perseverance MMRTG 110 W, Orion 11.2 kW")
+
+    # ---- v3 (E): mensajes y pistas en español, sin romper el inglés ----
+    es = cargar_mensajes(idioma="es")
+    en = cargar_mensajes()
+    assert set(en) <= set(es)                       # en español no falta ninguna clave
+    assert en["explota"] != es["explota"]
+    e = iniciar_mision(cargar_parametros("easy_cubesat"))
+    assert e["pistas_es"] and e["pistas_es"] != e["pistas"]
+    repartir_valor(e, "estructura", 3.0)
+    repartir_valor(e, "propulsion", 400)
+    revisar(e)
+    simular(e)
+    info_es = revelar(e, idioma="es")
+    info_en = revelar(e)
+    assert "estructura" in info_es["mensaje"] and "{" not in info_es["mensaje"]
+    assert info_en["mensaje"] != info_es["mensaje"] and info_en["puntaje"] == info_es["puntaje"]
+    assert info_es["recursos"][0]["pista"] == PISTAS_ZONA_ES["bajo_minimo"]
+    print("OK  idioma es         ->", info_es["recursos"][0]["pista"])
 
     # ---- Bloque 2: parrilla y progreso (archivo temporal de prueba) ----
     # La parrilla sale de parametros_misiones.json: misiones.json ya no existe.
