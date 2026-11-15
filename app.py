@@ -305,7 +305,7 @@ def main():
         # e) Agrandar el lienzo a la ventana (sin suavizar) y mostrarlo.
         pygame.transform.scale(lienzo, ventana.get_size(), ventana)
         pygame.display.flip()
-        dt = min(reloj.tick(config.FPS) / 1000, config.DT_MAXIMO)    # ms -> s, con tope
+        dt = min(reloj.tick(config.FPS) / 10t00, config.DT_MAXIMO)    # ms -> s, con tope
         ui["tiempo"] = ui["tiempo"] + dt
 
     pygame.quit()

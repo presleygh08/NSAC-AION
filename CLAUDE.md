@@ -31,7 +31,6 @@ python3.12 app.py
 
 ## Code layout notes
 
-- `fisica.py` has `masa_propelente` and `delta_v` (Tsiolkovsky, `G0 = 9.80665`); `potencia_costo.py` has `potencia_generada` (solar flux `S0 = 1361 W/m²` scaled by 1/d²), `balance_potencia` and `costo_total`. `nucleo.py` uses both to turn money into delta-v and power.
 - Physics functions raise `ValueError` on invalid input. Units go in the docstrings (m/s, s, kg, W, M USD).
 
 ## Data contract (`datos/*.json`)
@@ -49,11 +48,10 @@ Known inconsistencies to watch for when joining data:
 - The README's destination list (which includes "superficie lunar") and some of its source URLs don't match the JSON files exactly. `datos/README.md` says sources were unified under one `fuente` key, but `lanzadores.json` still uses per-field `fuente_*`. Check the JSON before trusting either README.
 
 ## Team plan
-Game concept (v3: avatar, Easy–Insane grid, hidden minimum/optimal values, simulation outcomes, scoring): @docs/concepto-juego.md
-Team split and definition (v4: roles and file ownership, Emanuel↔Gonzalo contract, resources per difficulty, parametros_misiones.json format, schedule): @docs/reparto-v4.md
-If v3 and v4 conflict, follow v4. Both supersede older plan items (e.g. the green/yellow/red checklist) and plan-equipo-resumen.md.
-Roles, screens, function/data contract and the 48 h schedule: @docs/plan-equipo-resumen.md
-Official challenge statement, deliverables, judging criteria and plan-vs-challenge gaps: @docs/reto.md
+Read these only when the task needs them (not loaded automatically):
+- `docs/reparto-v4.md` — team split and definition (v4: roles and file ownership, Emanuel↔Gonzalo contract, resources per difficulty, parametros_misiones.json format, schedule).
+- `docs/concepto-juego.md` — game concept (v3). If v3 and v4 conflict, follow v4. Both supersede older plan items (e.g. the green/yellow/red checklist) and `docs/plan-equipo-resumen.md` (old roles and 48 h schedule).
+- `docs/reto.md` — official challenge statement, deliverables, judging criteria and plan-vs-challenge gaps. Read it for README, demo, pitch or submission tasks.
 All user-facing text (game UI, messages, README) must be in English per Space Apps rules; code identifiers stay in Spanish.
 Team (5, roles per v4): Gonzalo (Pygame UI: app.py, interfaz/), Emanuel (game architecture: nucleo.py, fisica.py, potencia_costo.py), Chambi (research: datos/parametros_misiones.json), Justin (game definition, mensajes.json, textos_en.json, pitch), Piero (visual design: assets/, README, submission).
 
@@ -61,9 +59,7 @@ Team (5, roles per v4): Gonzalo (Pygame UI: app.py, interfaz/), Emanuel (game ar
 - VERSION 2 decisions (override the spec where they conflict): @docs/v2-cambios.md — English content for new screens is in interfaz/guia_misiones_en.json.
 - UI spec (screens, 16-bit style, lab with CML phases, simulation, results, priorities): @docs/especificacion-interfaz.md — follow it for everything visual.
 - Game logic API: @CONTRATO_API.md — the UI only calls functions of nucleo.py listed there (nucleo.py replaced juego.py, now juego_v1.py). During allocation never read estado["recursos"]; use recursos_visibles. Missing functions (cotizar, estrellas, faltante_pct, bonus por ahorro) are added directly to nucleo.py following docs/pedidos-emanuel.md.
-- Functions the UI uses, in flow order: `nuevo_progreso()`, `cargar_misiones(progreso)`, `puede_jugar(progreso, id)`, `cargar_parametros(id)`, `iniciar_mision(parametros)`, `paso_dinero(estado)`, `repartir(estado, clave, dinero_musd)`, `presupuesto_restante(estado)`, `recursos_visibles(estado)`, `revisar(estado)`, `simular(estado)`, `revelar(estado)`, `registrar_resultado(progreso, estado)`. Use `paso_dinero` for the − / + buttons, never a fixed step.
+- Use `paso_dinero` for the − / + buttons, never a fixed step.
 - You may edit ANY file in the repo (nucleo.py, fisica.py, potencia_costo.py, datos/, docs, README) when needed to meet the spec or fix a bug. Rules: keep existing function names and data keys used by CONTRATO_API.md (only add), update CONTRATO_API.md when adding functions, rerun the module self-tests/pruebas.py and validar_mision after touching game logic, never invent NASA numbers (mark estimates as such), and list in your final summary which teammates' files you changed.
-- Game state lives in a dict in the main loop of app.py.
 - Files that stop being used are renamed with a _v1 suffix (not deleted).
-- Run with: python3.12 app.py (the Anaconda python3 has no pygame).
 - Units: kg, m/s, W, kbps, days, millions of USD.
