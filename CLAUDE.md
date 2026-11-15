@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Everything is written in Spanish: code identifiers, docstrings, error messages, data keys, and docs. Keep new code in Spanish to match.
 
-Main files: `nucleo.py` (game logic: missions, allocation, review, simulation, score; Emanuel; it replaced `juego.py`, now `juego_v1.py`), `fisica.py` and `potencia_costo.py` (physics), `app.py` + `interfaz/` (Pygame UI, Gonzalo), `jugar_consola.py` (plays the whole flow in the terminal, no UI). `README.md` may still describe an older layout; sections marked **[COMPLETAR]** get filled in during the event.
+Main files: `nucleo.py` (game logic: missions, allocation, review, simulation, score; Emanuel; it replaced `juego.py`, now in `archive/juego_v1.py`), `fisica.py` and `potencia_costo.py` (physics), `app.py` + `interfaz/` (Pygame UI, Gonzalo), `jugar_consola.py` (plays the whole flow in the terminal, no UI). `README.md` is the public English README for the submission. Internal team notes (Spanish) are in `docs/team-notes/`.
 
 ## Commands
 

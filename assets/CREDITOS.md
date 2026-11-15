@@ -11,7 +11,7 @@ are generally not subject to copyright in the United States (NASA Media Usage Gu
 https://www.nasa.gov/nasa-brand-center/images-and-media/). They must not be used to imply
 NASA endorsement. Each photo was cropped around its subject and resized to 480x320; the
 game pixelates it and reduces it to its 32-color palette when it is shown.
-**To review (Piero):** chosen without logos, insignia or people.
+Checked (Nov 15, 2026): no NASA logos, mission insignia or people are visible in these photos.
 
 | File | Title | NASA ID | Credit | Source |
 |---|---|---|---|---|
@@ -31,3 +31,8 @@ the game uses it instead; list it in this file.
 
 All sprites (avatar, rocket, lab, NPC, planets) are drawn in code in `interfaz/sprites.py`
 (original work of the team).
+
+## Sounds
+
+All sounds (countdown beeps, ignition, success, failure, hangar doors) are synthesized in code in
+`interfaz/sonido.py` (original work of the team). No audio files are used.
