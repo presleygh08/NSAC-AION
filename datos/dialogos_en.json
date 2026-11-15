@@ -1,0 +1,326 @@
+{
+  "_nota": "Dialogue lines spoken by AION. Placeholders: {nombre} {mision} {destino} {cohete} {capacidad_kg} {presupuesto} {dificultad} {n_recursos} {completadas} {total} {exceso} {masa_kg}. 'pistas' entries unlock from the given level ('desde'); 'pista_extra' shows only after a failure on that resource.",
+  "inicio": {
+    "nombre": "Enter your name:",
+    "bienvenida": "Welcome, Commander {nombre}. Mission control is waiting for you."
+  },
+  "parrilla": {
+    "intro": "These are the official operations of the space program. We start with simple missions and few systems, so you can master resource and budget planning. Each completed operation expands your clearance and unlocks a new engineering challenge.",
+    "bloqueada": "Operation not authorized. Complete the previous mission to receive launch clearance.",
+    "desbloqueada": "New mission added to the manifest! A new objective is waiting in space.",
+    "cursor": "{mision}: destination {destino}, rocket {cohete}.",
+    "cursor_dificultad": "Difficulty {dificultad}: {n_recursos} resources to split.",
+    "tooltip_dificultad": "Higher difficulty means more resources to share your budget between.",
+    "progreso": "Missions completed: {completadas} of {total}.",
+    "en_preparacion": "Operation in preparation. Come back soon, Commander."
+  },
+  "tutorial": {
+    "t1": "I am AION, your mission engineering assistant. I will guide you through the basics before your first operation.",
+    "t2": "Movement control enabled. Use WASD or the arrow keys to move. Head to the access door.",
+    "t3": "Well done. This is your lab: every glowing panel is a mission decision.",
+    "t4": "Open panels with E or Space. When you finish one, the next one lights up.",
+    "regla1": "Your budget is limited: you cannot spend more than you have.",
+    "regla2": "Every resource has a hidden minimum. Fall below it and the mission fails.",
+    "regla3": "Overspending is not ideal either: that money could help elsewhere.",
+    "regla4": "There is no single right answer. If you fail, you learn and try again."
+  },
+  "niveles": {
+    "easy": {
+      "b1": "Mission control to base. A university team asked for help: they want to put a small satellite in orbit.",
+      "b2": "It is tiny, but it holds months of student work. Make sure it arrives. Go ahead, Commander.",
+      "limites": "Mission limits: your rocket, the {cohete}, lifts only {capacidad_kg} kg to low orbit. Budget: {presupuesto} M USD.",
+      "recursos": "In this mission you will split 2 resources: mass and structure.",
+      "terminal": "Financial planning terminal detected. Step up to the panel and press E or Space to open your mission budget.",
+      "aprendido": "Lesson learned: structure and mass go hand in hand."
+    },
+    "normal": {
+      "b1": "An observation satellite is waiting its turn. The Falcon 9 is already on the pad.",
+      "b2": "Low orbit is close, but without the right speed the satellite would just fall back. Run your numbers.",
+      "limites": "Mission limits: the {cohete} lifts {capacidad_kg} kg to low orbit. Budget: {presupuesto} M USD.",
+      "recursos": "New resource unlocked: power. Now your ship needs electricity to work.",
+      "consejo": "More resources mean more decisions. No resource can be left without budget.",
+      "aprendido": "Lesson learned: without power, no system works."
+    },
+    "hard": {
+      "b1": "Mars is more than one and a half times farther from the Sun than Earth. Sunlight arrives weak there.",
+      "b2": "This ship will orbit the red planet to study it from above. Getting there is hard; surviving on weak light comes next.",
+      "limites": "Mission limits: the {cohete} lifts {capacidad_kg} kg toward Mars. Budget: {presupuesto} M USD.",
+      "recursos": "New resource unlocked: delta-v. It is the change of speed your ship can make. Without enough, you never arrive.",
+      "aprendido": "Lesson learned: arriving costs speed, and those costs add up."
+    },
+    "harder": {
+      "b1": "A rover will land on Mars to look for signs of ancient life.",
+      "b2": "Every gram counts. And from there, the signal takes minutes to reach home. Make sure your antenna is up to it.",
+      "limites": "Mission limits: the {cohete} lifts {capacidad_kg} kg toward Mars. Budget: {presupuesto} M USD.",
+      "recursos": "New resource unlocked: communications. Without an antenna, you arrive alive but silent.",
+      "aprendido": "Lesson learned: without an antenna, nothing you measure gets home."
+    },
+    "insane": {
+      "b1": "One of the most powerful rockets ever built, and a capsule that will circle the Moon and return home.",
+      "b2": "It is almost four weeks of travel and six resources fighting over one budget. The whole team trusts you.",
+      "limites": "Mission limits: the {cohete} lifts {capacidad_kg} kg toward the Moon. Budget: {presupuesto} M USD.",
+      "recursos": "New resource unlocked: science. Instruments are the reason for the trip, but they weigh and use power.",
+      "aprendido": "Lesson learned: every resource depends on the others."
+    }
+  },
+  "paneles": {
+    "financiero": {
+      "intro": "This bar is your budget. Every upgrade you buy uses some of it.",
+      "limite": "You cannot spend more than you have. Split it carefully.",
+      "consejo": "A resource with no budget will almost surely fail. One with too much starves the others."
+    },
+    "masa": {
+      "intro": "Mass is how heavy your ship is with its cargo. Your rocket can only lift so much, so you cannot go over.",
+      "limite": "Every upgrade adds weight: panels, structure, fuel, antenna and instruments.",
+      "pistas": [
+        {
+          "desde": "easy",
+          "texto": "In a small satellite, every gram counts."
+        },
+        {
+          "desde": "easy",
+          "texto": "Light is not the same as fragile: balance mass with structure."
+        },
+        {
+          "desde": "normal",
+          "texto": "If mass worries you, check which resource weighs the most."
+        }
+      ],
+      "pista_extra": "Extra clue: your ship is heavier than the rocket can lift. Cut weight where you need it least.",
+      "falla": {
+        "reacciones": [
+          "Overweight! The rocket could not lift off with so much cargo.",
+          "The engines roared, but the ship stayed on the pad."
+        ],
+        "por_que": "Every rocket has a maximum payload. More weight needs more thrust.",
+        "que_probar": "Reduce mass: less weight in structure, panels, antenna or instruments."
+      }
+    },
+    "estructura": {
+      "intro": "Here you set how strong your vehicle's structure is. Adjust it to what the mission will put it through.",
+      "limite": "More strength weighs more and costs more. Look for just enough.",
+      "pistas": [
+        {
+          "desde": "easy",
+          "texto": "A small satellite feels the same liftoff vibration as a big one."
+        },
+        {
+          "desde": "easy",
+          "texto": "It does not have to be the most expensive part of the design, but not the cheapest either."
+        },
+        {
+          "desde": "easy",
+          "texto": "An oversized structure is weight that does nothing for you."
+        },
+        {
+          "desde": "harder",
+          "texto": "Entering the atmosphere and landing demands a lot of strength."
+        }
+      ],
+      "pista_extra": "Extra clue: liftoff needs more strength than you chose. Raise structure a little and try.",
+      "falla": {
+        "reacciones": [
+          "Structural alert! Vibration beat the ship's strength during ascent.",
+          "There was a crack... then silence. The structure could not take the liftoff.",
+          "The rocket broke under the strain. Engineers call this a structural failure."
+        ],
+        "por_que": "Liftoff is the most violent part of the trip: strong vibration and acceleration.",
+        "que_probar": "Give structure more budget, but not too much, so you do not add useless mass."
+      }
+    },
+    "potencia": {
+      "intro": "In Earth orbit sunlight is strong, but the ship passes through Earth's shadow and panels stop making power. Manage what you have.",
+      "limite": "More panels give more power, but they weigh and cost. Every system that is on uses power all the time.",
+      "pistas": [
+        {
+          "desde": "normal",
+          "texto": "With so many systems on, power is never plentiful."
+        },
+        {
+          "desde": "normal",
+          "texto": "Think about the shadow: during an eclipse, the ship lives on its batteries."
+        },
+        {
+          "desde": "hard",
+          "texto": "Far from Earth you need bigger panels: sunlight is weaker."
+        }
+      ],
+      "pista_extra": "Extra clue: the ship uses more power than it makes. Raise power and try.",
+      "falla": {
+        "reacciones": [
+          "Batteries at zero! Consumption beat generation and the ship went dark.",
+          "It entered Earth's shadow and the batteries ran out.",
+          "Without enough light, the panels could not cover what the ship used."
+        ],
+        "por_que": "Generation fell below consumption, especially in eclipse or far from the Sun.",
+        "que_probar": "Add more power (panels and batteries); remember that far from the Sun there is less light."
+      }
+    },
+    "delta_v": {
+      "intro": "Every maneuver, like entering orbit or landing, costs speed, and those costs add up. Your rocket must pay the full total.",
+      "limite": "More fuel gives more delta-v, but it adds weight that needs even more fuel.",
+      "pistas": [
+        {
+          "desde": "hard",
+          "texto": "Reaching low orbit takes a lot of sideways speed, not just going up."
+        },
+        {
+          "desde": "hard",
+          "texto": "To enter Mars orbit you must slow down, and slowing down costs speed too."
+        },
+        {
+          "desde": "hard",
+          "texto": "It is the deciding resource: without it, you do not arrive."
+        },
+        {
+          "desde": "harder",
+          "texto": "Landing has a cost too, not just arriving."
+        },
+        {
+          "desde": "insane",
+          "texto": "The trip back needs maneuvers too."
+        }
+      ],
+      "pista_extra": "Extra clue: the trip needs more speed than your ship can pay for. Raise delta-v or cut mass.",
+      "falla": {
+        "reacciones": [
+          "Engines out too early! There was not enough delta-v to reach the destination.",
+          "The ship ran out of thrust halfway. The destination is still out there, far away.",
+          "The engines did their job, but the trip asked for more."
+        ],
+        "por_que": "The sum of all maneuver costs was more than the ship could pay.",
+        "que_probar": "Raise delta-v and check whether extra mass is making it more expensive."
+      }
+    },
+    "comunicaciones": {
+      "intro": "The antenna sends your data to Earth. Without a good one, the ship arrives alive but transmits nothing.",
+      "limite": "A bigger antenna helps, but it costs mass and power.",
+      "pistas": [
+        {
+          "desde": "harder",
+          "texto": "The signal takes minutes to arrive and weakens with distance."
+        },
+        {
+          "desde": "harder",
+          "texto": "The farther away you are, the bigger the antenna must be."
+        }
+      ],
+      "pista_extra": "Extra clue: your antenna is too small for this distance. Give it budget without neglecting mass or power.",
+      "falla": {
+        "reacciones": [
+          "We reached the destination, but the signal cannot reach Earth!",
+          "The ship is alive, but it cannot tell us anything. Total silence.",
+          "Antenna too small for this distance. It arrived, but completely mute."
+        ],
+        "por_que": "The signal weakens with distance; the antenna did not have enough capacity.",
+        "que_probar": "Add antenna capacity, making sure you do not run short of mass or power."
+      }
+    },
+    "ciencia": {
+      "intro": "Each instrument adds science, but it weighs and uses power. You must reach the science minimum.",
+      "limite": "More instruments raise mass, power and the data you must send.",
+      "pistas": [
+        {
+          "desde": "insane",
+          "texto": "Instruments are the reason for the trip."
+        },
+        {
+          "desde": "insane",
+          "texto": "Without enough communications, the science never gets home."
+        }
+      ],
+      "pista_extra": "Extra clue: your instruments do not reach the science goal. Raise science and check power and antenna.",
+      "falla": {
+        "reacciones": [
+          "The ship survived, but its instruments miss the minimum science goal.",
+          "We arrived, we looked, and we brought back almost nothing to study.",
+          "Technically a success, scientifically empty."
+        ],
+        "por_que": "Without enough instruments, the trip does not meet its science purpose.",
+        "que_probar": "Raise the instrument budget and check the balance with power and communications."
+      }
+    }
+  },
+  "revision": {
+    "iniciar": "Go to the central panel. Before launch, I run the final check.",
+    "analizando": [
+      "Checking budget…",
+      "Checking total mass…",
+      "Check complete."
+    ],
+    "ok": "Everything is within limits. Launch authorized.",
+    "presupuesto_excedido": "Budget exceeded by {exceso} M USD. Go back to the workshop and adjust your split.",
+    "sobrepeso": "Overweight: the {cohete} lifts {capacidad_kg} kg and your ship weighs {masa_kg} kg. Reduce mass before launch."
+  },
+  "lanzamiento": {
+    "cuenta": "T-minus ten seconds. All systems green.",
+    "ignicion": "Ignition.",
+    "despegue": "Liftoff!"
+  },
+  "informe": {
+    "invitacion": "Check your vehicle's evaluation report and compare its performance with the reference values. In space engineering, every result teaches you how to improve the next mission.",
+    "revelado": "This is your split compared with what the mission really needed."
+  },
+  "ayuda": {
+    "inactividad_1": "Unsure? You still have glowing panels to check.",
+    "inactividad_2": "Start with the resource that matters most for this destination.",
+    "inactividad_3": "Remember: there is no single right answer.",
+    "segundo_intento": "Second try: change one resource at a time to understand what happened.",
+    "tercer_intento": "Third try: here is an extra clue about the resource that failed."
+  },
+  "finales": {
+    "exito_1": "Mission archived. Another destination conquered, Commander.",
+    "exito_2": "The report is already in the base archive. The next mission is waiting.",
+    "exito_3": "Mission control sends greetings. They say they will ask you for advice on the next one.",
+    "perfecto": "Textbook split, Commander. Real engineers would take notes.",
+    "falla_primera": "Mission failed, but the report is gold. We now know more than before.",
+    "falla_repetida": "Persistence is engineering too. Adjust one resource and try again."
+  },
+  "animo": {
+    "regla": "Show one random line after the failure reaction and before the 'why' and 'what to try' buttons. Do not repeat a line within the last 3 failures. Respect 'cuando' when present.",
+    "lineas": [
+      {
+        "id": "01",
+        "texto": "Failing in the simulator is free. Failing in a real launch is extremely expensive."
+      },
+      {
+        "id": "02",
+        "texto": "That was data, not defeat. Shall we analyze it?"
+      },
+      {
+        "id": "03",
+        "texto": "Almost. Adjust one resource and try again.",
+        "cuando": "solo si falló un único recurso"
+      },
+      {
+        "id": "04",
+        "texto": "The good news: you already know which system to check first."
+      },
+      {
+        "id": "05",
+        "texto": "Engineers call this 'lessons learned'."
+      },
+      {
+        "id": "06",
+        "texto": "It is okay, Commander. The base is still standing."
+      },
+      {
+        "id": "07",
+        "texto": "Breathe. Look at the reveal and try a different split."
+      },
+      {
+        "id": "08",
+        "texto": "That rocket did not arrive, but your judgment improved.",
+        "cuando": "solo si la falla fue no_llega, explota o no_despega"
+      },
+      {
+        "id": "09",
+        "texto": "A failure well understood is worth more than a lucky success."
+      },
+      {
+        "id": "10",
+        "texto": "Even real missions adjust their design after every test."
+      }
+    ]
+  }
+}
