@@ -352,11 +352,13 @@ METAL_AION_OSCURO = (120, 128, 150)
 PANTALLA_AION = (20, 28, 48)
 
 
-def dibujar_aion(sup, x, y, expresion="neutral", tiempo=0.0):
+def dibujar_aion(sup, x, y, expresion="neutral", tiempo=0.0, fondo=True):
     """Retrato de AION (32x32 px) con la esquina de arriba a la izquierda en (x, y).
-    'tiempo' hace parpadear la luz de la antena."""
+    'tiempo' hace parpadear la luz de la antena. fondo=False: sin el recuadro gris
+    (para el AION que flota en la sala)."""
     expresion = EQUIVALENCIA_EXPRESION.get(expresion, expresion)
-    pygame.draw.rect(sup, config.GRIS_OSCURO, (x, y, 32, 32))           # fondo del retrato
+    if fondo:
+        pygame.draw.rect(sup, config.GRIS_OSCURO, (x, y, 32, 32))       # fondo del retrato
 
     # Antena con su luz (roja si está en alerta, amarilla al celebrar, cian normal)
     pygame.draw.rect(sup, METAL_AION_OSCURO, (x + 15, y + 2, 2, 5))
@@ -426,6 +428,17 @@ def dibujar_aion(sup, x, y, expresion="neutral", tiempo=0.0):
         pygame.draw.rect(sup, METAL_AION, (x + 22, y + 26, 3, 5))
 
 
+def dibujar_aion_sala(sup, cx, y_suelo, expresion="neutral", tiempo=0.0):
+    """AION de cuerpo entero dentro de la sala de control (v2, D5): flota sobre el suelo
+    (sube y baja 2 px) con su sombra debajo. cx = centro, y_suelo = donde está su sombra."""
+    flota = int(2 * math.sin(tiempo * 3))
+    pygame.draw.ellipse(sup, (40, 44, 58), (cx - 9, y_suelo - 3, 18, 6))   # sombra
+    # Propulsor debajo del cuerpo (una llamita cian que parpadea)
+    if int(tiempo * 10) % 2 == 0:
+        pygame.draw.rect(sup, config.CIAN, (cx - 2, y_suelo - 6 + flota, 4, 2))
+    dibujar_aion(sup, cx - 16, y_suelo - 40 + flota, expresion, tiempo, fondo=False)
+
+
 def dibujar_npc(sup, x, y, expresion="neutral"):
     """El guía del juego. Desde la v2 es AION (antes, un director de vuelo).
     Se mantiene este nombre para no cambiar las pantallas que ya lo usan."""
@@ -491,21 +504,87 @@ def dibujar_torre(sup, x, y_base, alto):
         pygame.draw.line(sup, config.GRIS_OSCURO, (x, yy), (x + 6, yy + 8))
 
 
-def dibujar_cortinas(sup, rect, apertura):
-    """Cortinas rojas que tapan el cohete. apertura: 0 = cerradas, 1 = abiertas del todo."""
+# --- Puertas del hangar (v2, punto 17) -------------------------------------
+# Dos hojas de metal que se deslizan hacia los lados. Cada hoja se dibuja UNA vez en una
+# imagen (con paneles, remaches y franjas de advertencia) y luego solo se mueve.
+METAL_PUERTA = (110, 116, 134)
+METAL_PUERTA_CLARO = (150, 156, 175)
+METAL_PUERTA_OSCURO = (64, 68, 84)
+_cache_puertas = {}
+
+
+def imagen_hoja_puerta(ancho, alto, lado):
+    """Una hoja de la puerta. lado = -1 (izquierda) o 1 (derecha): las franjas amarillas y
+    negras quedan en el borde del centro, donde se juntan las dos hojas."""
+    clave = (ancho, alto, lado)
+    if clave in _cache_puertas:
+        return _cache_puertas[clave]
+    hoja = pygame.Surface((ancho, alto))
+    hoja.fill(METAL_PUERTA)
+    # Paneles horizontales con bisel (línea clara arriba, oscura abajo) y remaches
+    for y in range(0, alto, 28):
+        pygame.draw.line(hoja, METAL_PUERTA_OSCURO, (0, y), (ancho, y))
+        pygame.draw.line(hoja, METAL_PUERTA_CLARO, (0, y + 1), (ancho, y + 1))
+        for x in range(6, ancho - 14, 12):
+            hoja.set_at((x, y + 5), METAL_PUERTA_CLARO)
+            hoja.set_at((x + 1, y + 6), METAL_PUERTA_OSCURO)
+    # Borde del centro: franja diagonal amarilla y negra de 10 px
+    x_franja = ancho - 10 if lado == -1 else 0
+    for y in range(-10, alto, 8):
+        pygame.draw.polygon(hoja, config.AMARILLO, [(x_franja, y), (x_franja + 10, y + 10),
+                                                    (x_franja + 10, y + 14), (x_franja, y + 4)])
+    pygame.draw.rect(hoja, config.NEGRO, (x_franja, 0, 10, alto), 1)
+    # Refuerzo vertical y manija
+    x_refuerzo = 14 if lado == -1 else ancho - 18
+    pygame.draw.rect(hoja, METAL_PUERTA_OSCURO, (x_refuerzo, 0, 4, alto))
+    x_manija = ancho - 18 if lado == -1 else 14
+    pygame.draw.rect(hoja, config.GRIS_OSCURO, (x_manija, alto // 2 - 10, 4, 20))
+    pygame.draw.rect(hoja, METAL_PUERTA_CLARO, (x_manija, alto // 2 - 10, 1, 20))
+    _cache_puertas[clave] = hoja
+    return hoja
+
+
+def dibujar_baliza(sup, x, y, tiempo, encendida):
+    """Luz ámbar de advertencia que gira mientras las puertas se mueven."""
+    pygame.draw.rect(sup, config.GRIS_OSCURO, (x - 5, y + 3, 10, 3))          # base
+    if not encendida:
+        pygame.draw.circle(sup, (120, 90, 40), (x, y), 4)
+        return
+    pygame.draw.circle(sup, config.NARANJA, (x, y), 4)
+    pygame.draw.circle(sup, config.AMARILLO, (x, y), 2)
+    angulo = tiempo * 8                                                    # haz de luz que gira
+    largo = 22
+    punta1 = (x + math.cos(angulo - 0.25) * largo, y + math.sin(angulo - 0.25) * largo * 0.4)
+    punta2 = (x + math.cos(angulo + 0.25) * largo, y + math.sin(angulo + 0.25) * largo * 0.4)
+    haz = pygame.Surface(sup.get_size(), pygame.SRCALPHA)
+    pygame.draw.polygon(haz, (240, 200, 60, 90), [(x, y), punta1, punta2])
+    sup.blit(haz, (0, 0))
+
+
+def dibujar_puertas_hangar(sup, rect, apertura, tiempo=0.0):
+    """Puertas metálicas del hangar. apertura: 0 = cerradas, 1 = abiertas del todo.
+    Las hojas se deslizan hacia los lados (salen del recuadro, que recorta)."""
     r = pygame.Rect(rect)
     mitad = r.w // 2
-    ancho = int(mitad * (1 - apertura))
-    if ancho <= 0:
-        return
-    for i in range(2):
-        if i == 0:
-            zona = pygame.Rect(r.x, r.y, ancho, r.h)                # izquierda
-        else:
-            zona = pygame.Rect(r.right - ancho, r.y, ancho, r.h)   # derecha
-        pygame.draw.rect(sup, (150, 30, 40), zona)
-        for xx in range(zona.x + 3, zona.right, 6):                 # pliegues
-            pygame.draw.line(sup, (110, 20, 30), (xx, zona.y), (xx, zona.bottom))
+    corrido = int(mitad * apertura)                    # cuánto se movió cada hoja
+    recorte_anterior = sup.get_clip()
+    sup.set_clip(r.clip(recorte_anterior) if recorte_anterior else r)
+    if corrido < mitad:
+        sup.blit(imagen_hoja_puerta(mitad, r.h, -1), (r.x - corrido, r.y))
+        sup.blit(imagen_hoja_puerta(r.w - mitad, r.h, 1), (r.x + mitad + corrido, r.y))
+    # Rieles arriba y abajo (siempre se ven)
+    pygame.draw.rect(sup, METAL_PUERTA_OSCURO, (r.x, r.y, r.w, 4))
+    pygame.draw.rect(sup, METAL_PUERTA_OSCURO, (r.x, r.bottom - 3, r.w, 3))
+    sup.set_clip(recorte_anterior)
+    # Dos balizas en las esquinas de arriba (en el centro está el letrero "HANGAR")
+    moviendose = 0 < apertura < 1
+    dibujar_baliza(sup, r.x + 12, r.y + 10, tiempo, moviendose)
+    dibujar_baliza(sup, r.right - 12, r.y + 10, tiempo + 0.4, moviendose)
+
+
+def dibujar_cortinas(sup, rect, apertura):
+    """Nombre viejo (v1: telón rojo). Desde la v2 dibuja las puertas metálicas."""
+    dibujar_puertas_hangar(sup, rect, apertura)
 
 
 def dibujar_marcador(sup, cx, cy, simbolo, color, tiempo):
@@ -555,11 +634,9 @@ def dibujar_destino(sup, rect, destino, tiempo, nombre="", fondo=True):
     elif destino == "órbita lunar":
         pygame.draw.circle(sup, (170, 170, 175), (cx, cy), radio)
         pygame.draw.circle(sup, (130, 130, 135), (cx + radio // 3, cy - radio // 4), radio // 5)
-        pygame.draw.circle(sup, config.TIERRA_AZUL, (r.x + 14, r.y + 14), 6)
-    else:                                         # LEO: la Tierra
-        pygame.draw.circle(sup, config.TIERRA_AZUL, (cx, cy), radio)
-        pygame.draw.circle(sup, config.TIERRA_VERDE, (cx - radio // 3, cy - radio // 5), radio // 3)
-        pygame.draw.circle(sup, config.TIERRA_VERDE, (cx + radio // 3, cy + radio // 3), radio // 4)
+        dibujar_tierra(sup, r.x + 14, r.y + 14, 6)               # la Tierra a lo lejos
+    else:                                         # LEO: la Tierra con continentes, girando
+        dibujar_tierra(sup, cx, cy, radio, tiempo * 0.3)
     # Satélite dando vueltas
     angulo = tiempo * 0.8
     sx = cx + int((radio + 12) * math.cos(angulo))
@@ -575,11 +652,9 @@ def dibujar_destino(sup, rect, destino, tiempo, nombre="", fondo=True):
 def dibujar_tierra_y_cohete(sup, tiempo):
     """Ilustración de la pantalla de inicio: la Tierra abajo con nubes y un cohete
     que despega dejando una estela de humo."""
-    cx = config.ANCHO // 2
-    pygame.draw.circle(sup, config.AZUL_OSCURO, (cx, config.ALTO + 236), 306)   # borde de atmósfera
-    pygame.draw.circle(sup, config.TIERRA_AZUL, (cx, config.ALTO + 230), 300)
-    pygame.draw.circle(sup, config.TIERRA_VERDE, (cx - 120, config.ALTO + 10), 60)
-    pygame.draw.circle(sup, config.TIERRA_VERDE, (cx + 150, config.ALTO + 30), 70)
+    # La Tierra con continentes: solo se ve su parte de arriba (horizonte)
+    horizonte = imagen_horizonte(config.ANCHO, 80, 300)
+    sup.blit(horizonte, (0, config.ALTO - 74))
     # Nubes pixeladas que se mueven despacio
     for i in range(6):
         x = int((i * 113 + tiempo * 8) % 560) + 40
@@ -593,3 +668,180 @@ def dibujar_tierra_y_cohete(sup, tiempo):
         radio = 3 + i
         pygame.draw.circle(sup, config.GRIS_CLARO if i % 2 else config.GRIS, (520, y_cohete + 14 + i * 9), radio)
     dibujar_cohete(sup, 520, y_cohete, tiempo=tiempo, fuego=True)
+
+
+def dibujar_parlante(sup, x, y, silenciado):
+    """Ícono de parlante de 11x9 px (esquina de arriba a la derecha). Tecla M = silencio.
+    silenciado=True: con una X roja; si no, con dos ondas de sonido."""
+    color = config.GRIS_CLARO
+    pygame.draw.rect(sup, color, (x, y + 3, 3, 3))                         # caja del parlante
+    pygame.draw.polygon(sup, color, [(x + 3, y + 3), (x + 6, y), (x + 6, y + 8), (x + 3, y + 5)])
+    if silenciado:
+        pygame.draw.line(sup, config.ROJO, (x + 8, y + 2), (x + 11, y + 6))
+        pygame.draw.line(sup, config.ROJO, (x + 11, y + 2), (x + 8, y + 6))
+    else:
+        pygame.draw.line(sup, color, (x + 8, y + 3), (x + 8, y + 5))
+        pygame.draw.line(sup, color, (x + 10, y + 1), (x + 10, y + 7))
+
+
+# ---------------------------------------------------------------------------
+# La Tierra con continentes (v2, punto 16)
+# ---------------------------------------------------------------------------
+# Mapa del mundo de 64 x 32 celdas (proyección "rectangular": cada columna es una
+# longitud, de -180° a 180°, y cada fila una latitud, de 90° a -90°).
+#   "#" = tierra   "." = mar   "*" = hielo (polos y Groenlandia)
+# Se ven América, Europa, África, Asia y Australia.
+MAPA_MUNDO = [
+    "****************************************************************",
+    "****************************************************************",
+    "......................*****..............###..######............",
+    "...#############.....#******......#.###########################.",
+    "..##################..#####......###############################",
+    "..###################..........#.##############################.",
+    ".......##############..........############################.....",
+    ".........##########............########..##############..#......",
+    ".........##########...........########...##############.##......",
+    "...........########...........##.......##.###############.......",
+    "...........#####............##############...#..#########.......",
+    "............####...........################.###.....###.........",
+    ".............###............###############.###..##.............",
+    "...............###...........##########......##.####.#..........",
+    ".................#######....#############....##..###.#..........",
+    ".................########.....#.########.............#..........",
+    ".................########........######...........########......",
+    ".................#########.......######.........................",
+    "..................########.........####.#.............#####.....",
+    "...................######.........#######...........########....",
+    "...................#####..........#####.#..........#########....",
+    "...................####...........####..............########....",
+    "...................###.................................#......#.",
+    "...................###...................................#....#.",
+    "...................##...........................................",
+    "...................#............................................",
+    "................................................................",
+    "................................................................",
+    "****************************************************************",
+    "****************************************************************",
+    "****************************************************************",
+    "****************************************************************",
+]
+ANCHO_MAPA = len(MAPA_MUNDO[0])
+ALTO_MAPA = len(MAPA_MUNDO)
+
+COLORES_MAPA = {"#": config.TIERRA_VERDE, ".": config.TIERRA_AZUL, "*": config.BLANCO}
+# Lo mismo, más oscuro, para el borde de la esfera (así se ve redonda)
+COLORES_MAPA_SOMBRA = {"#": config.VERDE_OSCURO, ".": config.AZUL_OSCURO, "*": config.GRIS_CLARO}
+
+PASOS_GIRO = 32              # la Tierra que gira se guarda en 32 posiciones
+_cache_tierra = {}           # {(radio, paso): imagen} para no recalcular cada cuadro
+_cache_horizonte = {}
+
+
+def celda_mapa(latitud, longitud):
+    """Letra del mapa ("#", "." o "*") en esa latitud y longitud (en radianes)."""
+    fila = int((math.pi / 2 - latitud) / math.pi * ALTO_MAPA)
+    columna = int((longitud + math.pi) / (2 * math.pi) * ANCHO_MAPA) % ANCHO_MAPA
+    fila = max(0, min(ALTO_MAPA - 1, fila))
+    return MAPA_MUNDO[fila][columna]
+
+
+def color_esfera(dx, dy, radio, giro):
+    """Color del punto (dx, dy) de una esfera de 'radio' vista de frente (dx, dy medidos
+    desde el centro). 'giro' (radianes) rota la Tierra. Devuelve None fuera del disco."""
+    distancia2 = dx * dx + dy * dy
+    if distancia2 > radio * radio:
+        return None
+    z = math.sqrt(radio * radio - distancia2)               # "profundidad" del punto
+    latitud = math.asin(max(-1.0, min(1.0, -dy / radio)))
+    longitud = math.atan2(dx, z) + giro
+    longitud = (longitud + math.pi) % (2 * math.pi) - math.pi
+    letra = celda_mapa(latitud, longitud)
+    # Sombra: el Sol ilumina desde arriba a la izquierda y un poco de frente.
+    # 'luz' es cuánto mira ese punto hacia el Sol (producto punto con la dirección de la luz).
+    luz = (-0.45 * dx - 0.45 * dy + 0.77 * z) / radio
+    if luz < 0.12:
+        return COLORES_MAPA_SOMBRA[letra]
+    return COLORES_MAPA[letra]
+
+
+def imagen_tierra(radio, giro=0.0):
+    """Imagen transparente de la Tierra (disco de 'radio' px) con sus continentes y un
+    anillo de atmósfera. Se calcula píxel a píxel UNA vez por tamaño y posición de giro."""
+    radio = max(2, int(radio))
+    paso = int(round(giro / (2 * math.pi) * PASOS_GIRO)) % PASOS_GIRO
+    clave = (radio, paso)
+    if clave in _cache_tierra:
+        return _cache_tierra[clave]
+    giro = paso * 2 * math.pi / PASOS_GIRO
+    lado = radio * 2 + 4
+    imagen = pygame.Surface((lado, lado), pygame.SRCALPHA)
+    centro = radio + 2
+    pygame.draw.circle(imagen, config.CIELO, (centro, centro), radio + 1)     # atmósfera
+    for y in range(-radio, radio + 1):
+        for x in range(-radio, radio + 1):
+            color = color_esfera(x + 0.5, y + 0.5, radio, giro)
+            if color is not None:
+                imagen.set_at((centro + x, centro + y), color)
+    _cache_tierra[clave] = imagen
+    return imagen
+
+
+def dibujar_tierra(sup, cx, cy, radio, giro=0.0):
+    """Dibuja la Tierra con continentes centrada en (cx, cy). giro en radianes."""
+    imagen = imagen_tierra(radio, giro)
+    sup.blit(imagen, imagen.get_rect(center=(int(cx), int(cy))))
+
+
+def imagen_horizonte(ancho, alto, radio, giro=-1.0):
+    """La parte de ARRIBA de una Tierra enorme (el horizonte visto desde la órbita):
+    imagen de 'ancho' x 'alto' px; el punto más alto de la Tierra queda en y = 4.
+    Solo se calcula la franja visible (una esfera de radio 420 entera sería muy lenta).
+    Truco simple: la longitud sale de la x (curvada hacia los bordes) y la latitud de la
+    altura (de 50° N junto al horizonte a 10° S abajo), así se ven continentes conocidos."""
+    clave = (ancho, alto, radio)
+    if clave in _cache_horizonte:
+        return _cache_horizonte[clave]
+    imagen = pygame.Surface((ancho, alto), pygame.SRCALPHA)
+    cx = ancho / 2
+    cy = radio + 4                                           # centro de la esfera (fuera de la imagen)
+    for y in range(alto):
+        dy = y + 0.5 - cy
+        if abs(dy) >= radio:
+            continue
+        media_cuerda = math.sqrt(radio * radio - dy * dy)    # medio ancho de la Tierra en esa fila
+        profundidad = (y - 4) / alto                         # 0 en el horizonte, 1 abajo
+        latitud = math.radians(50 - 60 * max(0.0, profundidad) ** 0.7)
+        for x in range(ancho):
+            dx = x + 0.5 - cx
+            distancia = math.sqrt(dx * dx + dy * dy)
+            if distancia <= radio:
+                u = max(-1.0, min(1.0, dx / media_cuerda))
+                longitud = math.asin(u) * 0.9 + giro
+                longitud = (longitud + math.pi) % (2 * math.pi) - math.pi
+                letra = celda_mapa(latitud, longitud)
+                if distancia > radio - 3:
+                    color = COLORES_MAPA_SOMBRA[letra]       # borde más oscuro
+                else:
+                    color = COLORES_MAPA[letra]
+                imagen.set_at((x, y), color)
+            elif distancia <= radio + 4:
+                imagen.set_at((x, y), config.CIELO)          # atmósfera
+    _cache_horizonte[clave] = imagen
+    return imagen
+
+
+def dibujar_mapa_plano(sup, rect):
+    """Mapa del mundo plano (para la pantalla grande de la sala de control).
+    Cada celda del mapa se pinta como un rectángulo dentro de 'rect'."""
+    r = pygame.Rect(rect)
+    for fila in range(ALTO_MAPA):
+        y0 = r.y + fila * r.h // ALTO_MAPA
+        y1 = r.y + (fila + 1) * r.h // ALTO_MAPA
+        for columna in range(ANCHO_MAPA):
+            letra = MAPA_MUNDO[fila][columna]
+            if letra == ".":
+                continue                                     # el mar es el fondo de la pantalla
+            x0 = r.x + columna * r.w // ANCHO_MAPA
+            x1 = r.x + (columna + 1) * r.w // ANCHO_MAPA
+            color = config.VERDE if letra == "#" else config.GRIS_CLARO
+            pygame.draw.rect(sup, color, (x0, y0, max(1, x1 - x0), max(1, y1 - y0)))

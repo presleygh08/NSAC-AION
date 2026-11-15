@@ -4,11 +4,15 @@
 #     ui["sim"]["resultado"]. Aquí NO se muestra hasta el final.
 #   - Despega el MISMO cohete que el jugador armó en el hangar (hangar.imagen_cohete).
 #   - Primeros DURACION_COMUN segundos iguales para éxito y falla (tensión):
-#     cuenta regresiva, ignición con humo y temblor, despegue y ascenso del cielo al espacio.
-#   - Luego la animación se ramifica según el resultado:
-#       éxito en LEO -> se apaga el motor, se abre la cofia y el satélite queda en órbita
+#     cuenta regresiva, ignición con humo y temblor, despegue y GIRO POR GRAVEDAD
+#     (v2, punto 15): el cohete sube recto, luego se va inclinando hasta ANGULO_FIN_COMUN
+#     grados y su camino se curva, dejando una trayectoria punteada.
+#   - Luego la animación se ramifica según el resultado (todas empiezan con el cohete
+#     inclinado, en la misma posición en que terminó la parte común):
+#       éxito en LEO -> se apaga el motor, el cohete queda horizontal, se abre la cofia y
+#                       el satélite queda dando vueltas a la Tierra en su órbita punteada
 #       Marte / Luna -> viaje de transferencia y llegada: órbita (Marte, Luna) o
-#                       aterrizaje con paracaídas (superficie de Marte)
+#                       aterrizaje con paracaídas y rover (superficie de Marte)
 #       explota      -> el cohete tiembla, se desarma en 3 pedazos y explota
 #       no_llega     -> LEO: el motor se apaga y no alcanza la órbita; lejos: se queda a
 #                       mitad del viaje y se va a la deriva
@@ -18,16 +22,19 @@
 #     Al terminar, app.py pasa a "resultados".
 #   - v2 (punto 10): el cohete despega con paneles y antena PLEGADOS; se abren al llegar a
 #     órbita (separación del satélite en LEO, o al salir hacia Marte / la Luna).
+#   - v2 (D11): pitidos de cuenta regresiva, rugido de ignición y sonido de éxito o falla
+#     (interfaz/sonido.py). Cada sonido suena una sola vez (sim["sonados"]).
 #
+# Ángulos: 0 = cohete vertical, 90 = horizontal apuntando a la derecha.
 # "Cámara": el cohete sube; cuando pasa cierta altura, la cámara lo sigue y el suelo,
-# las nubes y el humo bajan por la pantalla.
+# las nubes y el humo se mueven por la pantalla.
 
 import math
 import random
 
 import pygame
 
-from interfaz import config, estilo, hangar, sprites
+from interfaz import config, estilo, hangar, sonido, sprites
 
 CENTRO_X = config.ANCHO // 2
 Y_SUELO = 290                      # y del suelo en pantalla antes del despegue
@@ -39,10 +46,23 @@ DURACION_DESPLIEGUE = 0.6          # segundos que tardan en abrirse paneles y an
 ALTO_BASE_IMAGEN = hangar.ALTO_IMAGEN - 8     # y de la base del cohete dentro de su imagen
 BAJO_CENTRO = ALTO_BASE_IMAGEN - hangar.ALTO_IMAGEN / 2   # de su centro a su base (px)
 
+# Giro por gravedad
+ACELERACION = 130                  # px/s²: la velocidad del cohete crece con el tiempo
+T_INICIO_GIRO = 0.8                # segundos después del despegue en que empieza a inclinarse
+ANGULO_FIN_COMUN = 60              # inclinación al terminar la parte común (grados)
+CORRIMIENTO_FIN = 80               # px que la base se corre a la izquierda en pantalla al inclinarse
+SUBIDA_FIN = 70                    # px que la base sube en pantalla al inclinarse (así se ve la estela)
+PASO_CALCULO = 1 / 60              # paso de tiempo para calcular la trayectoria
+Y_HORIZONTE = 290                  # y del borde de la Tierra al llegar al espacio
+# Dónde termina la base del cohete en pantalla al final de la parte común
+BASE_FIN = (CENTRO_X - CORRIMIENTO_FIN, Y_SUELO - SUBIDA_LIBRE - SUBIDA_FIN)
+
 
 def nueva_sim(resultado, tiempo):
     """Sub-estado de la simulación."""
-    return {"t0": tiempo, "resultado": resultado, "terminada": False, "imagen": None}
+    sprites.imagen_horizonte(config.ANCHO, 150, 420)     # se calcula ya (tarda ~0,06 s una vez)
+    return {"t0": tiempo, "resultado": resultado, "terminada": False, "imagen": None,
+            "sonados": set()}
 
 
 # ---------------------------------------------------------------------------
@@ -55,6 +75,21 @@ def mezclar(color1, color2, f):
     return (int(color1[0] + (color2[0] - color1[0]) * f),
             int(color1[1] + (color2[1] - color1[1]) * f),
             int(color1[2] + (color2[2] - color1[2]) * f))
+
+
+def suave(f):
+    """Curva suave de 0 a 1 (empieza y termina despacio)."""
+    f = max(0.0, min(1.0, f))
+    return f * f * (3 - 2 * f)
+
+
+def sonar_una_vez(sim, nombre, clave=None):
+    """Reproduce un sonido solo la primera vez que se llama con esa clave."""
+    if clave is None:
+        clave = nombre
+    if clave not in sim["sonados"]:
+        sim["sonados"].add(clave)
+        sonido.tocar(nombre)
 
 
 def tipo_final(resultado):
@@ -100,7 +135,8 @@ def pedazo(imagen, y_arriba, y_abajo):
 
 
 def pegar_centrado(sup, imagen, cx, cy, angulo=0, escala=1.0):
-    """Pega una imagen centrada en (cx, cy), girada 'angulo' grados y escalada (sin suavizar)."""
+    """Pega una imagen centrada en (cx, cy), girada 'angulo' grados (positivo = contra
+    las agujas del reloj, como pygame) y escalada (sin suavizar)."""
     if escala != 1.0:
         ancho = max(1, int(imagen.get_width() * escala))
         alto = max(1, int(imagen.get_height() * escala))
@@ -111,14 +147,46 @@ def pegar_centrado(sup, imagen, cx, cy, angulo=0, escala=1.0):
     sup.blit(imagen, rect)
 
 
-def dibujar_llama(sup, cx, y_base, t, largo=18, escala=1.0):
-    """Llama del motor que parpadea, debajo de (cx, y_base)."""
-    largo = int((largo + 6 * abs(math.sin(t * 25))) * escala)
-    ancho = int(8 * escala)
-    pygame.draw.polygon(sup, config.NARANJA, [(cx - ancho, y_base), (cx + ancho, y_base), (cx, y_base + largo)])
-    pygame.draw.polygon(sup, config.AMARILLO, [(cx - ancho // 2, y_base), (cx + ancho // 2, y_base),
-                                               (cx, y_base + largo * 2 // 3)])
+# --- Cohete inclinado -------------------------------------------------------
 
+def punto_cohete(base, angulo, adelante, costado=0.0):
+    """Punto de la pantalla a 'adelante' px de la base del cohete (hacia la nariz) y
+    'costado' px hacia su derecha, con el cohete inclinado 'angulo' grados."""
+    r = math.radians(angulo)
+    hacia_nariz = (math.sin(r), -math.cos(r))
+    hacia_derecha = (math.cos(r), math.sin(r))
+    return (base[0] + hacia_nariz[0] * adelante + hacia_derecha[0] * costado,
+            base[1] + hacia_nariz[1] * adelante + hacia_derecha[1] * costado)
+
+
+def distancia_desde_base(y_arriba, y_abajo):
+    """Distancia (px) entre la base del cohete y el centro de la franja y_arriba..y_abajo
+    de su imagen. Sirve para ubicar cada pedazo cuando el cohete está inclinado."""
+    return ALTO_BASE_IMAGEN - (y_arriba + y_abajo) / 2
+
+
+def pegar_pedazo(sup, imagen, base, angulo, adelante, costado=0.0, giro_extra=0.0, escala=1.0):
+    """Pega una imagen (el cohete o un pedazo) centrada a 'adelante' px de la base,
+    inclinada igual que el cohete (más 'giro_extra' grados)."""
+    x, y = punto_cohete(base, angulo, adelante * escala, costado * escala)
+    pegar_centrado(sup, imagen, x, y, angulo=-(angulo + giro_extra), escala=escala)
+
+
+def dibujar_llama(sup, cx, y_base, t, largo=18, escala=1.0, angulo=0.0):
+    """Llama del motor que parpadea, saliendo de la base (cx, y_base) hacia atrás
+    del cohete inclinado 'angulo' grados."""
+    largo = (largo + 6 * abs(math.sin(t * 25))) * escala
+    ancho = 8 * escala
+    base = (cx, y_base)
+
+    def p(costado, atras):
+        return punto_cohete(base, angulo, -atras, costado)
+
+    pygame.draw.polygon(sup, config.NARANJA, [p(-ancho, 0), p(ancho, 0), p(0, largo)])
+    pygame.draw.polygon(sup, config.AMARILLO, [p(-ancho / 2, 0), p(ancho / 2, 0), p(0, largo * 2 / 3)])
+
+
+# --- Fondos -----------------------------------------------------------------
 
 def dibujar_estrellas(sup, brillo):
     """Estrellas fijas que aparecen a medida que se sube (brillo 0 a 1)."""
@@ -131,62 +199,111 @@ def dibujar_estrellas(sup, brillo):
 
 
 def dibujar_tierra_curva(sup, y_arriba):
-    """Curva de la Tierra vista desde la órbita, con su atmósfera."""
-    centro = (CENTRO_X, y_arriba + 420)
-    pygame.draw.circle(sup, config.CIELO, centro, 424)
-    pygame.draw.circle(sup, config.TIERRA_AZUL, centro, 420)
-    pygame.draw.ellipse(sup, config.TIERRA_VERDE, (CENTRO_X - 190, y_arriba + 30, 110, 40))
-    pygame.draw.ellipse(sup, config.TIERRA_VERDE, (CENTRO_X + 90, y_arriba + 45, 130, 50))
-    for i in range(4):                                           # nubes (cerca del centro: sobre la Tierra)
-        x = CENTRO_X - 150 + i * 90
-        pygame.draw.rect(sup, config.BLANCO, (x, y_arriba + 22 + (i % 2) * 14, 30, 4))
+    """Curva de la Tierra (con continentes) vista desde la órbita; su borde de arriba
+    queda en y_arriba."""
+    alto = max(1, config.ALTO - int(y_arriba) + 6)
+    imagen = sprites.imagen_horizonte(config.ANCHO, 150, 420)
+    sup.blit(imagen, (0, int(y_arriba) - 4), (0, 0, config.ANCHO, alto))
 
 
-def dibujar_dialogo(sup, frase):
+def fondo_espacio(sup):
+    sup.fill(config.AZUL_NOCHE)
+    dibujar_estrellas(sup, 1.0)
+
+
+def dibujar_dialogo(sup, frase, expresion="neutral"):
+    """Cuadro de AION abajo, con su expresión (v2, D5)."""
     estilo.panel(sup, DIALOGO)
-    sprites.dibujar_npc(sup, DIALOGO.right - 42, DIALOGO.y + 10)
+    sprites.dibujar_npc(sup, DIALOGO.right - 42, DIALOGO.y + 10, expresion)
     estilo.texto_multilinea(sup, frase, DIALOGO.x + 10, DIALOGO.y + 10, DIALOGO.w - 60,
                             config.LETRA_PEQUENA)
 
 
 # ---------------------------------------------------------------------------
-# Parte común: cuenta regresiva, ignición, despegue y ascenso
+# Parte común: cuenta regresiva, ignición, despegue y giro por gravedad
 # ---------------------------------------------------------------------------
 
-def altura(t):
-    """Cuántos px subió el cohete en el segundo t (acelera después del despegue)."""
-    if t < T_DESPEGUE:
+def angulo_ascenso(t):
+    """Inclinación del cohete (grados) en el segundo t: 0 hasta T_INICIO_GIRO después
+    del despegue y luego sube suavemente hasta ANGULO_FIN_COMUN al final de la parte común."""
+    vuelo = t - T_DESPEGUE
+    if vuelo < T_INICIO_GIRO:
         return 0.0
-    return 65 * (t - T_DESPEGUE) ** 2
+    duracion_giro = config.DURACION_COMUN - T_DESPEGUE - T_INICIO_GIRO
+    return ANGULO_FIN_COMUN * suave((vuelo - T_INICIO_GIRO) / duracion_giro)
+
+
+def trayectoria(t):
+    """Lista de posiciones (x, h) de la base del cohete desde el despegue hasta el
+    segundo t, en px "del mundo" (x hacia la derecha, h = altura sobre la plataforma).
+    Se calcula paso a paso: la velocidad crece y apunta hacia donde mira el cohete,
+    por eso el camino se curva cuando el cohete se inclina."""
+    puntos = [(0.0, 0.0)]
+    x = 0.0
+    h = 0.0
+    pasos = int(max(0.0, t - T_DESPEGUE) / PASO_CALCULO)
+    for i in range(pasos):
+        tiempo = T_DESPEGUE + i * PASO_CALCULO
+        velocidad = ACELERACION * (tiempo - T_DESPEGUE)
+        angulo = math.radians(angulo_ascenso(tiempo))
+        x = x + velocidad * math.sin(angulo) * PASO_CALCULO
+        h = h + velocidad * math.cos(angulo) * PASO_CALCULO
+        puntos.append((x, h))
+    return puntos
+
+
+ALTURA_FIN = trayectoria(config.DURACION_COMUN)[-1][1]     # altura al final de la parte común
+
+
+def camara(t, x, h):
+    """Cuánto se movió la cámara (cam_x, cam_y) para seguir al cohete, y dónde queda la
+    base del cohete en pantalla."""
+    giro = angulo_ascenso(t) / ANGULO_FIN_COMUN        # 0 = vertical, 1 = inclinación final
+    base_x = CENTRO_X - CORRIMIENTO_FIN * giro
+    cam_x = x - (base_x - CENTRO_X)
+    cam_y = max(0.0, h - SUBIDA_LIBRE - SUBIDA_FIN * giro)
+    base = (base_x, Y_SUELO - h + cam_y)
+    return cam_x, cam_y, base
+
+
+def a_pantalla(x, h, cam_x, cam_y):
+    """De coordenadas del mundo (x, altura) a la pantalla."""
+    return CENTRO_X + x - cam_x, Y_SUELO - h + cam_y
 
 
 def parte_comun(sup, ui, textos, t):
     imagen, _ = preparar_imagen(ui)
-    h = altura(t)
-    camara = max(0.0, h - SUBIDA_LIBRE)          # cuánto bajó todo lo demás
-    espacio = min(1.0, camara / 320)             # 0 = cielo, 1 = espacio
+    puntos = trayectoria(t)
+    x, h = puntos[-1]
+    cam_x, cam_y, base = camara(t, x, h)
+    angulo = angulo_ascenso(t)
+    espacio = min(1.0, cam_y / (ALTURA_FIN - SUBIDA_LIBRE - SUBIDA_FIN)) ** 0.8   # 0 = cielo, 1 = espacio
 
     sup.fill(mezclar(config.CIELO, config.AZUL_NOCHE, espacio))
     dibujar_estrellas(sup, (espacio - 0.4) / 0.6)
+    # La Tierra aparece abajo cuando ya casi estamos en el espacio
+    if espacio > 0.55:
+        y_borde = config.ALTO + 20 - (config.ALTO + 20 - Y_HORIZONTE) * suave((espacio - 0.55) / 0.45)
+        dibujar_tierra_curva(sup, y_borde)
 
-    # Nubes (quedan atrás mientras se sube)
-    for i in range(5):
-        y = 60 + i * 45 + camara * 1.2 - 120
+    # Nubes (quedan atrás mientras se sube; arriba, en el espacio, ya no hay)
+    for i in range(5 if espacio < 0.5 else 0):
+        y = 60 + i * 45 + cam_y * 1.2 - 120
         if -10 < y < config.ALTO:
-            x = (i * 137) % 560 + 20
-            pygame.draw.rect(sup, config.BLANCO, (x, int(y), 46, 6))
-            pygame.draw.rect(sup, config.BLANCO, (x + 10, int(y) - 4, 24, 4))
+            xn = ((i * 137 - cam_x * 1.2) % 700) - 40
+            pygame.draw.rect(sup, config.BLANCO, (int(xn), int(y), 46, 6))
+            pygame.draw.rect(sup, config.BLANCO, (int(xn) + 10, int(y) - 4, 24, 4))
 
     temblor = 0
     if T_IGNICION <= t < T_DESPEGUE + 0.8:
         temblor = 1 if int(t * 30) % 2 == 0 else -1
 
-    # Suelo, plataforma y torre (bajan con la cámara)
-    y_suelo = Y_SUELO + camara
+    # Suelo, plataforma y torre (se mueven con la cámara)
+    x_plataforma, y_suelo = a_pantalla(0, 0, cam_x, cam_y)
     if y_suelo < config.ALTO:
         pygame.draw.rect(sup, config.TIERRA_VERDE, (0, int(y_suelo), config.ANCHO, config.ALTO))
-        pygame.draw.rect(sup, config.GRIS_OSCURO, (CENTRO_X - 50, int(y_suelo), 100, 6))
-        x_torre = CENTRO_X - 75
+        pygame.draw.rect(sup, config.GRIS_OSCURO, (int(x_plataforma) - 50, int(y_suelo), 100, 6))
+        x_torre = int(x_plataforma) - 75
         sprites.dibujar_torre(sup, x_torre, int(y_suelo), 190)
         # Brazos de la torre: se apartan al despegar
         largo = 40 if t < T_DESPEGUE else max(0, int(40 - (t - T_DESPEGUE) * 80))
@@ -194,30 +311,36 @@ def parte_comun(sup, ui, textos, t):
             if largo > 0:
                 pygame.draw.rect(sup, config.GRIS_CLARO, (x_torre + 6, y_brazo, largo, 3))
 
-    # Estela de humo detrás del cohete
-    y_base = Y_SUELO - h + camara                # base del cohete en pantalla
     if t >= T_IGNICION:
-        azar = random.Random(4)
-        for k in range(14):
-            alt = k * 26                          # altura a la que quedó esa nube
-            if alt > h:
-                break
-            y = Y_SUELO - alt + camara + 6
-            if -20 < y < config.ALTO + 20:
-                radio = 6 + min(14, (h - alt) * 0.08) + azar.random() * 3
-                pygame.draw.circle(sup, config.GRIS_CLARO, (CENTRO_X + azar.randint(-6, 6), int(y)), int(radio))
         # Humo grande en la plataforma
         if y_suelo < config.ALTO + 20:
             crecer = min(1.0, (t - T_IGNICION) / 1.5)
             for lado in (-1, 1):
                 for j in range(3):
-                    x = CENTRO_X + lado * (20 + j * 22 * crecer)
-                    pygame.draw.circle(sup, config.GRIS_CLARO, (int(x), int(y_suelo) - 4), int(8 + 10 * crecer))
+                    xh = x_plataforma + lado * (20 + j * 22 * crecer)
+                    pygame.draw.circle(sup, config.GRIS_CLARO, (int(xh), int(y_suelo) - 4), int(8 + 10 * crecer))
+        # Estela de humo cerca del suelo (cada vez más ancha) ...
+        azar = random.Random(4)
+        for k in range(0, len(puntos), 8):
+            px, ph = puntos[k]
+            if ph > 260 or espacio > 0.6:
+                break
+            sx, sy = a_pantalla(px, ph, cam_x, cam_y)
+            edad = (len(puntos) - k) * PASO_CALCULO
+            radio = 5 + min(14, edad * 6) + azar.random() * 3
+            if -20 < sy < config.ALTO + 20:
+                pygame.draw.circle(sup, config.GRIS_CLARO, (int(sx), int(sy) + 6), int(radio))
+        # ... y la trayectoria punteada (se ve curvarse con el giro por gravedad)
+        for k in range(0, len(puntos), 4):
+            sx, sy = a_pantalla(puntos[k][0], puntos[k][1], cam_x, cam_y)
+            if 0 <= sx < config.ANCHO and 0 <= sy < config.ALTO and (k // 4) % 2 == 0:
+                pygame.draw.rect(sup, config.AMARILLO, (int(sx) - 1, int(sy) - 1, 3, 3))
 
-    # El cohete y su llama
+    # El cohete (inclinado) y su llama
+    base_temblor = (base[0] + temblor, base[1])
     if t >= T_IGNICION:
-        dibujar_llama(sup, CENTRO_X + temblor, int(y_base), t)
-    sup.blit(imagen, (CENTRO_X - imagen.get_width() // 2 + temblor, int(y_base) - ALTO_BASE_IMAGEN))
+        dibujar_llama(sup, base_temblor[0], base_temblor[1], t, angulo=angulo)
+    pegar_pedazo(sup, imagen, base_temblor, angulo, BAJO_CENTRO)
 
     # Cuenta regresiva
     cuenta = textos["simulacion"]["cuenta"]
@@ -228,76 +351,65 @@ def parte_comun(sup, ui, textos, t):
 
 
 # ---------------------------------------------------------------------------
-# Ramas
+# Ramas en LEO y explosión (empiezan con el cohete en BASE_FIN, inclinado)
 # ---------------------------------------------------------------------------
 
-Y_BASE_EN_ORBITA = Y_SUELO - SUBIDA_LIBRE      # donde quedó la base del cohete al terminar la parte común
-
-
-def fondo_espacio(sup):
-    sup.fill(config.AZUL_NOCHE)
-    dibujar_estrellas(sup, 1.0)
+T_MECO = 0.6            # se apaga el motor principal
+T_SEPARA = 1.0          # se separan cofia, satélite y etapa
+T_ABRE = 1.6            # el satélite abre paneles y antena
+T_VISTA_ORBITA = 2.6    # cambia a la vista de la Tierra entera con la órbita
 
 
 def final_exito_leo(sup, ui, t):
-    """Éxito en LEO: motor apagado, cofia que se abre y satélite que queda en órbita."""
+    """Éxito en LEO: el cohete termina de inclinarse hasta quedar horizontal (inserción en
+    órbita), se apaga el motor, se abre la cofia y el satélite se libera. Luego, vista
+    de la Tierra entera con el satélite dando vueltas en su órbita punteada."""
+    if t >= T_VISTA_ORBITA:
+        orbita(sup, ui, "LEO", t - T_VISTA_ORBITA, nave(ui))
+        return
     imagen, m = preparar_imagen(ui)
     fondo_espacio(sup)
-    dibujar_tierra_curva(sup, 250 - int(min(t, 1.0) * 30))
-    # Órbita punteada alrededor de la Tierra
-    if t > 1.6:
-        for i in range(0, 40):
-            angulo = math.pi + i * math.pi / 40
-            x = CENTRO_X + math.cos(angulo) * 300
-            y = 400 + math.sin(angulo) * 260
-            if i % 2 == 0:
-                pygame.draw.rect(sup, config.CIAN, (int(x), int(y), 2, 2))
+    dibujar_tierra_curva(sup, Y_HORIZONTE + t * 8)              # la Tierra se aleja despacio
+    angulo = ANGULO_FIN_COMUN + (90 - ANGULO_FIN_COMUN) * suave(t / 1.0)
+    base = (BASE_FIN[0] + t * 12, BASE_FIN[1] - t * 6)
+    if t < T_MECO:
+        dibujar_llama(sup, base[0], base[1], t, 12, angulo=angulo)
+    if t < T_SEPARA:
+        pegar_pedazo(sup, imagen, base, angulo, BAJO_CENTRO)
+        return
 
-    y_base = Y_BASE_EN_ORBITA - t * 12                       # sigue subiendo despacio
-    if t < 0.6:
-        dibujar_llama(sup, CENTRO_X, int(y_base), t, 12)
-    y_img = y_base - ALTO_BASE_IMAGEN                         # y de la imagen en pantalla
-
-    # Pedazos de la imagen: cofia (nariz), satélite (módulo de carga) y la etapa (tanque + motor).
-    # El satélite abre sus paneles y su antena ya liberado en órbita (desde t = 1.6).
+    # Pedazos: cofia (en dos mitades), satélite y la etapa (tanque + motor).
+    separa = t - T_SEPARA
     cofia = pedazo(imagen, m.y_nariz - 18, m.y_carga)
-    apertura = (t - 1.6) / DURACION_DESPLIEGUE
-    satelite = pedazo(imagen_abierta(ui, apertura), m.y_carga - 18, m.y_franja)
     etapa = pedazo(imagen, m.y_franja, hangar.ALTO_IMAGEN)
-
-    separa = max(0.0, t - 1.0)                                # 0 hasta el segundo 1
-    # Etapa: se queda atrás y baja
-    pegar_centrado(sup, etapa, CENTRO_X - separa * 10, y_img + m.y_franja + etapa.get_height() / 2 + separa * 40,
-                   angulo=separa * 12)
-    # Satélite: sube un poco y se va a la derecha
-    sx = CENTRO_X + separa * 50
-    sy = y_img + m.y_carga - 18 + satelite.get_height() / 2 - separa * 25
-    pegar_centrado(sup, satelite, sx, sy)
-    sy = sy + 9                                               # centro del módulo de carga
-    # Si el satélite no lleva potencia (Easy), sus paneles tipo CubeSat se abren igual
-    if t > 1.6 and "potencia" not in ui["lab"]["partes"]:
-        largo = int(min(1.0, (t - 1.6) / 0.6) * 18)
-        pygame.draw.rect(sup, config.AZUL, (int(sx) - 14 - largo, int(sy) - 2, largo, 5))
-        pygame.draw.rect(sup, config.AZUL, (int(sx) + 14, int(sy) - 2, largo, 5))
-    # Cofia: se abre en dos mitades que se alejan girando
+    satelite = nave(ui, (t - T_ABRE) / DURACION_DESPLIEGUE)    # abre paneles y antena ya libre
+    # La etapa se queda atrás y cae hacia la Tierra
+    pegar_pedazo(sup, etapa, base, angulo, distancia_desde_base(m.y_franja, hangar.ALTO_IMAGEN) - separa * 30,
+                 separa * 14, giro_extra=separa * 12)
+    # El satélite sigue adelante
+    pegar_pedazo(sup, satelite, base, angulo, distancia_desde_base(m.y_carga - 18, m.y_franja) + separa * 22,
+                 -separa * 3)
+    # La cofia se abre en dos mitades que se alejan girando
     mitad = cofia.get_width() // 2
     izquierda = cofia.subsurface((0, 0, mitad, cofia.get_height())).copy()
     derecha = cofia.subsurface((mitad, 0, mitad, cofia.get_height())).copy()
-    cy = y_img + m.y_nariz - 18 + cofia.get_height() / 2 - separa * 20
-    pegar_centrado(sup, izquierda, CENTRO_X - mitad / 2 - separa * 40, cy, angulo=separa * 40)
-    pegar_centrado(sup, derecha, CENTRO_X + mitad / 2 + separa * 40, cy, angulo=-separa * 40)
+    adelante = distancia_desde_base(m.y_nariz - 18, m.y_carga) + separa * 30
+    pegar_pedazo(sup, izquierda, base, angulo, adelante, -mitad / 2 - separa * 40, giro_extra=-separa * 40)
+    pegar_pedazo(sup, derecha, base, angulo, adelante, mitad / 2 + separa * 40, giro_extra=separa * 40)
 
 
 def final_explota(sup, ui, t):
     """El cohete tiembla, se desarma en 3 pedazos y explota."""
     imagen, m = preparar_imagen(ui)
     fondo_espacio(sup)
-    y_img = Y_BASE_EN_ORBITA - ALTO_BASE_IMAGEN
+    dibujar_tierra_curva(sup, Y_HORIZONTE)
+    angulo = ANGULO_FIN_COMUN
     T_ROTURA = 0.8
     if t < T_ROTURA:
-        temblor = int(math.sin(t * 90) * 3)
-        dibujar_llama(sup, CENTRO_X + temblor, Y_BASE_EN_ORBITA, t)
-        sup.blit(imagen, (CENTRO_X - imagen.get_width() // 2 + temblor, y_img))
+        temblor = math.sin(t * 90) * 3
+        base = punto_cohete(BASE_FIN, angulo, 0, temblor)
+        dibujar_llama(sup, base[0], base[1], t, angulo=angulo)
+        pegar_pedazo(sup, imagen, base, angulo, BAJO_CENTRO, giro_extra=temblor)
         if int(t * 8) % 2 == 0:                                # alarma roja que parpadea
             alarma = pygame.Surface((config.ANCHO, config.ALTO))
             alarma.set_alpha(60)
@@ -308,18 +420,18 @@ def final_explota(sup, ui, t):
     d = t - T_ROTURA
     # Tres pedazos: arriba (nariz + carga), tanque y motor, cada uno con su velocidad y giro
     pedazos = [
-        (pedazo(imagen, m.y_nariz - 18, m.y_franja), -35, -55, 160),
-        (pedazo(imagen, m.y_franja, m.y_motor), 30, -10, -120),
-        (pedazo(imagen, m.y_motor, hangar.ALTO_IMAGEN), -5, 50, 90),
+        (m.y_nariz - 18, m.y_franja, -35, -55, 160),
+        (m.y_franja, m.y_motor, 30, -10, -120),
+        (m.y_motor, hangar.ALTO_IMAGEN, -5, 50, 90),
     ]
-    arriba = m.y_nariz - 18
-    for img, vx, vy, giro in pedazos:
-        cy0 = y_img + arriba + img.get_height() / 2
-        arriba = arriba + img.get_height()
-        pegar_centrado(sup, img, CENTRO_X + vx * d, cy0 + vy * d + 20 * d * d, angulo=giro * d)
+    for y_arriba, y_abajo, vx, vy, giro in pedazos:
+        img = pedazo(imagen, y_arriba, y_abajo)
+        x0, y0 = punto_cohete(BASE_FIN, angulo, distancia_desde_base(y_arriba, y_abajo))
+        pegar_centrado(sup, img, x0 + vx * d, y0 + vy * d + 20 * d * d, angulo=-angulo + giro * d)
 
     # Bola de fuego y escombros
-    centro = (CENTRO_X, int(y_img + m.y_franja))
+    cx, cy = punto_cohete(BASE_FIN, angulo, ALTO_BASE_IMAGEN - m.y_franja)
+    centro = (int(cx), int(cy))
     radio = int(10 + d * 70)
     if radio < 110:
         pygame.draw.circle(sup, config.ROJO, centro, radio)
@@ -327,15 +439,15 @@ def final_explota(sup, ui, t):
         pygame.draw.circle(sup, config.AMARILLO, centro, int(radio * 0.4))
     else:
         for i in range(8):                                     # humo que queda
-            angulo = i * 0.8
-            pygame.draw.circle(sup, config.GRIS, (int(centro[0] + math.cos(angulo) * 50),
-                                                  int(centro[1] + math.sin(angulo) * 40 - d * 10)), 18)
+            a = i * 0.8
+            pygame.draw.circle(sup, config.GRIS, (int(centro[0] + math.cos(a) * 50),
+                                                  int(centro[1] + math.sin(a) * 40 - d * 10)), 18)
     azar = random.Random(5)
     for _ in range(18):
-        angulo = azar.random() * 6.28
+        a = azar.random() * 6.28
         velocidad = 50 + azar.random() * 80
-        x = centro[0] + math.cos(angulo) * velocidad * d
-        y = centro[1] + math.sin(angulo) * velocidad * d + 15 * d * d
+        x = centro[0] + math.cos(a) * velocidad * d
+        y = centro[1] + math.sin(a) * velocidad * d + 15 * d * d
         pygame.draw.rect(sup, config.GRIS_CLARO, (int(x), int(y), 4, 3))
     # Destello blanco los primeros 0.4 s
     if d < 0.4:
@@ -345,56 +457,76 @@ def final_explota(sup, ui, t):
         sup.blit(destello, (0, 0))
 
 
+# --- no_llega en LEO: un pequeño diagrama -------------------------------------
+INICIO_DIAGRAMA = (60.0, 250.0)     # donde empieza el cohete (pequeño) en el diagrama
+VELOCIDAD_DIAGRAMA = 120            # px/s al empezar, en la dirección de ANGULO_FIN_COMUN
+EMPUJE_DIAGRAMA = 60                # px/s² mientras el motor funciona
+GRAVEDAD_DIAGRAMA = 35              # px/s² hacia abajo
+COMPRESION_X = 0.6                  # el diagrama se "aprieta" a lo ancho para que quepa
+T_CORTE = 0.9                       # el motor se apaga antes de tiempo
+Y_ORBITA = 56                       # línea de la órbita objetivo
+
+
+def vuelo_corto(t):
+    """Trayectoria del cohete que no llega: lista de (x, y, angulo) en pantalla.
+    Mientras el motor funciona acelera; luego solo lo frena la gravedad y cae."""
+    a = math.radians(ANGULO_FIN_COMUN)
+    vx = VELOCIDAD_DIAGRAMA * math.sin(a)
+    vy = -VELOCIDAD_DIAGRAMA * math.cos(a)
+    x, y = INICIO_DIAGRAMA
+    puntos = []
+    for i in range(int(t / PASO_CALCULO) + 1):
+        tiempo = i * PASO_CALCULO
+        if tiempo < T_CORTE:
+            rapidez = math.hypot(vx, vy)
+            vx = vx + vx / rapidez * EMPUJE_DIAGRAMA * PASO_CALCULO
+            vy = vy + vy / rapidez * EMPUJE_DIAGRAMA * PASO_CALCULO
+        vy = vy + GRAVEDAD_DIAGRAMA * PASO_CALCULO
+        x = x + vx * PASO_CALCULO
+        y = y + vy * PASO_CALCULO
+        # El cohete mira hacia donde se mueve (en el diagrama apretado)
+        angulo = math.degrees(math.atan2(vx * COMPRESION_X, -vy))
+        puntos.append((INICIO_DIAGRAMA[0] + (x - INICIO_DIAGRAMA[0]) * COMPRESION_X, y, angulo))
+    return puntos
+
+
 def final_no_llega(sup, ui, textos, t):
     """El motor se apaga antes de tiempo: el cohete no alcanza la órbita objetivo y cae.
-    Es un pequeño diagrama: se ve la órbita a la que debía llegar y lo que le faltó."""
+    La cámara se aleja y se ve el camino curvo y lo que le faltó."""
     imagen, _ = preparar_imagen(ui)
     fondo_espacio(sup)
     dibujar_tierra_curva(sup, 300)
     # Órbita objetivo: línea punteada arriba
-    Y_ORBITA = 56
     for x in range(20, config.ANCHO - 20, 12):
         pygame.draw.rect(sup, config.CIAN, (x, Y_ORBITA, 6, 2))
     estilo.texto(sup, textos["simulacion"]["orbita_objetivo"], 24, Y_ORBITA - 14, config.LETRA_PEQUENA, config.CIAN)
 
-    # Se aleja la cámara: el cohete se achica a la mitad en 0.4 s
-    escala = 1.0 - 0.5 * min(1.0, t / 0.4)
-    # Altura: sube más despacio cada vez, llega a su punto más alto y cae
-    T_CORTE = 0.8          # el motor se apaga
-    T_CIMA = 1.6
-    y_inicio = 230
-    y_cima = 120           # nunca llega a la órbita
-    if t < T_CIMA:
-        f = t / T_CIMA
-        y = y_inicio + (y_cima - y_inicio) * (1 - (1 - f) ** 2)
-    else:
-        y = y_cima + 90 * (t - T_CIMA) ** 2
-    x = CENTRO_X + t * 30
-    angulo = 0 if t < T_CIMA else -(t - T_CIMA) * 60     # se inclina al caer
+    puntos = vuelo_corto(t)
+    x, y, angulo = puntos[-1]
+    # Los primeros 0,5 s la cámara se aleja: el cohete pasa de su tamaño y lugar al diagrama
+    f = suave(t / 0.5)
+    escala = 1.0 - 0.6 * f
+    base = (BASE_FIN[0] + (x - BASE_FIN[0]) * f, BASE_FIN[1] + (y - BASE_FIN[1]) * f)
+    angulo = ANGULO_FIN_COMUN + (angulo - ANGULO_FIN_COMUN) * f
 
     # Trayectoria (puntos que va dejando)
-    for k in range(int(t / 0.08)):
-        tk = k * 0.08
-        if tk < T_CIMA:
-            yk = y_inicio + (y_cima - y_inicio) * (1 - (1 - tk / T_CIMA) ** 2)
-        else:
-            yk = y_cima + 90 * (tk - T_CIMA) ** 2
-        pygame.draw.rect(sup, config.GRIS_CLARO, (int(CENTRO_X + tk * 30), int(yk + BAJO_CENTRO * 0.5), 2, 2))
-    # Lo que le faltó: flecha roja punteada de la cima a la órbita
-    if t >= T_CIMA:
-        x_cima = CENTRO_X + T_CIMA * 30
-        y_punta = int(y_cima - BAJO_CENTRO * 0.5)              # punta del cohete en la cima
-        for yy in range(Y_ORBITA + 4, y_punta, 8):
-            pygame.draw.rect(sup, config.ROJO, (int(x_cima), yy, 2, 4))
+    for k in range(0, len(puntos), 5):
+        if (k // 5) % 2 == 0:
+            pygame.draw.rect(sup, config.GRIS_CLARO, (int(puntos[k][0]), int(puntos[k][1]), 2, 2))
+    # Lo que le faltó: línea roja punteada de la cima a la órbita
+    cima = min(puntos, key=lambda p: p[1])
+    if cima is not puntos[-1]:
+        for yy in range(Y_ORBITA + 4, int(cima[1]) - 4, 8):
+            pygame.draw.rect(sup, config.ROJO, (int(cima[0]), yy, 2, 4))
 
     # Llama que "tose" antes de apagarse
     if t < T_CORTE and int(t * 12) % 3 != 0:
-        dibujar_llama(sup, int(x), int(y + BAJO_CENTRO * escala), t, 10, escala)
-    pegar_centrado(sup, imagen, x, y, angulo=angulo, escala=escala)
+        dibujar_llama(sup, base[0], base[1], t, 10, escala, angulo)
+    pegar_pedazo(sup, imagen, base, angulo, BAJO_CENTRO, escala=escala)
 
 
 # ---------------------------------------------------------------------------
-# Destinos lejanos (Marte, Luna) y fallas genéricas
+# Destinos lejanos (Marte, Luna), órbitas y fallas genéricas
 # ---------------------------------------------------------------------------
 
 T_VIAJE = 1.2                       # segundos del viaje de transferencia
@@ -403,14 +535,16 @@ POS_DESTINO_VIAJE = (540, 140)
 CONTROL_ARCO = (300, 30)            # "tira" del arco hacia arriba
 CENTRO_PLANETA = (CENTRO_X, 150)    # planeta grande al llegar
 RADIO_PLANETA = 62
+ANGULO_LLEGADA = math.pi * 0.9      # donde entra la nave en su órbita
 
 
 def es_marte(destino):
     return destino in ("órbita de Marte", "superficie de Marte")
 
 
-def dibujar_planeta(sup, destino, cx, cy, r):
-    """Planeta simple: Marte (rojo con casquete polar), la Luna (gris con cráteres) o la Tierra."""
+def dibujar_planeta(sup, destino, cx, cy, r, giro=0.0):
+    """Planeta: Marte (rojo con casquete polar), la Luna (gris con cráteres) o la Tierra
+    (con continentes, ver sprites.dibujar_tierra)."""
     cx, cy, r = int(cx), int(cy), int(r)
     if es_marte(destino):
         pygame.draw.circle(sup, config.OXIDO, (cx, cy), r)
@@ -422,9 +556,7 @@ def dibujar_planeta(sup, destino, cx, cy, r):
         for dx, dy, rr in ((-0.35, -0.2, 0.18), (0.3, 0.25, 0.22), (0.15, -0.45, 0.1), (-0.2, 0.45, 0.12)):
             pygame.draw.circle(sup, (130, 130, 128), (cx + int(dx * r), cy + int(dy * r)), max(1, int(rr * r)))
     else:
-        pygame.draw.circle(sup, config.TIERRA_AZUL, (cx, cy), r)
-        pygame.draw.circle(sup, config.TIERRA_VERDE, (cx - r // 3, cy - r // 5), max(1, r // 3))
-        pygame.draw.circle(sup, config.TIERRA_VERDE, (cx + r // 3, cy + r // 3), max(1, r // 4))
+        sprites.dibujar_tierra(sup, cx, cy, r, giro)
 
 
 def punto_arco(s):
@@ -435,6 +567,17 @@ def punto_arco(s):
     return x, y
 
 
+def paneles_cubesat(ui, imagen, m, apertura):
+    """Si la nave no lleva el recurso potencia (Easy), igual abre dos paneles pequeños
+    tipo CubeSat. Dibuja sobre 'imagen' (la nave recortada)."""
+    if "potencia" in ui["lab"]["partes"] or apertura <= 0:
+        return
+    largo = int(18 * apertura)
+    y = 18 + 20 - 2              # mitad del módulo de carga (la nave empieza 18 px sobre él)
+    pygame.draw.rect(imagen, config.AZUL, (m.izq - largo, y, largo, 5))
+    pygame.draw.rect(imagen, config.AZUL, (m.der, y, largo, 5))
+
+
 def nave(ui, apertura=1.0):
     """La nave = el módulo de carga del cohete armado (con paneles, antena, caja...).
     apertura: cuánto están abiertos los paneles y la antena (1 = del todo, ya en órbita)."""
@@ -443,7 +586,9 @@ def nave(ui, apertura=1.0):
     paso = round(max(0.0, min(1.0, apertura)) * 4)
     clave = "nave_" + str(paso)
     if sim.get(clave) is None:
-        sim[clave] = pedazo(imagen_abierta(ui, paso / 4), m.y_carga - 18, m.y_franja)
+        imagen = pedazo(imagen_abierta(ui, paso / 4), m.y_carga - 18, m.y_franja)
+        paneles_cubesat(ui, imagen, m, paso / 4)
+        sim[clave] = imagen
     return sim[clave]
 
 
@@ -514,18 +659,31 @@ def posicion_en_orbita(angulo, radio_x=150, radio_y=55):
     return (CENTRO_PLANETA[0] + math.cos(angulo) * radio_x, CENTRO_PLANETA[1] + math.sin(angulo) * radio_y)
 
 
+def dibujar_orbita_punteada(sup, angulo_nave, gira):
+    """Órbita elíptica punteada: tenue completa y, si la nave está girando, en cian brillante
+    el tramo que ya recorrió (así se ve cómo la órbita "se dibuja")."""
+    for i in range(0, 60, 2):
+        angulo = i * math.pi / 30
+        x, y = posicion_en_orbita(angulo)
+        recorrido = (angulo - ANGULO_LLEGADA) % (2 * math.pi)
+        if gira and recorrido <= (angulo_nave - ANGULO_LLEGADA):
+            color = config.CIAN
+        else:
+            color = config.AZUL_PANEL
+        pygame.draw.rect(sup, color, (int(x), int(y), 2, 2))
+
+
 def orbita(sup, ui, destino, ta, imagen_nave, gira=True, deriva=0.0):
     """Planeta grande con la nave en órbita elíptica (detrás del planeta en la mitad de arriba).
+    En LEO el planeta es la Tierra entera con continentes, girando.
     gira=False: la nave se detiene delante del planeta y queda a la deriva 'deriva' segundos:
     se aleja despacio y da vueltas sobre sí misma (ya no la controla nadie).
     Devuelve la posición de la nave."""
     fondo_espacio(sup)
     if destino == "órbita lunar":                                # la Tierra asoma en una esquina
         dibujar_planeta(sup, "LEO", 560, 40, 14)
-    for i in range(0, 60, 2):                                     # órbita punteada
-        x, y = posicion_en_orbita(i * math.pi / 30)
-        pygame.draw.rect(sup, config.CIAN, (int(x), int(y), 2, 2))
-    angulo = math.pi * 0.9 + (ta * 0.9 if gira else 0)
+    angulo = ANGULO_LLEGADA + (ta * 0.9 if gira else 0)
+    dibujar_orbita_punteada(sup, angulo, gira)
     x, y = posicion_en_orbita(angulo)
     x = x - deriva * 8                                           # a la deriva, alejándose
     y = y + deriva * 4
@@ -533,10 +691,7 @@ def orbita(sup, ui, destino, ta, imagen_nave, gira=True, deriva=0.0):
     giro = deriva * 25                                           # vueltas lentas a la deriva
     if detras:
         pegar_centrado(sup, imagen_nave, x, y, angulo=giro, escala=0.5)
-    if destino == "LEO":
-        dibujar_tierra_curva(sup, 230)
-    else:
-        dibujar_planeta(sup, destino, CENTRO_PLANETA[0], CENTRO_PLANETA[1], RADIO_PLANETA)
+    dibujar_planeta(sup, destino, CENTRO_PLANETA[0], CENTRO_PLANETA[1], RADIO_PLANETA, ta * 0.4)
     if not detras:
         pegar_centrado(sup, imagen_nave, x, y, angulo=giro, escala=0.5)
     return x, y
@@ -552,14 +707,30 @@ def final_exito_lejos(sup, ui, t, destino):
         aterrizaje(sup, ui, ta)
         return
     x, y = orbita(sup, ui, destino, ta, nave(ui))
-    if ta < 0.8:                                                 # encendido de frenado
+    if ta < 0.8:                                                 # encendido de frenado (inserción)
         largo = int(10 + 4 * math.sin(ta * 30))
         pygame.draw.polygon(sup, config.NARANJA, [(int(x) + 12, int(y) - 3), (int(x) + 12, int(y) + 3),
                                                   (int(x) + 12 + largo, int(y))])
 
 
+def dibujar_rover(sup, x, y_suelo, t):
+    """Rover de 6 ruedas visto de costado (pixel art). x = centro, y_suelo = donde apoya."""
+    x = int(x)
+    for dx in (-8, 0, 8):                                         # ruedas que giran
+        pygame.draw.circle(sup, config.NEGRO, (x + dx, y_suelo - 3), 3)
+        if int(t * 8) % 2 == 0:
+            pygame.draw.rect(sup, config.GRIS, (x + dx - 1, y_suelo - 4, 2, 2))
+    pygame.draw.rect(sup, config.GRIS_OSCURO, (x - 10, y_suelo - 8, 20, 2))     # suspensión
+    pygame.draw.rect(sup, config.BLANCO, (x - 9, y_suelo - 13, 18, 5))         # cuerpo
+    pygame.draw.rect(sup, config.GRIS_CLARO, (x - 9, y_suelo - 13, 18, 1))
+    pygame.draw.rect(sup, config.GRIS_CLARO, (x + 5, y_suelo - 21, 2, 8))      # mástil
+    pygame.draw.rect(sup, config.GRIS, (x + 3, y_suelo - 24, 6, 3))            # cámara
+    pygame.draw.rect(sup, config.CIAN, (x + 7, y_suelo - 23, 1, 1))
+
+
 def aterrizaje(sup, ui, ta):
-    """Superficie de Marte: entrada con brillo, paracaídas, cohetes de frenado y polvo."""
+    """Superficie de Marte: entrada con brillo, paracaídas, cohetes de frenado, polvo y,
+    al final, el rover baja y empieza a explorar."""
     Y_SUELO_MARTE = 250
     sup.fill(mezclar((40, 20, 30), config.ARENA, min(1.0, ta / 1.2)))     # el cielo marciano aparece
     pygame.draw.rect(sup, config.OXIDO, (0, Y_SUELO_MARTE, config.ANCHO, config.ALTO))
@@ -596,6 +767,10 @@ def aterrizaje(sup, ui, ta):
     if ta >= 0.8:                                                 # patas del módulo
         for dx in (-10, 10):
             pygame.draw.line(sup, config.GRIS_CLARO, (int(x) + dx // 2, int(y) + 8), (int(x) + dx, int(y) + 14), 2)
+    # El rover sale del módulo y avanza
+    T_ROVER = 3.1
+    if ta >= T_ROVER:
+        dibujar_rover(sup, 240 + 12 + (ta - T_ROVER) * 28, Y_SUELO_MARTE + 2, ta)
 
 
 def final_no_llega_lejos(sup, ui, textos, t, destino):
@@ -670,9 +845,11 @@ def final_falla_generica(sup, ui, textos, t, falla, destino):
             luz_de_estado(sup, x + 12, y - 16, config.ROJO)
             etiqueta(sup, iconos["sin_energia"], x, y - 30, config.ROJO)
     elif falla == "incomunicada":
-        # Ondas hacia la Tierra (arriba a la izquierda) que se cortan a mitad de camino
-        tierra = (40, 40)
-        if destino != "LEO":
+        # Ondas hacia la Tierra que se cortan a mitad de camino
+        if destino == "LEO":
+            tierra = CENTRO_PLANETA                               # la estación está en la Tierra de abajo
+        else:
+            tierra = (40, 40)
             dibujar_planeta(sup, "LEO", tierra[0], tierra[1], 10)
         for k in range(4):
             f = ((ta * 0.8) + k / 4) % 1
@@ -684,7 +861,7 @@ def final_falla_generica(sup, ui, textos, t, falla, destino):
             etiqueta(sup, iconos["sin_senal"], x, y - 26, config.AMARILLO)
     elif falla == "sin_ciencia":
         if ta < T_FALLA + 0.6:                                    # rayo del instrumento que escanea
-            cx, cy = CENTRO_PLANETA if destino != "LEO" else (CENTRO_X, 260)
+            cx, cy = CENTRO_PLANETA
             ancho = 18 + int(8 * math.sin(ta * 12))
             pygame.draw.polygon(sup, config.CIAN_OSCURO, [(int(x), int(y) + 6), (cx - ancho, cy - 10),
                                                          (cx + ancho, cy - 10)], 1)
@@ -710,6 +887,41 @@ def duracion_final(final, destino):
     return config.DURACION_FINAL_LEJOS
 
 
+# ---------------------------------------------------------------------------
+# Sonidos (v2, D11) y dibujo principal
+# ---------------------------------------------------------------------------
+
+def sonidos_comunes(sim, t):
+    """Pitidos de T-3, T-2, T-1 y, en IGNITION, el pitido final y el rugido del motor."""
+    for i in range(3):
+        if t >= i * config.SEGUNDOS_POR_CUENTA:
+            sonar_una_vez(sim, "pitido", "cuenta_" + str(i))
+    if t >= T_IGNICION:
+        sonar_una_vez(sim, "pitido_final")
+        sonar_una_vez(sim, "ignicion")
+
+
+def sonidos_finales(sim, final, destino, t2):
+    """Explosión y sonido de éxito o de falla, en el momento justo de cada rama.
+    t2 = segundos dentro de la rama."""
+    if final == "explota":
+        if t2 >= 0.8:
+            sonar_una_vez(sim, "explosion")
+        if t2 >= 1.8:
+            sonar_una_vez(sim, "falla")
+    elif final == "exito":
+        if destino == "LEO":
+            momento = T_ABRE                          # el satélite queda libre
+        elif destino == "superficie de Marte":
+            momento = T_VIAJE + 2.8                   # toca el suelo
+        else:
+            momento = T_VIAJE + 0.8                   # entra en órbita
+        if t2 >= momento:
+            sonar_una_vez(sim, "exito")
+    elif t2 >= 2.0:
+        sonar_una_vez(sim, "falla")
+
+
 def dibujar(sup, ui, textos):
     sim = ui["sim"]
     t = ui["tiempo"] - sim["t0"]
@@ -719,7 +931,9 @@ def dibujar(sup, ui, textos):
 
     if t < config.DURACION_COMUN:
         parte_comun(sup, ui, textos, t)
+        sonidos_comunes(sim, t)
         frase = frases["despegue"]
+        expresion = "neutral"
     else:
         t_real = t - config.DURACION_COMUN
         t2 = t_real * config.VELOCIDAD_FINAL         # las ramas se animan un poco más lento (D7)
@@ -735,9 +949,11 @@ def dibujar(sup, ui, textos):
             final_no_llega_lejos(sup, ui, textos, t2, destino)
         else:
             final_falla_generica(sup, ui, textos, t2, final, destino)
+        sonidos_finales(sim, final, destino, t2)
         frase = frases.get(final, frases["despegue"])
+        expresion = "celebrando" if final == "exito" else "alerta"
         if t_real >= duracion_final(final, destino):
             sim["terminada"] = True        # app.py pasa a resultados
 
-    dibujar_dialogo(sup, frase.replace("{nombre}", ui["jugador"]["nombre"]))
+    dibujar_dialogo(sup, frase.replace("{nombre}", ui["jugador"]["nombre"]), expresion)
     return []                              # sin botones: la simulación no se salta (D7)

@@ -26,7 +26,7 @@ import sys
 import pygame
 
 import nucleo
-from interfaz import config, sprites
+from interfaz import config, sonido, sprites
 from interfaz import (pantalla_inicio, pantalla_avatar, pantalla_misiones, pantalla_info,
                       pantalla_didactica, laboratorio, simulacion, resultados, notificaciones,
                       pausa, pantalla_creditos)
@@ -331,6 +331,9 @@ def procesar_tecla(ui, evento, botones):
     if config.DEPURACION and evento.key == config.TECLA_DESBLOQUEAR:
         desbloquear_todo(ui)                     # F2: tecla de depuración (ver config.py)
         return False
+    if evento.key == pygame.K_m and ui["pantalla"] != "inicio":
+        sonido.alternar_silencio()               # M: silencio (v2, D11). En inicio se escribe el nombre.
+        return False
     if tecla_pausa(ui, evento):
         return True
     if es_enter(evento) and notificaciones.hay_notificacion(ui):
@@ -405,6 +408,7 @@ def dibujar_cuadro(lienzo, ui, textos, dx=0, dy=0, dt=0.0):
         botones = pausa.dibujar(lienzo, ui, textos)
         for boton in botones:
             boton.dibujar(lienzo)
+    sprites.dibujar_parlante(lienzo, config.ANCHO - 14, 3, sonido.silenciado())   # M = silencio
     # La notificación del asistente va encima de todo; su botón se revisa primero.
     botones = notificaciones.dibujar(lienzo, ui, textos) + botones
 
@@ -416,6 +420,7 @@ def dibujar_cuadro(lienzo, ui, textos, dx=0, dy=0, dt=0.0):
 
 def main():
     pygame.init()
+    sonido.iniciar()      # sonidos generados por código; si no hay audio, el juego sigue mudo
     textos = textos_juego
     ventana = pygame.display.set_mode((config.ANCHO * config.ESCALA, config.ALTO * config.ESCALA))
     pygame.display.set_caption(textos["titulo_ventana"])

@@ -39,6 +39,10 @@
 13. **Pantalla final de créditos** (`creditos_finales`) al completar Insane, y accesible desde el menú principal.
 
 ## Prioridad 2 (lo que más luce en el video)
+> **Hecha (15 nov 2026):** sonido en `interfaz/sonido.py` (tecla M); giro por gravedad, órbita punteada y finales por
+> destino en `interfaz/simulacion.py`; Tierra con continentes (`sprites.MAPA_MUNDO`, `dibujar_tierra`); puertas
+> metálicas (`sprites.dibujar_puertas_hangar`); AION en la sala con expresiones y menú `aion_faq` (E cerca de él o H);
+> sala de control con mapa, reloj MET y consolas (`laboratorio.dibujar_sala_control`).
 14. **D11** sonido.
 15. **Trayectoria con giro por gravedad** (el cohete se inclina y curva, no sube recto), luego **órbita punteada**; el final muestra el objetivo en su lugar: satélite liberado en su órbita alrededor de la Tierra, inserción en órbita de Marte, aterrizaje del rover, órbita alrededor de la Luna.
 16. **Tierra con continentes** reconocibles en pixel art (no círculos verdes).

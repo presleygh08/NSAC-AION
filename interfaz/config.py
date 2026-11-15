@@ -130,7 +130,7 @@ RADIO_INTERACCION = 20       # a esta distancia de un marcador aparece "[E] Inte
 DT_MAXIMO = 0.05             # tope del tiempo de un cuadro (si el juego se traba, no "salta")
 
 # --- Hangar (segundos) ---
-DURACION_CORTINAS = 1.0      # las cortinas se abren al confirmar CML 1
+DURACION_CORTINAS = 1.5      # las puertas del hangar se abren al confirmar CML 1 (v2)
 DURACION_ENSAMBLAJE = 1.5    # animación de cada recurso al confirmar su estación
 
 # --- Simulación (segundos) ---

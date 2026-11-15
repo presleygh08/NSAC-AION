@@ -1,7 +1,7 @@
 # hangar.py
 # Hangar del laboratorio (sección 4.6 de la especificación): la "ventana" de la derecha.
 #   - El cohete de la misión, en pixel art, junto a su torre de lanzamiento.
-#   - Antes de CML 1 lo tapan unas cortinas que se abren hacia los lados (~1 s).
+#   - Antes de CML 1 lo tapan unas puertas metálicas que se deslizan hacia los lados (~1,5 s, v2).
 #   - Cada vez que el jugador confirma una estación, se reproduce una animación de
 #     ensamblaje de ~1,5 s con su herramienta (brazo robótico, manguera, grúa...).
 #     No bloquea al jugador: depende solo del tiempo, se dibuja cuadro a cuadro.
@@ -464,7 +464,7 @@ def imagen_cohete(nombre_cohete, claves, apertura=0.0, con_nariz=True):
 
 def dibujar(sup, rect, lab, nombre_cohete, tiempo, apertura, texto_hangar):
     """Dibuja todo el hangar en 'rect'.
-    apertura: 0 = cortinas cerradas, 1 = abiertas (la calcula el laboratorio)."""
+    apertura: 0 = puertas cerradas, 1 = abiertas (la calcula el laboratorio)."""
     m = medidas_hangar(rect)
     pygame.draw.rect(sup, config.NEGRO, rect)
     recorte_anterior = sup.get_clip()
@@ -476,9 +476,8 @@ def dibujar(sup, rect, lab, nombre_cohete, tiempo, apertura, texto_hangar):
     dibujar_cohete(sup, m, nombre_cohete)
     dibujar_partes_y_animaciones(sup, m, lab, tiempo)
 
-    # Cortinas con su barra arriba
-    sprites.dibujar_cortinas(sup, m.interior, apertura)
-    pygame.draw.rect(sup, config.GRIS_CLARO, (m.interior.x, m.interior.y, m.interior.w, 3))
+    # Puertas metálicas del hangar (v2, punto 17): se deslizan hacia los lados
+    sprites.dibujar_puertas_hangar(sup, m.interior, apertura, tiempo)
 
     sup.set_clip(recorte_anterior)
     pygame.draw.rect(sup, config.COLOR_BORDE, rect, 2)

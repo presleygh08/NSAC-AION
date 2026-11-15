@@ -14,7 +14,8 @@
     "confirmar_lanzamiento": "CONFIRM LAUNCH",
     "creditos": "CREDITS",
     "reintentar": "TRY AGAIN",
-    "volver_misiones": "BACK TO MISSIONS"
+    "volver_misiones": "BACK TO MISSIONS",
+    "cerrar": "CLOSE"
   },
 
   "inicio": {
@@ -93,7 +94,11 @@
   "laboratorio": {
     "presupuesto": "Budget",
     "interactuar": "[E] Interact",
-    "ayuda_mover": "Arrows/WASD: move   E: interact   Esc: pause",
+    "ayuda_mover": "WASD: move  E: interact  H: ask AION  M: sound  Esc: pause",
+    "hablar_aion": "[E] Talk to AION",
+    "faq_titulo": "Ask AION",
+    "faq_elegir": "Choose a question:",
+    "reloj": "MET",
     "hangar": "HANGAR",
     "computadora": "Computer",
     "archivo": "Archive",
