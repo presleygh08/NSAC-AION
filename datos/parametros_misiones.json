@@ -1,6 +1,7 @@
 [
   {
     "mision": "easy_cubesat",
+    "nombre": "CubeSat in orbit",
     "dificultad": "Easy",
     "destino": "LEO",
     "cohete": "Electron",
@@ -39,6 +40,7 @@
   },
   {
     "mision": "normal_leo",
+    "nombre": "Small satellite in LEO",
     "dificultad": "Normal",
     "destino": "LEO",
     "cohete": "Falcon 9",
@@ -87,6 +89,7 @@
   },
   {
     "mision": "hard_mro_marte",
+    "nombre": "Mars orbiter",
     "dificultad": "Hard",
     "destino": "órbita de Marte",
     "cohete": "Falcon Heavy",
@@ -145,12 +148,13 @@
   },
   {
     "mision": "harder_perseverance",
+    "nombre": "Mars rover",
     "dificultad": "Harder",
     "destino": "superficie de Marte",
     "cohete": "Falcon Heavy",
     "masa_seca_kg": 1900.0,
     "isp_s": 450,
-    "eficiencia_panel": 0.30,
+    "eficiencia_panel": 0.3,
     "musd_por_kg_propelente": 0.007,
     "musd_por_m2_panel": 8.79,
     "presupuesto_musd": 195.0,
@@ -213,12 +217,13 @@
   },
   {
     "mision": "insane_artemis1",
+    "nombre": "Moon orbiter",
     "dificultad": "Insane",
     "destino": "órbita lunar",
     "cohete": "SLS block 1",
     "masa_seca_kg": 10300.0,
     "isp_s": 450,
-    "eficiencia_panel": 0.30,
+    "eficiencia_panel": 0.3,
     "musd_por_kg_propelente": 0.005,
     "musd_por_m2_panel": 20.42,
     "presupuesto_musd": 256.0,
