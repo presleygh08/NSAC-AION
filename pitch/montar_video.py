@@ -38,49 +38,52 @@ FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
 FPS = 30
 SR = 44100
 ANCHO, ALTO = 1920, 1080               # 640x360 x3, sin suavizar
-DURACION = 29.6                        # el reto exige MÁXIMO 30 s
+DURACION = 29.8                        # el reto exige MÁXIMO 30 s
 VOZ = os.path.join(CARPETA, "voz_justin.ogg")
 DESFASE_VOZ = 0.25                     # segundo del video en que empieza el audio de la voz
 SALIDA = os.path.join(CARPETA, "star_forge_pitch.mp4")
-T_FINAL = 27.0                         # empieza la tarjeta final
+T_FINAL = 27.6                         # empieza la tarjeta final
 
 # (segundo del video, clip, cuadro inicial del clip, velocidad, palabra grande o None)
 TOMAS = [
     (0.00, "avatar", 15, 1.0, None),            # "Today's generation grows up playing."
-    (2.40, "lab1", 0, 1.0, None),               # "Can we turn playing into scientific curiosity?"
-    (4.45, "titulo", 9, 1.0, None),             # "Hi, we are Aion Space and this is Star Forge:"
-    (7.42, "hangar_luna", 20, 1.6, "BUILD"),    # "build,"
-    (8.00, "lab2", 184, 1.0, "BALANCE"),        # "balance,"
-    (8.58, "sim_marte", 108, 1.5, "LAUNCH"),    # "launch."
-    (9.60, "misiones", 15, 2.0, None),          # "Build rockets with real NASA data,"
-    (10.60, "didactica_marte", 8, 1.0, None),
-    (11.45, "lab2", 45, 1.0, None),             # "but engineering and budget must stay in balance."
-    (12.65, "lab2", 82, 1.0, None),
-    (13.30, "revision", 6, 1.0, None),
-    (14.10, "sim_falla", 196, 1.6, None),       # "When a mission fails,"
-    (15.40, "res_falla", 0, 1.0, None),         # "the game shows whether design or budget was the problem."
-    (18.45, "lab_fix", 15, 1.6, None),          # "What if the next aerospace engineer..."
-    (19.35, "sim_exito", 232, 1.5, None),
-    (20.35, "sim_exito", 300, 1.0, None),
-    (20.90, "res_exito", 30, 1.0, None),        # "...is born playing Star Forge?"
-    (22.20, "sim_marte", 262, 2.0, None),       # "A generation that learns space science through playing,"
-    (23.75, "sim_luna", 244, 1.5, None),
-    (25.05, "sim_mro", 268, 1.5, None),         # "and one day will be able to build real missions."
-    (26.00, "sim_marte", 366, 1.0, None),
+    (2.45, "lab1", 0, 1.0, None),               # "Can we turn playing into scientific curiosity?"
+    (4.60, "titulo", 9, 1.0, None),             # "Hi, we are Aion Space and this is Star Forge:"
+    (7.62, "hangar_luna", 20, 1.6, "BUILD"),    # "build,"
+    (8.02, "lab2", 184, 1.0, "BALANCE"),        # "balance,"
+    (8.42, "sim_marte", 108, 1.5, "LAUNCH"),    # "launch"
+    (8.95, "misiones", 15, 1.3, None),          # "made for Space Mission Design Game."
+    (10.75, "info_marte", 0, 1.0, None),
+    (12.20, "didactica_marte", 8, 1.0, None),   # "Build rockets with real NASA data,"
+    (13.10, "hangar_marte", 10, 1.5, None),
+    (14.45, "lab2", 45, 1.0, None),             # "but engineering and budget must stay in balance."
+    (15.65, "lab2", 82, 1.0, None),
+    (16.30, "revision", 6, 1.0, None),
+    (17.15, "sim_falla", 196, 1.6, None),       # "When a mission fails,"
+    (18.35, "res_falla", 0, 1.0, None),         # "the game shows whether design or budget was the problem."
+    (21.05, "lab_fix", 15, 1.6, None),          # "What if the next aerospace engineer..."
+    (21.85, "sim_exito", 232, 1.5, None),
+    (22.75, "sim_exito", 300, 1.0, None),
+    (23.25, "res_exito", 30, 1.0, None),        # "...is born playing Star Forge?"
+    (24.35, "sim_marte", 262, 2.0, None),       # "A generation that learns space science through playing,"
+    (25.45, "sim_luna", 244, 1.5, None),
+    (26.35, "sim_mro", 268, 1.5, None),         # "and one day will be able to build real missions."
+    (27.05, "sim_marte", 366, 1.0, None),
 ]
 
 # (inicio, fin, texto) en segundos DEL AUDIO de la voz (se les suma DESFASE_VOZ)
 SUBTITULOS = [
     (0.10, 2.05, "Today's generation grows up playing."),
-    (2.20, 4.15, "Can we turn playing into scientific curiosity?"),
-    (4.25, 7.10, "Hi, we are Aion Space and this is Star Forge:"),
-    (7.18, 9.20, "build, balance, launch."),
-    (9.50, 11.15, "Build rockets with real NASA data,"),
-    (11.22, 13.70, "but engineering and budget must stay in balance."),
-    (13.90, 15.00, "When a mission fails,"),
-    (15.15, 17.95, "the game shows whether design or budget was the problem."),
-    (18.22, 21.60, "What if the next aerospace engineer is born playing Star Forge?"),
-    (21.95, 28.10, "A generation that learns space science through playing, and one day will be able to build real missions."),
+    (2.22, 4.28, "Can we turn playing into scientific curiosity?"),
+    (4.38, 7.12, "Hi, we are Aion Space and this is Star Forge:"),
+    (7.36, 8.60, "build, balance, launch"),
+    (8.70, 11.50, "made for Space Mission Design Game."),
+    (11.82, 13.95, "Build rockets with real NASA data,"),
+    (14.28, 16.72, "but engineering and budget must stay in balance."),
+    (17.00, 18.00, "When a mission fails,"),
+    (18.10, 20.52, "the game shows whether design or budget was the problem."),
+    (20.88, 23.85, "What if the next aerospace engineer is born playing Star Forge?"),
+    (24.18, 29.00, "A generation that learns space science through playing, and one day will be able to build real missions."),
 ]
 
 _clips = {}
@@ -259,12 +262,12 @@ def construir_musica():
             poner(pista, t0, tono(f, 5.2, 1.0, 1.4), 0.22)
         for j in range(8):
             tj = t0 + j * 0.5
-            if 4.5 <= tj < 27.0:
+            if 4.5 <= tj < T_FINAL:
                 f = arpegios[c][j % 4]
                 tt = np.arange(int(0.9 * SR)) / SR
                 poner(pista, tj, np.sin(2 * np.pi * f * tt) * np.exp(-tt * 5.5), 0.13)
                 poner(pista, tj + 0.25, np.sin(2 * np.pi * f * 2 * tt) * np.exp(-tt * 9), 0.04)
-            if 7.4 <= tj < 27.0:
+            if 7.5 <= tj < T_FINAL:
                 tt = np.arange(int(0.3 * SR)) / SR
                 bombo = np.sin(2 * np.pi * (45 * tt + 40 * (1 - np.exp(-tt * 30)) / 30)) * np.exp(-tt * 14)
                 poner(pista, tj, bombo, 0.42)
