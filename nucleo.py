@@ -1,5 +1,5 @@
 # nucleo.py
-# Núcleo del juego con el flujo de REPARTO DE PRESUPUESTO:
+# Núcleo del juego con el flujo de REPARTO DE PRESUPUESTO.
 #
 # Flujo:  iniciar_mision -> repartir (varias veces) -> revisar -> simular
 #         -> puntaje / revelar
@@ -18,6 +18,7 @@
 import copy
 import json
 import math
+import random
 import itertools
 from pathlib import Path
 
@@ -28,7 +29,10 @@ CARPETA_DATOS = Path(__file__).parent / "datos"
 ARCHIVO_PARAMETROS = "parametros_misiones.json"
 ARCHIVO_DESTINOS = "destinos.json"
 
-FALLAS_VALIDAS = ["explota", "no_llega", "se_apaga", "incomunicada"]
+# Qué le pasa a la nave cuando un recurso queda bajo su mínimo (campo "falla" de cada
+# recurso): estructura -> explota, propulsión -> no_llega, potencia -> se_apaga,
+# comunicaciones -> incomunicada, datos -> sin_ciencia, tiempo -> fuera_de_tiempo.
+FALLAS_VALIDAS = ["explota", "no_llega", "se_apaga", "incomunicada", "sin_ciencia", "fuera_de_tiempo"]
 MARGEN_OPTIMO = 0.10   # un recurso es "óptimo" si está a ±10 % de su óptimo (Justin puede cambiarlo)
 TOLERANCIA = 1e-9      # evita errores de redondeo al comparar números decimales
 
@@ -130,6 +134,7 @@ def iniciar_mision(parametros):
         "reparto": {r["clave"]: 0.0 for r in parametros["recursos"]},   # M USD por recurso
         "fase": "reparto",                      # reparto, simulacion, resultado
         "resultado": None,
+        "umbrales_estrellas": umbrales_estrellas(parametros),   # (puntaje 2 estrellas, puntaje 3 estrellas)
     }
 
 
@@ -264,15 +269,18 @@ def revisar(estado):
 
 def simular(estado):
     """Compara cada valor con su mínimo. Guarda y devuelve el resultado:
-    {'exito': bool, 'falla': None o 'explota'/'no_llega'/..., 'bajo_minimo': [claves]}.
-    Si fallan varios, 'falla' es la del primer recurso en el orden de la lista
-    (estructura, propulsión, potencia, comunicaciones)."""
+    {'exito': bool, 'falla': None o 'explota'/'no_llega'/..., 'fallas': [...],
+     'bajo_minimo': [claves]}.
+    Éxito = ningún recurso quedó bajo su mínimo. Si fallan varios, TODOS cuentan por
+    igual: 'bajo_minimo' y 'fallas' los listan en el orden del JSON. 'falla' es solo
+    la primera de 'fallas' (se mantiene por compatibilidad; usar 'fallas')."""
     if estado["fase"] != "simulacion":
         raise ValueError("Primero hay que pasar la revisión (revisar)")
     bajo = [r["clave"] for r in estado["recursos"]
             if valor_recurso(estado, r["clave"]) < r["minimo"] - TOLERANCIA]
-    falla = _buscar_recurso(estado, bajo[0])["falla"] if bajo else None
-    estado["resultado"] = {"exito": not bajo, "falla": falla, "bajo_minimo": bajo}
+    fallas = [_buscar_recurso(estado, c)["falla"] for c in bajo]
+    estado["resultado"] = {"exito": not bajo, "falla": fallas[0] if fallas else None,
+                           "fallas": fallas, "bajo_minimo": bajo}
     estado["fase"] = "resultado"
     return estado["resultado"]
 
@@ -342,22 +350,38 @@ def mensaje(clave, mensajes=None, **datos):
     return plantilla.format_map(_Campos(datos))
 
 
-def mensaje_resultado(estado, mensajes=None):
-    """Texto explicativo del resultado (usa revelar). Solo después de simular().
-    Si la misión falló, explica la PRIMERA falla (la misma que devuelve simular)."""
+def mensajes_fallas(estado, mensajes=None):
+    """Una entrada por CADA recurso que quedó bajo su mínimo, todas con el mismo peso:
+    [{'clave': 'propulsion', 'falla': 'no_llega', 'mensaje': texto}, ...].
+    Lista vacía si hubo éxito. Solo después de simular()."""
     if estado["fase"] != "resultado":
         raise ValueError("Primero hay que simular")
-    base = {"destino": estado["destino"], "lanzador": estado["cohete"]}
-    res = estado["resultado"]
-    if res["exito"]:
-        return mensaje("exito", mensajes, **base)
-    r = _buscar_recurso(estado, res["bajo_minimo"][0])
-    valor = valor_recurso(estado, r["clave"])
-    datos = dict(base, recurso=r["clave"], unidad=r["unidad"], valor=_num(valor),
-                 minimo=_num(r["minimo"]), optimo=_num(r["optimo"]),
-                 dv_requerido_m_s=_num(r["minimo"]), dv_disponible_m_s=_num(valor),
-                 consumo_w=_num(r["minimo"]), generada_w=_num(valor))
-    return mensaje(FALLA_A_MENSAJE.get(r["falla"], r["falla"]), mensajes, **datos)
+    mensajes = mensajes if mensajes is not None else cargar_mensajes()
+    salida = []
+    for clave in estado["resultado"]["bajo_minimo"]:
+        r = _buscar_recurso(estado, clave)
+        valor = valor_recurso(estado, clave)
+        datos = {"destino": estado["destino"], "lanzador": estado["cohete"],
+                 "recurso": clave, "unidad": r["unidad"], "valor": _num(valor),
+                 "minimo": _num(r["minimo"]), "optimo": _num(r["optimo"]),
+                 "dv_requerido_m_s": _num(r["minimo"]), "dv_disponible_m_s": _num(valor),
+                 "consumo_w": _num(r["minimo"]), "generada_w": _num(valor)}
+        salida.append({"clave": clave, "falla": r["falla"],
+                       "mensaje": mensaje(FALLA_A_MENSAJE.get(r["falla"], r["falla"]),
+                                          mensajes, **datos)})
+    return salida
+
+
+def mensaje_resultado(estado, mensajes=None):
+    """Texto explicativo del resultado (lo usa revelar). Solo después de simular().
+    Éxito: el mensaje "exito". Falla: los mensajes de TODAS las fallas, uno por
+    párrafo, en el orden del JSON (para mostrarlos por separado, usar mensajes_fallas)."""
+    if estado["fase"] != "resultado":
+        raise ValueError("Primero hay que simular")
+    mensajes = mensajes if mensajes is not None else cargar_mensajes()
+    if estado["resultado"]["exito"]:
+        return mensaje("exito", mensajes, destino=estado["destino"], lanzador=estado["cohete"])
+    return "\n\n".join(f["mensaje"] for f in mensajes_fallas(estado, mensajes))
 
 
 def mensaje_presupuesto(estado, mensajes=None):
@@ -387,12 +411,84 @@ def puntaje(estado):
     return round(sum(pts) / len(pts))
 
 
+# Estrellas: 1 = completar la misión (cualquier puntaje), 2 = puntaje >= ESTRELLAS_UMBRALES[0],
+# 3 = puntaje >= ESTRELLAS_UMBRALES[1]. Cada misión puede traer su propio
+# "estrellas": [dos, tres] en parametros_misiones.json.
+# Por qué 70 y 85 (análisis con los 5 niveles): cumplir justo los mínimos da 63-70 puntos
+# (1 estrella); el mejor puntaje posible es 87-94, así que 85 exige un reparto muy
+# cuidado pero alcanzable (en Easy, 3 de cada 4 aprobados lo logran; en Hard y Harder, ~1 de 10).
+ESTRELLAS_UMBRALES = (70, 85)
+
+
+def _umbrales_validos(e):
+    return (isinstance(e, (list, tuple)) and len(e) == 2
+            and all(_es_numero_positivo(x) for x in e) and e[0] < e[1] <= 100)
+
+
+def umbrales_estrellas(m):
+    """(puntaje para 2 estrellas, puntaje para 3 estrellas) de una misión."""
+    e = m.get("estrellas")
+    return tuple(e) if _umbrales_validos(e) else ESTRELLAS_UMBRALES
+
+
+def estrellas_de(puntaje, umbrales=ESTRELLAS_UMBRALES, completada=True):
+    """Estrellas (0 a 3). 0 si la misión no se completó; si se completó, mínimo 1."""
+    if not completada:
+        return 0
+    dos, tres = umbrales
+    return 3 if puntaje >= tres else 2 if puntaje >= dos else 1
+
+
+def puntaje_maximo(parametros, intentos=15000, semilla=0):
+    """Estimación (por abajo) del mejor puntaje posible con el presupuesto: compra
+    los mínimos, reparte la holgura al azar y mejora moviendo dinero entre recursos.
+    Sirve para comprobar que las 3 estrellas son alcanzables. Devuelve un entero."""
+    par = preparar_parametros(parametros)
+    rec = par["recursos"]
+    rnd = random.Random(semilla)
+    costos_min = [costo_de(r, r["minimo"]) for r in rec]
+    holgura = par["presupuesto_musd"] - sum(costos_min)
+    if holgura < 0 or len(rec) < 2:
+        return 0
+
+    def puntos(dinero):
+        p = [puntos_recurso(convertir(r, d), r["optimo"]) for r, d in zip(rec, dinero)]
+        return sum(p) / len(p)
+
+    mejor, mejor_d = -1.0, None
+    for _ in range(intentos):
+        w = [rnd.expovariate(1) for _ in rec]
+        t = sum(w)
+        d = [c + holgura * x / t for c, x in zip(costos_min, w)]
+        s = puntos(d)
+        if s > mejor:
+            mejor, mejor_d = s, d
+    for _ in range(intentos * 2):
+        i, j = rnd.sample(range(len(rec)), 2)
+        delta = rnd.random() * holgura * 0.05
+        if mejor_d[j] - delta < costos_min[j]:
+            continue
+        d = list(mejor_d)
+        d[i] += delta
+        d[j] -= delta
+        s = puntos(d)
+        if s > mejor:
+            mejor, mejor_d = s, d
+    return round(mejor)
+
+
 def revelar(estado):
     """Datos para la pantalla de resultados: por recurso, lo elegido, el mínimo,
     el óptimo, sus puntos y si quedó bajo el mínimo / cerca del óptimo.
-    Devuelve: {'puntaje', 'exito', 'optimo', 'falla', 'mensaje', 'recursos': [...]}.
-      'falla'   -> None si hubo éxito, o 'explota'/'no_llega'/... (la primera falla)
-      'mensaje' -> texto explicativo de mensajes.json para mostrar en la pantalla."""
+    Devuelve: {'puntaje', 'exito', 'optimo', 'falla', 'fallas', 'mensaje',
+               'estrellas', 'siguiente_estrella_pts', 'recursos': [...]}.
+      'fallas'  -> TODAS las fallas, con el mismo peso: lista de
+                   {'clave', 'falla', 'mensaje'} (vacía si hubo éxito)
+      'falla'   -> la primera falla o None (solo por compatibilidad; usar 'fallas')
+      'mensaje' -> texto de mensajes.json: "exito", o el de todas las fallas juntas
+      'estrellas' -> 0 si falló; 1 si completó; 2 y 3 según el puntaje
+      'siguiente_estrella_pts' -> puntaje que falta alcanzar para la próxima estrella
+                   (None si falló o ya tiene 3)."""
     if estado["fase"] != "resultado":
         raise ValueError("Primero hay que simular")
     filas = []
@@ -407,10 +503,16 @@ def revelar(estado):
             "fuente": r.get("fuente", ""),
         })
     exito = estado["resultado"]["exito"]
-    return {"puntaje": puntaje(estado), "exito": exito,
+    pts = puntaje(estado)
+    umbrales = estado.get("umbrales_estrellas", ESTRELLAS_UMBRALES)
+    n_estrellas = estrellas_de(pts, umbrales, exito)
+    return {"puntaje": pts, "exito": exito,
             "optimo": exito and all(f["cerca_optimo"] for f in filas),
             "falla": estado["resultado"]["falla"],
+            "fallas": mensajes_fallas(estado),
             "mensaje": mensaje_resultado(estado),
+            "estrellas": n_estrellas,
+            "siguiente_estrella_pts": umbrales[n_estrellas - 1] if exito and n_estrellas < 3 else None,
             "recursos": filas}
 
 
@@ -490,6 +592,8 @@ def verificar_parametros(m):
             costo_opt += costo_de(r, r["optimo"])
     if not m.get("pistas"):
         p.append(f"{mid}: faltan 'pistas'")
+    if "estrellas" in m and not _umbrales_validos(m["estrellas"]):
+        p.append(f"{mid}: 'estrellas' debe ser [puntaje_2_estrellas, puntaje_3_estrellas] con 0 < dos < tres <= 100")
     # Condición de validez: costo(mínimos) <= presupuesto < costo(óptimos)
     if completos and recursos and _es_numero_positivo(m.get("presupuesto_musd")):
         pres = m["presupuesto_musd"]
@@ -512,6 +616,46 @@ def provisionales_archivo(ruta=None):
     ruta = Path(ruta) if ruta else CARPETA_DATOS / ARCHIVO_PARAMETROS
     with open(ruta, encoding="utf-8") as f:
         return {m.get("mision", "?"): recursos_provisionales(m) for m in json.load(f)}
+
+
+def verificar_niveles(ruta=None):
+    """Revisa que cada nivel de DIFICULTADES tenga EXACTAMENTE una misión en
+    parametros_misiones.json (el campo "dificultad" es la asignación nivel -> misión).
+    Avisa de: nivel sin misión, nivel con varias, nivel desconocido (se compara tal
+    cual: "Hard", no "hard"), ids repetidos, y niveles que no incluyen los recursos
+    del nivel anterior (cada nivel añade recursos, no quita). Devuelve la lista de
+    problemas (vacía si todo está bien)."""
+    ruta = Path(ruta) if ruta else CARPETA_DATOS / ARCHIVO_PARAMETROS
+    with open(ruta, encoding="utf-8") as f:
+        misiones = json.load(f)
+    p, ids, por_nivel = [], set(), {}
+    for m in misiones:
+        mid = m.get("mision", "?")
+        if mid in ids:
+            p.append(f"id repetido: '{mid}'")
+        ids.add(mid)
+        nivel = m.get("dificultad")
+        if nivel not in DIFICULTADES:
+            p.append(f"{mid}: nivel desconocido {nivel!r}; debe ser uno de {DIFICULTADES}")
+            continue
+        por_nivel.setdefault(nivel, []).append(m)
+    for nivel in DIFICULTADES:
+        ms = por_nivel.get(nivel, [])
+        if not ms:
+            p.append(f"nivel {nivel}: no tiene misión asignada")
+        elif len(ms) > 1:
+            p.append(f"nivel {nivel}: tiene {len(ms)} misiones {[m.get('mision') for m in ms]}; debe tener una sola")
+    anterior = None                      # (nivel, claves de recursos) del nivel anterior
+    for nivel in DIFICULTADES:
+        ms = por_nivel.get(nivel, [])
+        if len(ms) != 1:
+            anterior = None
+            continue
+        claves = {r.get("clave") for r in ms[0].get("recursos") or []}
+        if anterior and not anterior[1] <= claves:
+            p.append(f"nivel {nivel}: le faltan recursos del nivel {anterior[0]}: {sorted(anterior[1] - claves)}")
+        anterior = (nivel, claves)
+    return p
 
 
 # ---------------------------------------------------------------------------
@@ -571,11 +715,14 @@ def _nombre_mision(m):
 
 
 def cargar_misiones(progreso=None, ruta_parametros=None):
-    """Lista para la parrilla, ordenada por dificultad. Sale de
-    parametros_misiones.json. Cada elemento trae SOLO estos campos (nunca
-    mínimos ni óptimos):
-      'id', 'nombre', 'dificultad', 'destino', 'cohete', 'presupuesto_musd',
-      'estado' y 'mejor_puntaje' (None si no está completada).
+    """Lista para la parrilla, ordenada por nivel. Sale de parametros_misiones.json:
+    cada nivel de DIFICULTADES tiene UNA misión (la asignación es el campo
+    "dificultad"). Una misión con nivel desconocido, o la segunda de un nivel ya
+    ocupado, no aparece (verificar_niveles lo avisa). Cada elemento trae SOLO estos
+    campos (nunca mínimos ni óptimos):
+      'id', 'nombre', 'nivel' (1 a 5), 'dificultad', 'destino', 'cohete',
+      'presupuesto_musd', 'estado', 'mejor_puntaje' (None si no está completada) y
+      'estrellas' (0 si no está completada; si lo está, 1 a 3 según el mejor puntaje).
     'estado' es una de:
       'completada'    -> ya se completó (se puede repetir)
       'disponible'    -> se puede jugar
@@ -588,17 +735,25 @@ def cargar_misiones(progreso=None, ruta_parametros=None):
     with open(ruta, encoding="utf-8") as f:
         misiones = json.load(f)
     orden = {d: i for i, d in enumerate(DIFICULTADES)}
-    misiones = sorted(misiones, key=lambda m: orden.get(m.get("dificultad"), len(orden)))
+    misiones = sorted((m for m in misiones if m.get("dificultad") in orden),
+                      key=lambda m: orden[m["dificultad"]])
 
     parrilla = []
     anterior_completada = True              # la primera misión siempre está abierta
+    ocupados = set()
     for m in misiones:
+        nivel = m["dificultad"]
+        if nivel in ocupados:               # segunda misión del mismo nivel: se ignora
+            continue
+        ocupados.add(nivel)
         mid = m["mision"]
-        fila = {"id": mid, "nombre": _nombre_mision(m), "dificultad": m.get("dificultad"),
-                "destino": m.get("destino"), "cohete": m.get("cohete"),
-                "presupuesto_musd": m.get("presupuesto_musd"),
-                "mejor_puntaje": progreso["completadas"].get(mid)}
-        if mid in progreso["completadas"]:
+        completada = mid in progreso["completadas"]
+        mejor = progreso["completadas"].get(mid)
+        fila = {"id": mid, "nombre": _nombre_mision(m), "nivel": orden[nivel] + 1,
+                "dificultad": nivel, "destino": m.get("destino"), "cohete": m.get("cohete"),
+                "presupuesto_musd": m.get("presupuesto_musd"), "mejor_puntaje": mejor,
+                "estrellas": estrellas_de(mejor, umbrales_estrellas(m)) if completada else 0}
+        if completada:
             fila["estado"] = "completada"
         elif verificar_parametros(m):       # lista de problemas no vacía
             fila["estado"] = "proximamente"
@@ -607,7 +762,7 @@ def cargar_misiones(progreso=None, ruta_parametros=None):
         else:
             fila["estado"] = "disponible"
         if fila["estado"] != "proximamente":
-            anterior_completada = mid in progreso["completadas"]
+            anterior_completada = completada
         parrilla.append(fila)
     return parrilla
 
@@ -670,6 +825,10 @@ if __name__ == "__main__":
                 print("   -", x)
             if prov.get(mid):
                 print("   * valores PROVISIONALES (esperan a Chambi):", ", ".join(prov[mid]))
+        probs_niveles = verificar_niveles(ruta[0] if ruta else None)
+        print(f"[{'OK ' if not probs_niveles else 'PENDIENTE'}] niveles {DIFICULTADES}")
+        for x in probs_niveles:
+            print("   -", x)
         sys.exit()
 
     # 1. Reparto dentro del presupuesto y sobre los mínimos -> éxito
@@ -697,7 +856,7 @@ if __name__ == "__main__":
     e = _mision_lista(1.0, 1.0)
     revisar(e)
     r = simular(e)
-    assert r["falla"] == "explota" and r["bajo_minimo"] == ["estructura", "propulsion"]
+    assert r["falla"] == "explota" and r["bajo_minimo"] == ["estructura", "propulsion"] and r["fallas"] == ["explota", "no_llega"]
     print("OK  dos fallas       ->", r["falla"], r["bajo_minimo"])
 
     # 5. Pasarse del presupuesto: la revisión lo detecta y no deja simular
@@ -800,12 +959,12 @@ if __name__ == "__main__":
     print("OK  mensaje explota   ->", info["mensaje"][:45] + "...")
 
     # 17. Cada falla (también las de Harder e Insane) tiene mensaje completo
-    for falla in FALLAS_VALIDAS + ["sin_ciencia", "fuera_de_tiempo"]:
+    for falla in FALLAS_VALIDAS:
         txt = mensaje(FALLA_A_MENSAJE.get(falla, falla), recurso="x", unidad="u", valor=1,
                       minimo=2, optimo=3, dv_requerido_m_s=2, dv_disponible_m_s=1,
                       consumo_w=2, generada_w=1)
         assert txt != MENSAJE_GENERICO and "{" not in txt, falla
-    print("OK  todas las fallas  -> tienen mensaje:", FALLAS_VALIDAS + ["sin_ciencia", "fuera_de_tiempo"])
+    print("OK  todas las fallas  -> tienen mensaje:", FALLAS_VALIDAS)
 
     # 18. Presupuesto excedido: revisar trae el mensaje con el gasto y el presupuesto
     e = iniciar_mision(easy)
@@ -816,6 +975,82 @@ if __name__ == "__main__":
     repartir(e, "estructura", 8.5); repartir(e, "propulsion", 6.0)
     assert revisar(e)["mensaje"] is None
     print("OK  presupuesto       ->", rev["mensaje"][:45] + "...")
+
+    # ---- Todas las fallas, niveles y estrellas ----
+    import tempfile
+    IDS_NIVELES = ["easy_cubesat", "normal_leo", "hard_mro_marte", "harder_perseverance", "insane_artemis1"]
+
+    # 19. Si fallan varios recursos se muestran TODOS, con el mismo peso
+    e = iniciar_mision(easy)
+    repartir(e, "estructura", 3.0); repartir(e, "propulsion", 3.0)
+    revisar(e)
+    r = simular(e)
+    assert r["fallas"] == ["explota", "no_llega"] and r["falla"] == "explota"
+    info = revelar(e)
+    assert [f["clave"] for f in info["fallas"]] == ["estructura", "propulsion"]
+    assert [f["falla"] for f in info["fallas"]] == ["explota", "no_llega"]
+    assert "broke apart" in info["mensaje"] and "250 m/s" in info["mensaje"] and "{" not in info["mensaje"]
+    assert info["estrellas"] == 0 and info["siguiente_estrella_pts"] is None
+    print("OK  varias fallas     ->", [f["falla"] for f in info["fallas"]])
+
+    # 20. Los 5 niveles: cada uno con su misión y todas jugables (ya con las 6 fallas)
+    assert verificar_niveles() == [], verificar_niveles()
+    assert all(v == [] for v in verificar_archivo().values()), verificar_archivo()
+    parrilla = cargar_misiones()
+    assert [f["dificultad"] for f in parrilla] == DIFICULTADES and [f["nivel"] for f in parrilla] == [1, 2, 3, 4, 5]
+    assert [f["id"] for f in parrilla] == IDS_NIVELES
+    assert [f["estado"] for f in parrilla] == ["disponible"] + ["bloqueada"] * 4
+    assert all(f["estrellas"] == 0 for f in parrilla)
+    print("OK  5 niveles         ->", [(f["nivel"], f["id"]) for f in parrilla])
+
+    # 21. verificar_niveles detecta nivel faltante, repetido, desconocido y recursos que faltan
+    def con_niveles(lista):
+        with tempfile.TemporaryDirectory() as tmp:
+            ruta = Path(tmp) / "p.json"
+            ruta.write_text(json.dumps(lista), encoding="utf-8")
+            return verificar_niveles(ruta)
+
+    def mis(mid, nivel, *claves):
+        return {"mision": mid, "dificultad": nivel, "recursos": [{"clave": c} for c in claves]}
+
+    completo = [mis("a", "Easy", "estructura"), mis("b", "Normal", "estructura", "potencia"),
+                mis("c", "Hard", "estructura", "potencia"), mis("d", "Harder", "estructura", "potencia"),
+                mis("e", "Insane", "estructura", "potencia")]
+    assert con_niveles(completo) == []
+    assert any("Insane" in x and "no tiene misión" in x for x in con_niveles(completo[:4]))
+    assert any("Normal" in x and "2 misiones" in x for x in con_niveles(completo + [mis("f", "Normal", "estructura", "potencia")]))
+    assert any("'hard'" in x for x in con_niveles(completo[:2] + [mis("c", "hard", "estructura")] + completo[3:]))
+    assert any("repetido" in x for x in con_niveles(completo + [mis("a", "Easy", "estructura")]))
+    sin_prop = [mis("a", "Easy", "estructura", "propulsion")] + completo[1:]
+    assert any("Normal" in x and "propulsion" in x for x in con_niveles(sin_prop))
+    print("OK  verificar_niveles -> detecta faltante, repetido, desconocido y recursos que faltan")
+
+    # 22. Estrellas: 1 = completar, 2 >= 70, 3 >= 85 (cada misión puede traer "estrellas": [dos, tres])
+    assert [estrellas_de(p) for p in (0, 66, 69, 70, 84, 85, 100)] == [1, 1, 1, 2, 2, 3, 3]
+    assert estrellas_de(90, completada=False) == 0
+    assert umbrales_estrellas({"estrellas": [60, 80]}) == (60, 80)
+    assert umbrales_estrellas({"estrellas": [80, 60]}) == ESTRELLAS_UMBRALES      # inválido -> los de siempre
+    assert umbrales_estrellas({}) == ESTRELLAS_UMBRALES
+    assert verificar_parametros(dict(easy, estrellas=[80, 60])) != []
+    assert verificar_parametros(dict(easy, estrellas=[60, 80])) == []
+
+    # 23. revelar trae las estrellas y cuánto falta para la siguiente
+    info = jugar(easy, estructura=6.0, propulsion=5.0)       # justo los mínimos: se aprueba, 1 estrella
+    assert info["exito"] and info["estrellas"] == 1 and info["siguiente_estrella_pts"] == 70, info["puntaje"]
+    info = jugar(easy, estructura=6.5, propulsion=5.5)
+    assert info["estrellas"] == 2 and info["siguiente_estrella_pts"] == 85, info["puntaje"]
+    info = jugar(easy, estructura=8.5, propulsion=6.0)
+    assert info["puntaje"] == 87 and info["estrellas"] == 3 and info["siguiente_estrella_pts"] is None
+    assert puntos_recurso(12.0, 8.5) < puntos_recurso(8.5, 8.5) == 100        # pasarse del óptimo resta
+    print("OK  estrellas         -> mínimos 1, intermedio 2, buen reparto 3")
+
+    # 24. Las 3 estrellas deben ser alcanzables en cada nivel
+    maximos = {}
+    for mid in IDS_NIVELES:
+        par = cargar_parametros(mid)
+        maximos[mid] = puntaje_maximo(par)
+        assert maximos[mid] >= umbrales_estrellas(par)[1], (mid, maximos[mid])
+    print("OK  3 estrellas posibles -> mejor puntaje estimado:", maximos)
 
     # ---- Paso de los botones − y + ----
     esperado = {"easy_cubesat": 0.5, "normal_leo": 1, "hard_mro_marte": 5,
@@ -864,6 +1099,7 @@ if __name__ == "__main__":
         revisar(e); simular(e)
         registrar_resultado(prog, e)
         assert prog["completadas"]["easy_cubesat"] == puntaje(e)
+        assert cargar_misiones(prog, r_par)[0]["estrellas"] == estrellas_de(puntaje(e)) >= 1
         assert estados(prog) == {"easy_cubesat": "completada", "normal_leo": "disponible", "hard_mro": "proximamente"}
         print("OK  desbloqueo       ->", estados(prog))
 
