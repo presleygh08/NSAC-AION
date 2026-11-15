@@ -37,19 +37,22 @@ if puede_jugar(progreso, "easy_cubesat"):
 ## Funciones
 | Función | Cuándo | Devuelve |
 |---|---|---|
-| `nuevo_progreso()` | al empezar | `{'completadas': {id: mejor_puntaje}}` |
+| `nuevo_progreso()` | al empezar | `{'completadas': {id: mejor_puntaje}, 'estrellas': {id: mejores_estrellas}}` |
 | `cargar_misiones(progreso)` | parrilla | lista de los 5 niveles en orden (ver abajo) |
 | `puede_jugar(progreso, id)` | al elegir misión | `True` si está disponible o completada |
 | `cargar_parametros(id)` | al jugar | diccionario de la misión |
 | `iniciar_mision(parametros)` | al jugar | `estado` |
 | `paso_dinero(estado)` | al jugar | paso (M USD) para los botones − y + de esa misión |
+| `cotizar(estado, clave, valor)` | estación del laboratorio | M USD que cuesta esa CANTIDAD del recurso (kg, m/s, W…). `ValueError` si valor < 0 o la clave no existe |
+| `repartir_valor(estado, clave, valor)` | estación (atajo) | hace `repartir(estado, clave, cotizar(...))` y devuelve el costo |
 | `repartir(estado, clave, dinero_musd)` | reparto | `estado` (no bloquea si se pasa del presupuesto) |
 | `recursos_visibles(estado)` | reparto | lista de recursos sin mínimos ni óptimos |
 | `presupuesto_restante(estado)` | reparto | M USD sin repartir (negativo si se pasó) |
 | `revisar(estado)` | botón "lanzar" | `{'ok', 'exceso_musd', 'mensaje'}` |
 | `simular(estado)` | tras `revisar` ok | `{'exito', 'falla', 'fallas', 'bajo_minimo'}` |
 | `revelar(estado)` | pantalla de resultados | ver abajo |
-| `registrar_resultado(progreso, estado)` | tras `simular` | `progreso` |
+| `estrellas(estado)` | tras `simular` | 0 a 5 (lo mismo que `revelar(...)["estrellas"]`) |
+| `registrar_resultado(progreso, estado)` | tras `simular` | `progreso` (guarda mejor puntaje y mejores estrellas) |
 
 Campos de `estado` que la interfaz puede leer: `mision`, `destino`, `cohete`,
 `presupuesto_musd`, `pistas` (lista de textos), `fase`.
@@ -68,12 +71,14 @@ Campos de `estado` que la interfaz puede leer: `mision`, `destino`, `cohete`,
 | datos | `sin_ciencia` |
 | tiempo | `fuera_de_tiempo` |
 
-- **Estrellas:** 0 = no se completó. 1 = misión completada (cualquier puntaje).
-  2 = puntaje de 70 o más. 3 = puntaje de 85 o más. Completar solo pide no fallar, así
-  que con 1 estrella ya se desbloquea el siguiente nivel; las estrellas invitan a repetir.
-  Una misión puede traer su propio `"estrellas": [dos, tres]` en el JSON.
-- **Puntaje:** promedio de los puntos por recurso. Cada recurso da
-  `100 × (1 − |valor − óptimo| / óptimo)`: quedarse corto o pasarse del óptimo resta por igual.
+- **Estrellas (0 a 5):** 0 = no se completó · 1 = completada (cualquier puntaje) ·
+  2 = puntaje ≥ 72 · 3 = ≥ 78 · 4 = ≥ 82 · 5 = ≥ 86 **o** diseño óptimo (todos los recursos a ±10 % del óptimo).
+  Completar solo pide no fallar, así que con 1 estrella ya se desbloquea el siguiente nivel.
+  Una misión puede traer su propio `"estrellas": [dos, tres, cuatro, cinco]` en el JSON.
+  (Cumplir justo los mínimos da 66–71 puntos; el mejor puntaje posible es 87–94 según el nivel.)
+- **Puntaje:** cercanía al óptimo + bonus por ahorro, con tope 100 (0 si falló).
+  Cercanía = promedio por recurso de `100 × (1 − |valor − óptimo| / óptimo)` (quedarse corto o pasarse resta igual).
+  Bonus = `15 × dinero_sin_gastar / presupuesto` (máximo 15 puntos). Fallar para ahorrar nunca conviene: da 0.
 
 ## Paso de los botones − y +
 NO usar un paso fijo. `paso_dinero(estado)` da el paso de cada misión:
@@ -94,7 +99,7 @@ que gastar 15. Usar `repartir(estado, clave, round(dinero + paso, 6))`, sin baja
 (nunca mínimos ni óptimos): `id, nombre, nivel, dificultad, destino, cohete,
 presupuesto_musd, estado, mejor_puntaje, estrellas`.
 `estado` es `'completada'`, `'disponible'`, `'bloqueada'` o `'proximamente'`
-(parámetros incompletos). `estrellas` es 0 si no está completada, y 1 a 3 si lo está.
+(parámetros incompletos). `estrellas` es 0 si no está completada, y 1 a 5 si lo está (las mejores logradas).
 ```python
 {'id': 'easy_cubesat', 'nombre': 'CubeSat in orbit', 'nivel': 1, 'dificultad': 'Easy',
  'destino': 'LEO', 'cohete': 'Electron', 'presupuesto_musd': 14.5,
@@ -118,10 +123,11 @@ Con `ok: True`, `mensaje` es `None` y la misión pasa a la fase de simulación
 ```python
 {'puntaje': 87, 'exito': True, 'optimo': False, 'falla': None, 'fallas': [],
  'mensaje': 'Mission complete! Your ship reached LEO and every limit held, ...',
- 'estrellas': 3, 'siguiente_estrella_pts': None,
+ 'estrellas': 5, 'siguiente_estrella_pts': None,
+ 'ahorro_musd': 0.0, 'presupuesto_usado_pct': 100.0,
  'recursos': [
    {'clave': 'propulsion', 'unidad': 'm/s', 'valor': 297.37, 'minimo': 250, 'optimo': 400,
-    'puntos': 74, 'bajo_minimo': False, 'cerca_optimo': False, 'fuente': 'https://...'},
+    'puntos': 74, 'bajo_minimo': False, 'cerca_optimo': False, 'faltante_pct': 0.0, 'fuente': 'https://...'},
    ...]}
 ```
 `revelar(estado)` con dos fallas a la vez
@@ -130,11 +136,14 @@ Con `ok: True`, `mensaje` es `None` y la misión pasa a la fase de simulación
  'fallas': [{'clave': 'estructura', 'falla': 'explota',  'mensaje': 'The ship broke apart ...'},
             {'clave': 'propulsion', 'falla': 'no_llega', 'mensaje': 'The mission stopped: this trip needs 250 m/s ...'}],
  'mensaje': '<los dos mensajes juntos, uno por párrafo>',
- 'estrellas': 0, 'siguiente_estrella_pts': None, 'recursos': [...]}
+ 'estrellas': 0, 'siguiente_estrella_pts': None, 'ahorro_musd': ..., 'presupuesto_usado_pct': ...,
+ 'recursos': [...]}
 ```
 - Para mostrar las fallas por separado, recorrer `fallas`; para un solo bloque de texto, usar `mensaje`.
 - `siguiente_estrella_pts` es el puntaje que falta alcanzar para la próxima estrella
-  (`None` si la misión falló o ya tiene 3).
+  (`None` si la misión falló o ya tiene 5).
+- `faltante_pct` (en cada recurso) = `max(0, (mínimo − valor) / mínimo × 100)`: cuánto le faltó para el mínimo.
+- `ahorro_musd` = dinero sin gastar; `presupuesto_usado_pct` = % del presupuesto gastado.
 - Si la misión falló, `puntaje` es 0. Los mensajes vienen de `datos/mensajes.json`, en inglés.
 
 ## Errores que la interfaz debe esperar
@@ -144,5 +153,5 @@ función fuera de su fase (por ejemplo `simular` antes de `revisar`) o la misió
 ## Pendiente de otros
 - Pistas (`estado["pistas"]`) siguen en español: Justin decide su traducción y dónde se guarda.
 - Faltan en `mensajes.json` las claves `explota`, `incomunicada`, `sin_ciencia` y `fuera_de_tiempo` (hay borradores de respaldo en el código).
-- Los presupuestos por nivel son de referencia; Chambi puede cambiarlos tras su investigación. Si cambian, repetir `python nucleo.py` (comprueba que las 3 estrellas sigan siendo alcanzables).
+- Los presupuestos por nivel son de referencia; Chambi puede cambiarlos tras su investigación. Si cambian, repetir `python nucleo.py` (comprueba que las 5 estrellas sigan siendo alcanzables).
 - `destino` y los nombres de recursos se muestran traducidos por la interfaz (el núcleo los devuelve como están en los JSON).

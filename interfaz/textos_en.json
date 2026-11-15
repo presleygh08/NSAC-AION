@@ -1,81 +1,234 @@
 {
-  "titulo_ventana": "Space Mission Design Game",
-  "aviso_prueba": "Test values: game logic is not connected yet",
-  "sin_datos": "No published data",
+  "titulo_ventana": "Rocket Run - Space Mission Design Game",
 
   "botones": {
-    "empezar": "Start",
-    "siguiente": "Next",
-    "atras": "Back",
-    "lanzar": "Launch mission",
-    "redisenar": "Redesign",
-    "menu": "Main menu"
+    "jugar": "PLAY",
+    "aleatorio": "RANDOM",
+    "continuar": "CONTINUE",
+    "atras": "BACK",
+    "siguiente": "NEXT",
+    "correr": "RUN",
+    "confirmar": "CONFIRM",
+    "cancelar": "CANCEL",
+    "aceptar": "ACCEPT",
+    "confirmar_lanzamiento": "CONFIRM LAUNCH",
+    "saltar": "SKIP",
+    "reintentar": "TRY AGAIN",
+    "volver_misiones": "BACK TO MISSIONS"
   },
 
   "inicio": {
-    "titulo": "Space Mission Design Game",
-    "subtitulo": "Design a space mission with limited mass, power and budget.",
-    "instrucciones": "Choose a destination, design your ship, pick a launcher and launch. Then find out why your mission succeeded or failed."
+    "titulo": "ROCKET RUN",
+    "subtitulo": "Space Mission Design Game",
+    "pide_nombre": "Enter your callsign:",
+    "ayuda": "Press ENTER or click PLAY"
   },
 
-  "objetivo": {
-    "titulo": "1. Choose your mission objective",
-    "ayuda": "Delta-v is the change in speed your ship needs to reach the destination. Farther destinations need more delta-v.",
-    "delta_v": "Delta-v needed",
-    "distancia": "Distance from the Sun",
-    "fuente": "Source"
+  "avatar": {
+    "titulo": "Create your avatar",
+    "vista_lab": "In the lab",
+    "ayuda": "Mix anything with anything: every option fits every body.",
+    "categorias": {
+      "cuerpo": "Body",
+      "piel": "Skin tone",
+      "pelo": "Hair",
+      "color_pelo": "Hair color",
+      "ojos": "Eyes",
+      "color_ojos": "Eye color",
+      "accesorio": "Accessory",
+      "polo": "Top",
+      "pantalon": "Bottom"
+    },
+    "opciones": {
+      "cuerpo": ["Body 1", "Body 2", "Body 3"],
+      "pelo": ["Short", "Long", "Curly", "Afro", "Braids", "Buzz", "Bald"],
+      "ojos": ["Round", "Narrow", "Wide", "Sleepy"],
+      "accesorio": ["None", "Glasses", "Cap", "Headphones", "Headscarf", "Space helmet"],
+      "polo": ["Blue tee", "Striped tee", "Hoodie", "Jacket", "Flight suit"],
+      "pantalon": ["Jeans + sneakers", "Pants + boots", "Shorts + sneakers", "Joggers", "Flight suit + boots"]
+    }
   },
 
-  "diseno": {
-    "titulo": "2. Design your ship",
-    "masa_seca": "Dry mass (ship without propellant)",
-    "masa_seca_ayuda": "A heavier ship needs more propellant and a stronger launcher.",
-    "area_paneles": "Solar panel area",
-    "area_paneles_ayuda": "Bigger panels give more power, but sunlight gets weaker far from the Sun.",
-    "isp": "Engine efficiency (Isp)",
-    "isp_ayuda": "A higher Isp gives more delta-v with the same propellant."
+  "misiones": {
+    "titulo": "Choose your mission",
+    "ayuda": "Start with Easy to master the budget split. Each mission you complete unlocks a new one.",
+    "estados": {
+      "disponible": "Available",
+      "completada": "Completed",
+      "bloqueada": "Locked",
+      "proximamente": "Coming soon"
+    },
+    "mejor_puntaje": "Best",
+    "destino": "Destination",
+    "cohete": "Rocket",
+    "presupuesto": "Budget"
   },
 
-  "lanzador": {
-    "titulo": "3. Choose your launcher",
-    "capacidad": "Capacity to",
-    "costo": "Cost",
-    "fuente": "Source",
-    "sin_destino": "Choose a destination first.",
-    "aviso": "Capacities are maximum published values under different conditions, and costs come from different years. Use them as a reference, not as exact prices."
+  "info": {
+    "descripcion": "Description",
+    "objetivo": "Objective",
+    "cohete": "Rocket",
+    "destino": "Destination",
+    "recursos": "Resources to balance",
+    "presupuesto": "Budget",
+    "proximamente": "Coming soon"
   },
 
-  "parrilla": {
-    "titulo": "Mission grid",
-    "pendiente": "Coming soon: missions sorted by difficulty, from Easy to Insane."
+  "misiones_texto_nota": "PROVISIONAL texts until Chambi/Justin add 'descripcion' and 'objetivo' in English to parametros_misiones.json.",
+  "misiones_texto": {
+    "easy_cubesat": {
+      "descripcion": "A small CubeSat rides a light rocket to low Earth orbit. Small satellites like this are how many students and universities reach space.",
+      "objetivo": "Survive the launch and use your own thruster to reach your final orbit."
+    },
+    "normal_leo": {
+      "descripcion": "A bigger satellite heads to low Earth orbit. Now it also needs solar panels to keep its systems running.",
+      "objetivo": "Reach your orbit and generate enough power for the whole mission."
+    }
   },
 
-  "taller": {
-    "titulo": "2. Design workshop",
-    "pendiente": "Coming soon: split your budget between the rocket's resources."
+  "laboratorio": {
+    "presupuesto_restante": "Budget left",
+    "interactuar": "[E] Interact",
+    "ayuda_mover": "Arrows/WASD: move   E: interact   Esc: close",
+    "hangar": "HANGAR",
+    "computadora": "Computer",
+    "archivo": "Archive",
+    "estaciones": "Control stations",
+    "npc_nombre": "Flight Director",
+    "fases": {
+      "cml1": {
+        "titulo": "Concept Maturity Level 1: Cocktail Napkin",
+        "texto": "Welcome, {nombre}! Go to the computer and confirm your mission."
+      },
+      "cml2": {
+        "titulo": "Concept Maturity Level 2: Initial Feasibility",
+        "texto": "Good job, {nombre}! Now study the mission conditions."
+      },
+      "cml3": {
+        "titulo": "Concept Maturity Level 3: Trade Space",
+        "texto": "Visit each station and assign your resources. Use the clues in the archive."
+      },
+      "cml4": {
+        "titulo": "Concept Maturity Level 4: Point Design",
+        "texto": "Go to the archive (purple !) for the budget review. Stations are still editable."
+      }
+    },
+    "briefing": {
+      "titulo": "Mission briefing",
+      "meta": "Goal",
+      "destino": "Destination",
+      "cohete": "Rocket"
+    },
+    "pistas": {
+      "titulo": "Update information",
+      "guardadas": "Your clues are stored in the archive. Visit the green ! anytime to review them.",
+      "archivo_titulo": "Archive: mission clues"
+    },
+    "estacion": {
+      "cantidad": "Amount",
+      "costo": "Cost",
+      "queda": "Budget left after this",
+      "invalido": "Enter a valid number",
+      "actual": "Current"
+    },
+    "revision": {
+      "titulo": "BUDGET REVIEW",
+      "ok": "Costs are within the assigned budget.",
+      "aviso_ok": "After launch confirmation you can't change your design.",
+      "excedido": "You have exceeded the budget by {exceso}. Adjust your resources."
+    }
   },
 
-  "revision": {
-    "titulo": "3. Pre-launch review",
-    "pendiente": "Coming soon: we check that your plan fits the budget before launch."
+  "explicacion_recursos": {
+    "estructura": "The frame that holds the ship together during the violent launch.",
+    "propulsion": "How much your ship can change its speed with its own engine.",
+    "potencia": "Electricity from the solar panels for all the ship's systems.",
+    "comunicaciones": "How fast the ship can send data back to Earth.",
+    "datos": "Scientific value of the instruments on board.",
+    "tiempo": "How long the ship can keep working."
   },
 
-  "resultado": {
-    "titulo": "4. Mission results",
+  "simulacion": {
+    "cuenta": ["T-3", "T-2", "T-1", "IGNITION!"],
+    "frases": {
+      "despegue": "T-3, 2, 1... Ignition! Engines at full power. Let's see if your numbers hold.",
+      "explota": "Structural alert! The vibration was stronger than the ship.",
+      "no_llega": "Engines cut off too early! Not enough delta-v to reach the target.",
+      "se_apaga": "Batteries at zero! We used more energy than we generated.",
+      "incomunicada": "We made it... but our signal can't reach Earth!",
+      "sin_ciencia": "The ship survived, but without enough instruments or time we missed the goal.",
+      "fuera_de_tiempo": "The ship survived, but without enough instruments or time we missed the goal.",
+      "exito": "Mission accomplished! You think like a real mission designer."
+    },
+    "ayuda_saltar": "SPACE to skip",
+    "orbita_objetivo": "Target orbit",
+    "iconos": {
+      "sin_energia": "POWER 0%",
+      "sin_senal": "NO SIGNAL",
+      "sin_datos": "NO DATA",
+      "sin_tiempo": "TIME UP"
+    }
+  },
+
+  "resultados": {
+    "exito": "Mission complete!",
+    "optimo": "Optimal design!",
     "puntaje": "Score",
-    "sin_resultado": "No result yet. Launch a mission first."
+    "presupuesto_usado": "Budget used",
+    "ahorrado": "saved",
+    "fallas": "Resources below their minimum",
+    "revelado": "What each resource needed",
+    "de_necesarios": "{valor} of {minimo} needed",
+    "faltante": "{pct}% missing",
+    "leyenda_min": "Min",
+    "leyenda_optimo": "Optimal",
+    "siguiente_estrella": "Next star at {pts} points",
+    "columnas": {
+      "recurso": "Resource",
+      "valor": "Your value",
+      "minimo": "Minimum",
+      "optimo": "Optimal",
+      "puntos": "Points",
+      "faltante": "Missing"
+    },
+    "etiquetas_faltante": {
+      "poco": "Just short",
+      "medio": "Short",
+      "mucho": "Far below"
+    },
+    "titulos_falla": {
+      "explota": "The rocket broke apart",
+      "no_llega": "The ship didn't reach its destination",
+      "se_apaga": "The ship ran out of power",
+      "incomunicada": "The ship lost contact with Earth",
+      "sin_ciencia": "The mission missed its science goal",
+      "fuera_de_tiempo": "The mission ran out of time"
+    },
+    "falla_generica": "Mission failed"
+  },
+
+  "notificaciones": {
+    "bienvenida": "Here are the station's missions. Start with Easy to master the budget split. Each mission you complete unlocks a new real engineering challenge.",
+    "desbloqueo": "Great work, {nombre}! New mission unlocked: {mision}.",
+    "reintento": "Don't give up, {nombre}! Check the revealed minimums and try again."
   },
 
   "recursos": {
-    "titulo": "Resources",
-    "masa": "Mass",
+    "estructura": "Structure",
+    "propulsion": "Propulsion (delta-v)",
     "potencia": "Power",
-    "presupuesto": "Budget",
-    "sin_limite": "choose a launcher"
+    "comunicaciones": "Communications",
+    "datos": "Science data",
+    "tiempo": "Time"
+  },
+
+  "unidades": {
+    "dias": "days",
+    "puntos": "points"
   },
 
   "destinos": {
-    "LEO": "Low Earth Orbit (LEO)",
+    "LEO": "Low Earth Orbit",
     "órbita lunar": "Lunar orbit",
     "órbita de Marte": "Mars orbit",
     "superficie de Marte": "Mars surface"

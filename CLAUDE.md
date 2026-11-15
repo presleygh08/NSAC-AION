@@ -8,29 +8,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Everything is written in Spanish: code identifiers, docstrings, error messages, data keys, and docs. Keep new code in Spanish to match.
 
-The repo is in an early, pre-event state. `README.md` describes a planned layout that **does not exist yet**: `fisica.py` (physics, Emanuel), `juego.py` (state/phases/events/score, Emanuel), `app.py` (Pygame UI, Gonzalo), `requirements.txt`. Sections marked **[COMPLETAR]** in the README get filled in during the event.
+Main files: `nucleo.py` (game logic: missions, allocation, review, simulation, score; Emanuel; it replaced `juego.py`, now `juego_v1.py`), `fisica.py` and `potencia_costo.py` (physics), `app.py` + `interfaz/` (Pygame UI, Gonzalo), `jugar_consola.py` (plays the whole flow in the terminal, no UI). `README.md` may still describe an older layout; sections marked **[COMPLETAR]** get filled in during the event.
 
 ## Commands
 
 No build, lint, or test framework yet. Tests are `assert`-based self-checks in each module's `if __name__ == "__main__":` block:
 
 ```bash
-python3 Funciones/Funciones/potencia.py   # rocket equation + power + cost checks
-python3 Funciones/fisica.py               # rocket equation checks only
+python3 nucleo.py              # game logic self-tests (also validates Easy and Normal)
+python3 nucleo.py --verificar  # checks datos/parametros_misiones.json
+python3 fisica.py              # rocket equation checks
+python3 potencia_costo.py      # power + cost checks
+python3 jugar_consola.py       # play the flow in the terminal
 ```
 
-Planned run command (once `app.py`/`requirements.txt` exist):
+Run the game (needs pygame, which is installed for python3.12, not for the Anaconda python3):
 
 ```bash
-pip install -r requirements.txt
-python3 app.py
+python3.12 app.py
 ```
 
 ## Code layout notes
 
-- `Funciones/Funciones/potencia.py` is a **superset** of `Funciones/fisica.py`: it has the same `masa_propelente` and `delta_v` (Tsiolkovsky, `G0 = 9.80665`), plus `potencia_generada` (solar flux `S0 = 1361 W/m²` scaled by 1/d²), `balance_potencia`, and `costo_total`. Changes to the shared functions have to go into both files until they are merged into the planned top-level `fisica.py`.
+- `fisica.py` has `masa_propelente` and `delta_v` (Tsiolkovsky, `G0 = 9.80665`); `potencia_costo.py` has `potencia_generada` (solar flux `S0 = 1361 W/m²` scaled by 1/d²), `balance_potencia` and `costo_total`. `nucleo.py` uses both to turn money into delta-v and power.
 - Physics functions raise `ValueError` on invalid input. Units go in the docstrings (m/s, s, kg, W, M USD).
-- `Hi.py` is a scratch/hello-world file.
 
 ## Data contract (`datos/*.json`)
 
@@ -39,7 +40,7 @@ The README's section 4 is the authoritative spec. Key rules for code that reads 
 - Units go in the key suffix: `_kg`, `_m_s`, `_ua`, `_km`, `_dias`, `_musd` (millions of USD). Decimal points, UTF-8 (load with `encoding="utf-8"`; names contain accents).
 - **`null` means "no published data", not zero or "impossible".** Skip it in calculations and treat it as "this launcher has no figure for that destination". Every numeric field has a matching `fuente_*` field, and a `null` value has a `null` source.
 - Launcher capacities are theoretical maxima under different conditions per manufacturer (often expendable configs). Costs are reference values from different years with no inflation adjustment. SLS cost is the rocket only. Don't present them as directly comparable or contractual.
-- Files: `lanzadores.json` (capacity to LEO/Luna/Marte + cost per launcher), `destinos.json` (`destino`, `delta_v_m_s`, `distancia_ua`, `fuente`), `misiones.json` (3 NASA reference missions: `nombre`, `destino`, `masa_kg`, `distancia_km`, `duracion_dias`, `fuente`).
+- Files: `lanzadores.json` (capacity to LEO/Luna/Marte + cost per launcher), `destinos.json` (`destino`, `delta_v_m_s`, `distancia_ua`, `fuente`), `parametros_misiones.json` (one mission per difficulty: id in `mision`, `dificultad`, `destino`, `cohete`, `presupuesto_musd`, `recursos` with hidden `minimo`/`optimo`, `pistas`; the mission grid comes from here), `mensajes.json` (result texts). `misiones_v1.json` is no longer used.
 - `distancia_ua` in `destinos.json` is the input for `potencia_generada`.
 
 Known inconsistencies to watch for when joining data:
@@ -58,6 +59,7 @@ Team (5, roles per v4): Gonzalo (Pygame UI: app.py, interfaz/), Emanuel (game ar
 ## UI rules (Pygame)
 - UI spec (screens, 16-bit style, lab with CML phases, simulation, results, priorities): @docs/especificacion-interfaz.md — follow it for everything visual.
 - Game logic API: @CONTRATO_API.md — the UI only calls functions of nucleo.py listed there (nucleo.py replaced juego.py, now juego_v1.py). During allocation never read estado["recursos"]; use recursos_visibles. Missing functions (cotizar, estrellas, faltante_pct, bonus por ahorro) are added directly to nucleo.py following docs/pedidos-emanuel.md.
+- Functions the UI uses, in flow order: `nuevo_progreso()`, `cargar_misiones(progreso)`, `puede_jugar(progreso, id)`, `cargar_parametros(id)`, `iniciar_mision(parametros)`, `paso_dinero(estado)`, `repartir(estado, clave, dinero_musd)`, `presupuesto_restante(estado)`, `recursos_visibles(estado)`, `revisar(estado)`, `simular(estado)`, `revelar(estado)`, `registrar_resultado(progreso, estado)`. Use `paso_dinero` for the − / + buttons, never a fixed step.
 - You may edit ANY file in the repo (nucleo.py, fisica.py, potencia_costo.py, datos/, docs, README) when needed to meet the spec or fix a bug. Rules: keep existing function names and data keys used by CONTRATO_API.md (only add), update CONTRATO_API.md when adding functions, rerun the module self-tests/pruebas.py and validar_mision after touching game logic, never invent NASA numbers (mark estimates as such), and list in your final summary which teammates' files you changed.
 - Game state lives in a dict in the main loop of app.py.
 - Files that stop being used are renamed with a _v1 suffix (not deleted).

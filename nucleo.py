@@ -134,7 +134,7 @@ def iniciar_mision(parametros):
         "reparto": {r["clave"]: 0.0 for r in parametros["recursos"]},   # M USD por recurso
         "fase": "reparto",                      # reparto, simulacion, resultado
         "resultado": None,
-        "umbrales_estrellas": umbrales_estrellas(parametros),   # (puntaje 2 estrellas, puntaje 3 estrellas)
+        "umbrales_estrellas": umbrales_estrellas(parametros),   # puntaje para 2, 3, 4 y 5 estrellas
     }
 
 
@@ -186,6 +186,23 @@ def costo_de(recurso, valor):
 def valor_recurso(estado, clave):
     """Valor actual del recurso según el dinero que se le asignó."""
     return convertir(_buscar_recurso(estado, clave), estado["reparto"][clave])
+
+
+def cotizar(estado, clave, valor):
+    """Cuántos M USD cuesta tener 'valor' del recurso 'clave' (en su unidad: kg, m/s, W...).
+    La usa la interfaz en cada estación: el jugador escribe la CANTIDAD y ve su costo.
+    Es la inversa de convertir (usa costo_de). ValueError si valor < 0 o la clave no existe."""
+    if valor < 0:
+        raise ValueError("La cantidad no puede ser negativa")
+    return costo_de(_buscar_recurso(estado, clave), valor)
+
+
+def repartir_valor(estado, clave, valor):
+    """Atajo: asigna al recurso el dinero que cuesta 'valor' (repartir + cotizar).
+    Devuelve el costo en M USD."""
+    costo = cotizar(estado, clave, valor)
+    repartir(estado, clave, costo)
+    return costo
 
 
 # ---------------------------------------------------------------------------
@@ -400,49 +417,104 @@ def puntos_recurso(valor, optimo):
     return max(0.0, 100 * (1 - abs(valor - optimo) / optimo))
 
 
+# Bonus por ahorro (decisión del equipo): si la misión se completa, el dinero que
+# NO se gastó suma hasta BONUS_AHORRO_MAX puntos (proporcional a ahorro / presupuesto).
+# Es un bonus SUMADO a la cercanía al óptimo (no ponderado): con la regla ponderada
+# 0.85·cercanía + 15·ahorro el mejor puntaje bajaba a 74-77 y las 4-5 estrellas eran imposibles.
+# Si la misión falla, el puntaje es 0: quedarse corto para "ahorrar" nunca conviene.
+BONUS_AHORRO_MAX = 15
+
+
+def ahorro(estado):
+    """M USD que quedaron sin gastar (0 si se pasó del presupuesto)."""
+    return max(0.0, presupuesto_restante(estado))
+
+
+def puntaje_cercania(estado):
+    """Promedio de los puntos por recurso (cercanía al óptimo), sin bonus. Float."""
+    pts = [puntos_recurso(valor_recurso(estado, r["clave"]), r["optimo"])
+           for r in estado["recursos"]]
+    return sum(pts) / len(pts)
+
+
 def puntaje(estado):
-    """Promedio de los puntos por recurso (0 si la misión falló). Devuelve entero."""
+    """Puntaje final (entero 0-100): cercanía al óptimo + bonus por ahorro, con tope 100.
+    0 si la misión falló."""
     if estado["fase"] != "resultado":
         raise ValueError("Primero hay que simular")
     if not estado["resultado"]["exito"]:
         return 0
-    pts = [puntos_recurso(valor_recurso(estado, r["clave"]), r["optimo"])
-           for r in estado["recursos"]]
-    return round(sum(pts) / len(pts))
+    bonus = BONUS_AHORRO_MAX * ahorro(estado) / estado["presupuesto_musd"]
+    return min(100, round(puntaje_cercania(estado) + bonus))
 
 
-# Estrellas: 1 = completar la misión (cualquier puntaje), 2 = puntaje >= ESTRELLAS_UMBRALES[0],
-# 3 = puntaje >= ESTRELLAS_UMBRALES[1]. Cada misión puede traer su propio
-# "estrellas": [dos, tres] en parametros_misiones.json.
-# Por qué 70 y 85 (análisis con los 5 niveles): cumplir justo los mínimos da 63-70 puntos
-# (1 estrella); el mejor puntaje posible es 87-94, así que 85 exige un reparto muy
-# cuidado pero alcanzable (en Easy, 3 de cada 4 aprobados lo logran; en Hard y Harder, ~1 de 10).
-ESTRELLAS_UMBRALES = (70, 85)
+# Estrellas (0 a 5): 0 = falló · 1 = completó (cualquier puntaje) · 2, 3, 4 y 5 cuando el
+# puntaje llega a cada valor de ESTRELLAS_UMBRALES · también 5 si el diseño es "óptimo"
+# (todos los recursos a ±10 % de su óptimo). Cada misión puede traer su propio
+# "estrellas": [dos, tres, cuatro, cinco] en parametros_misiones.json.
+# Por qué estos valores (medido con los 5 niveles): cumplir justo los mínimos da 66-71
+# puntos (1 estrella) y el mejor puntaje posible es 87-94, así que 5 estrellas (86) exige un
+# reparto muy cuidado pero alcanzable. La propuesta 40/60/80 daba 2 estrellas solo por
+# completar y dejaba 4-5 casi imposibles.
+ESTRELLAS_UMBRALES = (72, 78, 82, 86)
+ESTRELLAS_MAX = 5
 
 
 def _umbrales_validos(e):
-    return (isinstance(e, (list, tuple)) and len(e) == 2
-            and all(_es_numero_positivo(x) for x in e) and e[0] < e[1] <= 100)
+    if not (isinstance(e, (list, tuple)) and len(e) == ESTRELLAS_MAX - 1):
+        return False
+    if not all(_es_numero_positivo(x) for x in e):
+        return False
+    for i in range(len(e) - 1):          # de menor a mayor, sin repetir
+        if e[i] >= e[i + 1]:
+            return False
+    return e[-1] <= 100
 
 
 def umbrales_estrellas(m):
-    """(puntaje para 2 estrellas, puntaje para 3 estrellas) de una misión."""
+    """(puntaje para 2, 3, 4 y 5 estrellas) de una misión."""
     e = m.get("estrellas")
     return tuple(e) if _umbrales_validos(e) else ESTRELLAS_UMBRALES
 
 
-def estrellas_de(puntaje, umbrales=ESTRELLAS_UMBRALES, completada=True):
-    """Estrellas (0 a 3). 0 si la misión no se completó; si se completó, mínimo 1."""
+def estrellas_de(puntaje, umbrales=ESTRELLAS_UMBRALES, completada=True, optimo=False):
+    """Estrellas (0 a 5). 0 si la misión no se completó; si se completó, mínimo 1.
+    optimo=True (todos los recursos cerca del óptimo) da 5 directamente."""
     if not completada:
         return 0
-    dos, tres = umbrales
-    return 3 if puntaje >= tres else 2 if puntaje >= dos else 1
+    if optimo:
+        return ESTRELLAS_MAX
+    n = 1
+    for umbral in umbrales:
+        if puntaje >= umbral:
+            n = n + 1
+    return n
+
+
+def es_optimo(estado):
+    """True si la misión se completó y TODOS los recursos quedaron a ±MARGEN_OPTIMO del óptimo."""
+    if estado["fase"] != "resultado" or not estado["resultado"]["exito"]:
+        return False
+    for r in estado["recursos"]:
+        if abs(valor_recurso(estado, r["clave"]) - r["optimo"]) > MARGEN_OPTIMO * r["optimo"] + TOLERANCIA:
+            return False
+    return True
+
+
+def estrellas(estado):
+    """Estrellas (0 a 5) de la misión ya simulada."""
+    if estado["fase"] != "resultado":
+        raise ValueError("Primero hay que simular")
+    umbrales = estado.get("umbrales_estrellas", ESTRELLAS_UMBRALES)
+    return estrellas_de(puntaje(estado), umbrales, estado["resultado"]["exito"], es_optimo(estado))
 
 
 def puntaje_maximo(parametros, intentos=15000, semilla=0):
     """Estimación (por abajo) del mejor puntaje posible con el presupuesto: compra
     los mínimos, reparte la holgura al azar y mejora moviendo dinero entre recursos.
-    Sirve para comprobar que las 3 estrellas son alcanzables. Devuelve un entero."""
+    Cuenta solo la cercanía al óptimo (sin bonus por ahorro), así que el puntaje real
+    máximo es igual o mayor. Sirve para comprobar que las 5 estrellas son alcanzables.
+    Devuelve un entero."""
     par = preparar_parametros(parametros)
     rec = par["recursos"]
     rnd = random.Random(semilla)
@@ -481,14 +553,19 @@ def revelar(estado):
     """Datos para la pantalla de resultados: por recurso, lo elegido, el mínimo,
     el óptimo, sus puntos y si quedó bajo el mínimo / cerca del óptimo.
     Devuelve: {'puntaje', 'exito', 'optimo', 'falla', 'fallas', 'mensaje',
-               'estrellas', 'siguiente_estrella_pts', 'recursos': [...]}.
+               'estrellas', 'siguiente_estrella_pts', 'ahorro_musd',
+               'presupuesto_usado_pct', 'recursos': [...]}.
+      'puntaje' -> cercanía al óptimo + bonus por ahorro (0 si falló)
       'fallas'  -> TODAS las fallas, con el mismo peso: lista de
                    {'clave', 'falla', 'mensaje'} (vacía si hubo éxito)
       'falla'   -> la primera falla o None (solo por compatibilidad; usar 'fallas')
       'mensaje' -> texto de mensajes.json: "exito", o el de todas las fallas juntas
-      'estrellas' -> 0 si falló; 1 si completó; 2 y 3 según el puntaje
+      'estrellas' -> 0 a 5 (ver estrellas_de)
       'siguiente_estrella_pts' -> puntaje que falta alcanzar para la próxima estrella
-                   (None si falló o ya tiene 3)."""
+                   (None si falló o ya tiene 5)
+      'ahorro_musd' -> M USD sin gastar; 'presupuesto_usado_pct' -> % del presupuesto gastado
+      En cada recurso, 'faltante_pct' -> cuánto le faltó para el mínimo, en %
+                   (0 si no quedó bajo el mínimo)."""
     if estado["fase"] != "resultado":
         raise ValueError("Primero hay que simular")
     filas = []
@@ -500,19 +577,26 @@ def revelar(estado):
             "puntos": round(puntos_recurso(valor, r["optimo"])),
             "bajo_minimo": valor < r["minimo"] - TOLERANCIA,
             "cerca_optimo": abs(valor - r["optimo"]) <= MARGEN_OPTIMO * r["optimo"] + TOLERANCIA,
+            "faltante_pct": max(0.0, (r["minimo"] - valor) / r["minimo"] * 100),
             "fuente": r.get("fuente", ""),
         })
     exito = estado["resultado"]["exito"]
     pts = puntaje(estado)
     umbrales = estado.get("umbrales_estrellas", ESTRELLAS_UMBRALES)
-    n_estrellas = estrellas_de(pts, umbrales, exito)
+    n_estrellas = estrellas(estado)
+    if exito and n_estrellas < ESTRELLAS_MAX:
+        siguiente = umbrales[n_estrellas - 1]
+    else:
+        siguiente = None
     return {"puntaje": pts, "exito": exito,
-            "optimo": exito and all(f["cerca_optimo"] for f in filas),
+            "optimo": es_optimo(estado),
             "falla": estado["resultado"]["falla"],
             "fallas": mensajes_fallas(estado),
             "mensaje": mensaje_resultado(estado),
             "estrellas": n_estrellas,
-            "siguiente_estrella_pts": umbrales[n_estrellas - 1] if exito and n_estrellas < 3 else None,
+            "siguiente_estrella_pts": siguiente,
+            "ahorro_musd": ahorro(estado),
+            "presupuesto_usado_pct": gasto_total(estado) / estado["presupuesto_musd"] * 100,
             "recursos": filas}
 
 
@@ -593,7 +677,7 @@ def verificar_parametros(m):
     if not m.get("pistas"):
         p.append(f"{mid}: faltan 'pistas'")
     if "estrellas" in m and not _umbrales_validos(m["estrellas"]):
-        p.append(f"{mid}: 'estrellas' debe ser [puntaje_2_estrellas, puntaje_3_estrellas] con 0 < dos < tres <= 100")
+        p.append(f"{mid}: 'estrellas' debe ser [puntaje_2, puntaje_3, puntaje_4, puntaje_5] de menor a mayor, <= 100")
     # Condición de validez: costo(mínimos) <= presupuesto < costo(óptimos)
     if completos and recursos and _es_numero_positivo(m.get("presupuesto_musd")):
         pres = m["presupuesto_musd"]
@@ -703,9 +787,10 @@ DESBLOQUEO_EN_ORDEN = True    # Justin decide; False = todas abiertas desde el i
 
 
 def nuevo_progreso():
-    """Progreso de un jugador nuevo: {'completadas': {id_mision: mejor_puntaje}}.
+    """Progreso de un jugador nuevo:
+    {'completadas': {id_mision: mejor_puntaje}, 'estrellas': {id_mision: mejores_estrellas}}.
     Vive en memoria (así también funciona en la versión web con pygbag)."""
-    return {"completadas": {}}
+    return {"completadas": {}, "estrellas": {}}
 
 
 def _nombre_mision(m):
@@ -722,7 +807,7 @@ def cargar_misiones(progreso=None, ruta_parametros=None):
     campos (nunca mínimos ni óptimos):
       'id', 'nombre', 'nivel' (1 a 5), 'dificultad', 'destino', 'cohete',
       'presupuesto_musd', 'estado', 'mejor_puntaje' (None si no está completada) y
-      'estrellas' (0 si no está completada; si lo está, 1 a 3 según el mejor puntaje).
+      'estrellas' (0 si no está completada; si lo está, 1 a 5: las mejores logradas).
     'estado' es una de:
       'completada'    -> ya se completó (se puede repetir)
       'disponible'    -> se puede jugar
@@ -752,7 +837,14 @@ def cargar_misiones(progreso=None, ruta_parametros=None):
         fila = {"id": mid, "nombre": _nombre_mision(m), "nivel": orden[nivel] + 1,
                 "dificultad": nivel, "destino": m.get("destino"), "cohete": m.get("cohete"),
                 "presupuesto_musd": m.get("presupuesto_musd"), "mejor_puntaje": mejor,
-                "estrellas": estrellas_de(mejor, umbrales_estrellas(m)) if completada else 0}
+                "estrellas": 0}
+        if completada:
+            # Mejores estrellas guardadas; si el progreso es antiguo (sin 'estrellas'),
+            # se calculan con el mejor puntaje.
+            guardadas = progreso.get("estrellas", {}).get(mid)
+            if guardadas is None:
+                guardadas = estrellas_de(mejor, umbrales_estrellas(m))
+            fila["estrellas"] = guardadas
         if completada:
             fila["estado"] = "completada"
         elif verificar_parametros(m):       # lista de problemas no vacía
@@ -784,6 +876,9 @@ def registrar_resultado(progreso, estado):
         mid = estado["mision"]
         pts = puntaje(estado)
         progreso["completadas"][mid] = max(pts, progreso["completadas"].get(mid, 0))
+        if "estrellas" not in progreso:
+            progreso["estrellas"] = {}
+        progreso["estrellas"][mid] = max(estrellas(estado), progreso["estrellas"].get(mid, 0))
     return progreso
 
 
@@ -1025,32 +1120,65 @@ if __name__ == "__main__":
     assert any("Normal" in x and "propulsion" in x for x in con_niveles(sin_prop))
     print("OK  verificar_niveles -> detecta faltante, repetido, desconocido y recursos que faltan")
 
-    # 22. Estrellas: 1 = completar, 2 >= 70, 3 >= 85 (cada misión puede traer "estrellas": [dos, tres])
-    assert [estrellas_de(p) for p in (0, 66, 69, 70, 84, 85, 100)] == [1, 1, 1, 2, 2, 3, 3]
+    # 22. Estrellas 0-5: 1 = completar, 2 >= 72, 3 >= 78, 4 >= 82, 5 >= 86 o diseño óptimo
+    assert [estrellas_de(p) for p in (0, 71, 72, 77, 78, 81, 82, 85, 86, 100)] == [1, 1, 2, 2, 3, 3, 4, 4, 5, 5]
     assert estrellas_de(90, completada=False) == 0
-    assert umbrales_estrellas({"estrellas": [60, 80]}) == (60, 80)
-    assert umbrales_estrellas({"estrellas": [80, 60]}) == ESTRELLAS_UMBRALES      # inválido -> los de siempre
+    assert estrellas_de(50, optimo=True) == 5
+    assert umbrales_estrellas({"estrellas": [60, 70, 80, 90]}) == (60, 70, 80, 90)
+    assert umbrales_estrellas({"estrellas": [80, 60, 70, 90]}) == ESTRELLAS_UMBRALES   # inválido -> los de siempre
+    assert umbrales_estrellas({"estrellas": [60, 80]}) == ESTRELLAS_UMBRALES           # formato viejo (0-3)
     assert umbrales_estrellas({}) == ESTRELLAS_UMBRALES
-    assert verificar_parametros(dict(easy, estrellas=[80, 60])) != []
-    assert verificar_parametros(dict(easy, estrellas=[60, 80])) == []
+    assert verificar_parametros(dict(easy, estrellas=[80, 60, 70, 90])) != []
+    assert verificar_parametros(dict(easy, estrellas=[60, 70, 80, 90])) == []
 
-    # 23. revelar trae las estrellas y cuánto falta para la siguiente
+    # 23. revelar trae estrellas, cuánto falta para la siguiente, ahorro y % usado
     info = jugar(easy, estructura=6.0, propulsion=5.0)       # justo los mínimos: se aprueba, 1 estrella
-    assert info["exito"] and info["estrellas"] == 1 and info["siguiente_estrella_pts"] == 70, info["puntaje"]
-    info = jugar(easy, estructura=6.5, propulsion=5.5)
-    assert info["estrellas"] == 2 and info["siguiente_estrella_pts"] == 85, info["puntaje"]
-    info = jugar(easy, estructura=8.5, propulsion=6.0)
-    assert info["puntaje"] == 87 and info["estrellas"] == 3 and info["siguiente_estrella_pts"] is None
+    assert info["exito"] and info["estrellas"] == 1 and info["siguiente_estrella_pts"] == 72, info["puntaje"]
+    assert abs(info["ahorro_musd"] - 3.5) < 1e-9 and abs(info["presupuesto_usado_pct"] - 11 / 14.5 * 100) < 1e-9
+    info = jugar(easy, estructura=8.5, propulsion=6.0)       # todo el presupuesto, buen reparto
+    assert info["puntaje"] == 87 and info["estrellas"] == 5 and info["siguiente_estrella_pts"] is None
+    assert info["ahorro_musd"] == 0 and abs(info["presupuesto_usado_pct"] - 100) < 1e-9
     assert puntos_recurso(12.0, 8.5) < puntos_recurso(8.5, 8.5) == 100        # pasarse del óptimo resta
-    print("OK  estrellas         -> mínimos 1, intermedio 2, buen reparto 3")
+    print("OK  estrellas         -> mínimos 1, buen reparto 5")
 
-    # 24. Las 3 estrellas deben ser alcanzables en cada nivel
+    # 23b. Bonus por ahorro: con la misma cercanía, ahorrar suma; fallar sigue dando 0
+    e = iniciar_mision(easy)
+    repartir(e, "estructura", 6.0); repartir(e, "propulsion", 5.0)
+    revisar(e); simular(e)
+    assert puntaje(e) == round(puntaje_cercania(e) + 15 * 3.5 / 14.5) > round(puntaje_cercania(e))
+    assert jugar(easy, estructura=3.0, propulsion=1.0)["puntaje"] == 0      # ahorró mucho pero falló
+    assert estrellas(e) == revelar(e)["estrellas"]
+    print("OK  bonus por ahorro  -> mínimos:", round(puntaje_cercania(e)), "+ bonus =", puntaje(e))
+
+    # 23c. cotizar es la inversa de convertir y valida la entrada
+    e = iniciar_mision(easy)
+    assert math.isclose(cotizar(e, "estructura", 8.5), 8.5)                 # 1 M USD por kg
+    costo = cotizar(e, "propulsion", 400)
+    repartir(e, "propulsion", costo)
+    assert math.isclose(valor_recurso(e, "propulsion"), 400, rel_tol=1e-9)
+    assert cotizar(e, "propulsion", 0) == 0
+    for malo in (("estructura", -1), ("antena", 5)):
+        try:
+            cotizar(e, *malo)
+            raise AssertionError("debió fallar")
+        except ValueError:
+            pass
+    assert math.isclose(repartir_valor(e, "estructura", 7.0), 7.0) and e["reparto"]["estructura"] == 7.0
+    print(f"OK  cotizar           -> 400 m/s cuestan ${costo:.2f} M")
+
+    # 23d. faltante_pct: cuánto le faltó al recurso para su mínimo
+    info = jugar(easy, estructura=3.0, propulsion=6.0)
+    filas = {f["clave"]: f for f in info["recursos"]}
+    assert math.isclose(filas["estructura"]["faltante_pct"], 50) and filas["propulsion"]["faltante_pct"] == 0
+    print("OK  faltante_pct      -> 3 kg de 6 kg mínimos = 50 %")
+
+    # 24. Las 5 estrellas deben ser alcanzables en cada nivel
     maximos = {}
     for mid in IDS_NIVELES:
         par = cargar_parametros(mid)
         maximos[mid] = puntaje_maximo(par)
-        assert maximos[mid] >= umbrales_estrellas(par)[1], (mid, maximos[mid])
-    print("OK  3 estrellas posibles -> mejor puntaje estimado:", maximos)
+        assert maximos[mid] >= umbrales_estrellas(par)[-1], (mid, maximos[mid])
+    print("OK  5 estrellas posibles -> mejor puntaje estimado:", maximos)
 
     # ---- Paso de los botones − y + ----
     esperado = {"easy_cubesat": 0.5, "normal_leo": 1, "hard_mro_marte": 5,
@@ -1099,7 +1227,7 @@ if __name__ == "__main__":
         revisar(e); simular(e)
         registrar_resultado(prog, e)
         assert prog["completadas"]["easy_cubesat"] == puntaje(e)
-        assert cargar_misiones(prog, r_par)[0]["estrellas"] == estrellas_de(puntaje(e)) >= 1
+        assert cargar_misiones(prog, r_par)[0]["estrellas"] == estrellas(e) == prog["estrellas"]["easy_cubesat"] >= 1
         assert estados(prog) == {"easy_cubesat": "completada", "normal_leo": "disponible", "hard_mro": "proximamente"}
         print("OK  desbloqueo       ->", estados(prog))
 

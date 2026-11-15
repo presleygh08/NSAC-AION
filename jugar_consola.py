@@ -14,7 +14,7 @@ def elegir_mision(progreso):
     parrilla = nucleo.cargar_misiones(progreso)
     print("\n=== MISIONES ===")
     for i, f in enumerate(parrilla, 1):
-        pts = (f" (mejor: {f['mejor_puntaje']}  {'★' * f['estrellas']}{'☆' * (3 - f['estrellas'])})"
+        pts = (f" (mejor: {f['mejor_puntaje']}  {'★' * f['estrellas']}{'☆' * (5 - f['estrellas'])})"
                if f["mejor_puntaje"] is not None else "")
         print(f"{i}. [{f['dificultad']}] {f['nombre']} -> {f['destino']}, {f['cohete']}  "
               f"- {ETIQUETA[f['estado']]}{pts}")
@@ -59,7 +59,7 @@ def jugar(mision_id, progreso):
     else:
         for f in info["fallas"]:                # todas las fallas, con el mismo peso
             print(f"- [{f['clave']} -> {f['falla']}] {f['mensaje']}\n")
-    print(f"Puntaje: {info['puntaje']}   {'★' * info['estrellas']}{'☆' * (3 - info['estrellas'])}")
+    print(f"Puntaje: {info['puntaje']}   {'★' * info['estrellas']}{'☆' * (5 - info['estrellas'])}")
     if info["siguiente_estrella_pts"]:
         print(f"Para la siguiente estrella: {info['siguiente_estrella_pts']} puntos")
     for f in info["recursos"]:
