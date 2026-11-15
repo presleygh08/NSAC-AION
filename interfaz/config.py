@@ -40,7 +40,8 @@ RUTA_DESTINOS = os.path.join(RUTA_PROYECTO, "datos", "destinos.json")
 RUTA_MENSAJES = os.path.join(RUTA_PROYECTO, "datos", "mensajes.json")
 
 # --- Orden de las pantallas (los botones Next/Back siguen esta lista) ---
-ORDEN_PANTALLAS = ["inicio", "objetivo", "diseno", "lanzador", "resultados"]
+# Flujo de v4 (versión reducida): parrilla -> objetivo -> taller -> revisión -> resultado.
+ORDEN_PANTALLAS = ["parrilla", "objetivo", "taller", "revision", "resultado"]
 
 # --- Qué columna de lanzadores.json corresponde a cada destino ---
 # lanzadores.json solo tiene LEO, Luna y Marte, pero destinos.json usa

@@ -44,7 +44,7 @@ def cargar_datos():
 def crear_estado_inicial():
     """Devuelve el diccionario con el estado de una partida nueva."""
     return {
-        "pantalla": "inicio",        # qué pantalla se está viendo
+        "pantalla": "parrilla",      # qué pantalla se está viendo (ver config.ORDEN_PANTALLAS)
         "destino": None,             # nombre del destino, como en destinos.json
         "lanzador": None,            # nombre del lanzador, como en lanzadores.json
         # Decisiones de diseño de la nave:
@@ -127,10 +127,10 @@ def aplicar_accion(estado, accion, valor, datos):
 
     elif accion == "simular":
         estado["resultado"] = evaluar_mision_prueba(estado, datos)
-        estado["pantalla"] = "resultados"
+        estado["pantalla"] = "resultado"
 
     elif accion == "redisenar":
-        estado["pantalla"] = "diseno"
+        estado["pantalla"] = "taller"     # volver al taller de reparto
 
     elif accion == "menu":
         estado = crear_estado_inicial()   # partida nueva desde cero

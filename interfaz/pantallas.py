@@ -254,9 +254,9 @@ def dibujar_lanzador(ventana, estado, datos):
 # Pantalla 5: resultados
 # ---------------------------------------------------------------------------
 
-def dibujar_resultados(ventana, estado, datos):
+def dibujar_resultado(ventana, estado, datos):
     textos = datos["textos"]
-    t = textos["resultados"]
+    t = textos["resultado"]
     dibujar_titulo(ventana, t["titulo"])
 
     resultado = estado["resultado"]
@@ -286,20 +286,59 @@ def dibujar_resultados(ventana, estado, datos):
 
 
 # ---------------------------------------------------------------------------
+# Pantallas PROVISIONALES del flujo v4 (solo título, aviso y botones).
+# Todavía no usan interfaz/juego_stub.py: eso es el siguiente paso.
+# ---------------------------------------------------------------------------
+
+def dibujar_provisional(ventana, textos, clave):
+    """Dibuja el título y el aviso "Coming soon" de la pantalla con esa clave
+    (la clave es la sección de textos_en.json: "parrilla", "taller", ...)."""
+    t = textos[clave]
+    dibujar_titulo(ventana, t["titulo"])
+    dibujar_texto_multilinea(ventana, t["pendiente"], MARGEN, 110, config.ANCHO - 2 * MARGEN,
+                             config.LETRA_NORMAL, config.COLOR_TEXTO_SUAVE)
+
+
+def dibujar_parrilla(ventana, estado, datos):
+    textos = datos["textos"]
+    dibujar_provisional(ventana, textos, "parrilla")
+    # Es la primera pantalla: no hay "Back", solo "Next".
+    return [boton_siguiente(textos)]
+
+
+def dibujar_taller(ventana, estado, datos):
+    textos = datos["textos"]
+    dibujar_provisional(ventana, textos, "taller")
+    return [boton_atras(textos), boton_siguiente(textos)]
+
+
+def dibujar_revision(ventana, estado, datos):
+    textos = datos["textos"]
+    dibujar_provisional(ventana, textos, "revision")
+    # En vez de "Next", el botón es "Launch mission" (acción "simular"),
+    # que guarda el resultado y lleva a la pantalla de resultado.
+    boton_lanzar = Boton(textos["botones"]["lanzar"], config.ANCHO - MARGEN - 220,
+                         Y_BOTONES_NAV, 220, 50, "simular")
+    return [boton_atras(textos), boton_lanzar]
+
+
+# ---------------------------------------------------------------------------
 # Elegir qué pantalla dibujar
 # ---------------------------------------------------------------------------
+# NOTA: dibujar_inicio, dibujar_diseno y dibujar_lanzador son del flujo viejo.
+# Ya no se usan; las dejamos por si reutilizamos partes en las pantallas nuevas.
 
 def dibujar_pantalla(ventana, estado, datos):
     """Llama a la función de la pantalla actual y devuelve sus botones."""
     pantalla = estado["pantalla"]
-    if pantalla == "inicio":
-        return dibujar_inicio(ventana, estado, datos)
+    if pantalla == "parrilla":
+        return dibujar_parrilla(ventana, estado, datos)
     elif pantalla == "objetivo":
         return dibujar_objetivo(ventana, estado, datos)
-    elif pantalla == "diseno":
-        return dibujar_diseno(ventana, estado, datos)
-    elif pantalla == "lanzador":
-        return dibujar_lanzador(ventana, estado, datos)
-    elif pantalla == "resultados":
-        return dibujar_resultados(ventana, estado, datos)
+    elif pantalla == "taller":
+        return dibujar_taller(ventana, estado, datos)
+    elif pantalla == "revision":
+        return dibujar_revision(ventana, estado, datos)
+    elif pantalla == "resultado":
+        return dibujar_resultado(ventana, estado, datos)
     return []
