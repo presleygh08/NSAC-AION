@@ -1,6 +1,6 @@
 # pantalla_inicio.py
-# Pantalla de inicio: título ROCKET RUN, la Tierra con un cohete despegando y la caja
-# para escribir el nombre del jugador (callsign).
+# Pantalla de inicio: título STAR FORGE, la Tierra con un cohete despegando y la caja
+# para escribir el nombre del jugador (callsign). Botón CREDITS -> créditos (v2, punto 13).
 #
 # Cada pantalla tiene:
 #   dibujar(sup, ui, textos) -> lista de botones
@@ -30,7 +30,9 @@ def dibujar(sup, ui, textos):
     estilo.texto(sup, t["ayuda"], centro, 238, config.LETRA_PEQUENA, config.COLOR_TEXTO_SUAVE,
                  centrado=True)
     return [Boton(textos["botones"]["jugar"], centro - 50, 200, 100, config.ALTO_BOTON,
-                  "jugar", color=config.VERDE)]
+                  "jugar", color=config.VERDE, principal=True),
+            Boton(textos["botones"]["creditos"], config.ANCHO - 116, 326, 100, config.ALTO_BOTON,
+                  "ver_creditos")]
 
 
 def tecla(ui, evento):

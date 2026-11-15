@@ -1,6 +1,6 @@
-# Space Mission Design Game
+# STAR FORGE — Space Mission Design Game
 
-Juego interactivo para el reto **Space Mission Design Game** del NASA Space Apps Challenge 2026. El jugador diseña, gestiona y simula una misión espacial completa tomando decisiones de ingeniería con recursos limitados (masa, potencia, costo y capacidad del lanzador).
+**STAR FORGE** es un juego interactivo para el reto **Space Mission Design Game** del NASA Space Apps Challenge 2026. El jugador diseña, gestiona y simula una misión espacial completa tomando decisiones de ingeniería con recursos limitados (masa, potencia, costo y capacidad del lanzador).
 
 **Equipo:** 
 - Gonzales Herrera, Emanuel Presley

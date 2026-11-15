@@ -50,11 +50,13 @@ if puede_jugar(progreso, "easy_cubesat"):
 | `repartir(estado, clave, dinero_musd)` | reparto | `estado` (no bloquea si se pasa del presupuesto) |
 | `recursos_visibles(estado)` | reparto | lista de recursos sin mínimos ni óptimos |
 | `presupuesto_restante(estado)` | reparto | M USD sin repartir (negativo si se pasó) |
+| `dentro_del_presupuesto(estado)` | HUD del laboratorio (v2, D1) | `True` si lo repartido cabe en el presupuesto. La interfaz solo pinta un indicador verde/rojo, sin cifras |
 | `revisar(estado)` | botón "lanzar" | `{'ok', 'exceso_musd', 'mensaje'}` |
 | `simular(estado)` | tras `revisar` ok | `{'exito', 'falla', 'fallas', 'bajo_minimo'}` |
 | `revelar(estado)` | pantalla de resultados | ver abajo |
 | `estrellas(estado)` | tras `simular` | 0 a 5 (lo mismo que `revelar(...)["estrellas"]`) |
 | `registrar_resultado(progreso, estado)` | tras `simular` | `progreso` (guarda mejor puntaje y mejores estrellas) |
+| `presupuesto_sugerido(parametros)` | herramienta (Chambi / validación) | menor presupuesto redondo ≥ 1.05 × costo de los óptimos (v2, D2) |
 
 Campos de `estado` que la interfaz puede leer: `mision`, `destino`, `cohete`,
 `presupuesto_musd`, `pistas` (lista de textos), `fase`.
@@ -91,9 +93,9 @@ NO usar un paso fijo. `paso_dinero(estado)` da el paso de cada misión:
 | normal_leo | 1 |
 | hard_mro_marte | 5 |
 | harder_perseverance | 5 |
-| insane_artemis1 | 4 |
+| insane_artemis1 | 5 |
 
-Con pasos de 5, Easy (14.5 M USD) sería imposible: sus mínimos cuestan ~11 y habría
+Con pasos de 5, Easy habría sido imposible con su presupuesto viejo (14.5 M USD): sus mínimos cuestan ~11 y habría
 que gastar 15. Usar `repartir(estado, clave, round(dinero + paso, 6))`, sin bajar de 0.
 
 ## Ejemplos reales
@@ -103,8 +105,8 @@ presupuesto_musd, estado, mejor_puntaje, estrellas`.
 `estado` es `'completada'`, `'disponible'`, `'bloqueada'` o `'proximamente'`
 (parámetros incompletos). `estrellas` es 0 si no está completada, y 1 a 5 si lo está (las mejores logradas).
 ```python
-{'id': 'easy_cubesat', 'nombre': 'CubeSat in orbit', 'nivel': 1, 'dificultad': 'Easy',
- 'destino': 'LEO', 'cohete': 'Electron', 'presupuesto_musd': 14.5,
+{'id': 'easy_cubesat', 'nombre': 'CubeSat to Low Earth Orbit', 'nivel': 1, 'dificultad': 'Easy',
+ 'destino': 'LEO', 'cohete': 'Electron', 'presupuesto_musd': 18.0,
  'mejor_puntaje': None, 'estrellas': 0, 'estado': 'disponible'}
 ```
 
@@ -116,7 +118,7 @@ presupuesto_musd, estado, mejor_puntaje, estrellas`.
 
 `revisar(estado)` con el reparto pasado de presupuesto
 ```python
-{'ok': False, 'exceso_musd': 5.5, 'mensaje': 'The mission stopped before launch: it costs 20 M USD ...'}
+{'ok': False, 'exceso_musd': 2.0, 'mensaje': 'The mission stopped before launch: it costs 20 M USD ...'}
 ```
 Con `ok: True`, `mensaje` es `None` y la misión pasa a la fase de simulación
 (desde ahí ya no se puede volver a repartir).
@@ -129,7 +131,8 @@ Con `ok: True`, `mensaje` es `None` y la misión pasa a la fase de simulación
  'ahorro_musd': 0.0, 'presupuesto_usado_pct': 100.0,
  'recursos': [
    {'clave': 'propulsion', 'unidad': 'm/s', 'valor': 297.37, 'minimo': 250, 'optimo': 400,
-    'puntos': 74, 'bajo_minimo': False, 'cerca_optimo': False, 'faltante_pct': 0.0, 'fuente': 'https://...'},
+    'puntos': 74, 'bajo_minimo': False, 'cerca_optimo': False, 'faltante_pct': 0.0,
+    'zona': 'aceptable', 'pista': 'Needs a bit more', 'fuente': 'https://...'},
    ...]}
 ```
 `revelar(estado)` con dos fallas a la vez
@@ -144,6 +147,9 @@ Con `ok: True`, `mensaje` es `None` y la misión pasa a la fase de simulación
 - Para mostrar las fallas por separado, recorrer `fallas`; para un solo bloque de texto, usar `mensaje`.
 - `siguiente_estrella_pts` es el puntaje que falta alcanzar para la próxima estrella
   (`None` si la misión falló o ya tiene 5).
+- `zona` y `pista` (en cada recurso, v2 D3): `bajo_minimo` → "Needs much more", `aceptable` → "Needs a bit more",
+  `optimo` (±10 % del óptimo) → "Close to optimal", `exceso` → "More than needed". La interfaz NO muestra
+  `minimo`, `optimo` ni `faltante_pct` salvo con 5 estrellas (D3); con menos, usa `zona` y `pista`.
 - `faltante_pct` (en cada recurso) = `max(0, (mínimo − valor) / mínimo × 100)`: cuánto le faltó para el mínimo.
 - `ahorro_musd` = dinero sin gastar; `presupuesto_usado_pct` = % del presupuesto gastado.
 - Si la misión falló, `puntaje` es 0. Los mensajes vienen de `datos/mensajes.json`, en inglés.
@@ -155,5 +161,5 @@ función fuera de su fase (por ejemplo `simular` antes de `revisar`) o la misió
 ## Pendiente de otros
 - Pistas (`estado["pistas"]`) siguen en español: Justin decide su traducción y dónde se guarda.
 - `mensajes.json` ya trae `explota`, `incomunicada`, `sin_ciencia` y `fuera_de_tiempo` (copiados de los respaldos de `nucleo.py` el 15 nov; Justin puede mejorar su texto).
-- Los presupuestos por nivel son de referencia; Chambi puede cambiarlos tras su investigación. Si cambian, repetir `python nucleo.py` (comprueba que las 5 estrellas sigan siendo alcanzables).
+- Presupuestos v2 (D2): `presupuesto_musd` = `presupuesto_sugerido(parametros)` (18, 71, 155, 240, 305). Si Chambi cambia mínimos u óptimos, recalcularlo y repetir `python nucleo.py` y `python nucleo.py --validar-fino`. `verificar_parametros` avisa si el presupuesto no alcanza para los mínimos o supera 1.10 × costo de los óptimos.
 - `destino` y los nombres de recursos se muestran traducidos por la interfaz (el núcleo los devuelve como están en los JSON).

@@ -1,7 +1,7 @@
 [
   {
     "mision": "easy_cubesat",
-    "nombre": "CubeSat in orbit",
+    "nombre": "CubeSat to Low Earth Orbit",
     "dificultad": "Easy",
     "destino": "LEO",
     "cohete": "Electron",
@@ -10,7 +10,7 @@
     "eficiencia_panel": 0.28,
     "musd_por_kg_propelente": 2.03,
     "musd_por_m2_panel": 15.24,
-    "presupuesto_musd": 14.5,
+    "presupuesto_musd": 18.0,
     "recursos": [
       {
         "clave": "estructura",
@@ -40,7 +40,7 @@
   },
   {
     "mision": "normal_leo",
-    "nombre": "Small satellite in LEO",
+    "nombre": "Exoplanet SmallSat to LEO",
     "dificultad": "Normal",
     "destino": "LEO",
     "cohete": "Falcon 9",
@@ -49,7 +49,7 @@
     "eficiencia_panel": 0.28,
     "musd_por_kg_propelente": 0.84,
     "musd_por_m2_panel": 15.24,
-    "presupuesto_musd": 57.0,
+    "presupuesto_musd": 71.0,
     "recursos": [
       {
         "clave": "estructura",
@@ -89,7 +89,7 @@
   },
   {
     "mision": "hard_mro_marte",
-    "nombre": "Mars orbiter",
+    "nombre": "Mars Orbiter",
     "dificultad": "Hard",
     "destino": "órbita de Marte",
     "cohete": "Falcon Heavy",
@@ -98,7 +98,7 @@
     "eficiencia_panel": 0.28,
     "musd_por_kg_propelente": 0.012,
     "musd_por_m2_panel": 8.21,
-    "presupuesto_musd": 125.0,
+    "presupuesto_musd": 155.0,
     "recursos": [
       {
         "clave": "estructura",
@@ -148,7 +148,7 @@
   },
   {
     "mision": "harder_perseverance",
-    "nombre": "Mars rover",
+    "nombre": "Mars Rover",
     "dificultad": "Harder",
     "destino": "superficie de Marte",
     "cohete": "Falcon Heavy",
@@ -157,7 +157,7 @@
     "eficiencia_panel": 0.3,
     "musd_por_kg_propelente": 0.007,
     "musd_por_m2_panel": 8.79,
-    "presupuesto_musd": 195.0,
+    "presupuesto_musd": 240.0,
     "recursos": [
       {
         "clave": "estructura",
@@ -217,7 +217,7 @@
   },
   {
     "mision": "insane_artemis1",
-    "nombre": "Moon orbiter",
+    "nombre": "Moon Orbiter",
     "dificultad": "Insane",
     "destino": "órbita lunar",
     "cohete": "SLS block 1",
@@ -226,7 +226,7 @@
     "eficiencia_panel": 0.3,
     "musd_por_kg_propelente": 0.005,
     "musd_por_m2_panel": 20.42,
-    "presupuesto_musd": 256.0,
+    "presupuesto_musd": 305.0,
     "recursos": [
       {
         "clave": "estructura",

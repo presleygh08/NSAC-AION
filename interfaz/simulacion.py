@@ -14,7 +14,10 @@
 #                       mitad del viaje y se va a la deriva
 #       se_apaga, incomunicada, sin_ciencia, fuera_de_tiempo -> la nave llega pero se
 #                       apaga / la señal se corta / el instrumento no obtiene nada / se acaba el tiempo
-#   - SKIP (o Espacio) salta al final. Al terminar, app.py pasa a "resultados".
+#   - v2 (D7): la simulación NUNCA se puede saltar (no hay SKIP) y dura 12-15 s.
+#     Al terminar, app.py pasa a "resultados".
+#   - v2 (punto 10): el cohete despega con paneles y antena PLEGADOS; se abren al llegar a
+#     órbita (separación del satélite en LEO, o al salir hacia Marte / la Luna).
 #
 # "Cámara": el cohete sube; cuando pasa cierta altura, la cámara lo sigue y el suelo,
 # las nubes y el humo bajan por la pantalla.
@@ -25,14 +28,14 @@ import random
 import pygame
 
 from interfaz import config, estilo, hangar, sprites
-from interfaz.componentes import Boton
 
 CENTRO_X = config.ANCHO // 2
 Y_SUELO = 290                      # y del suelo en pantalla antes del despegue
 SUBIDA_LIBRE = 40                  # px que sube el cohete antes de que la cámara lo siga
 DIALOGO = pygame.Rect(16, 300, 500, 52)
-T_IGNICION = 1.8
-T_DESPEGUE = 2.4
+T_IGNICION = 3 * config.SEGUNDOS_POR_CUENTA        # al aparecer "IGNITION!"
+T_DESPEGUE = T_IGNICION + 0.6
+DURACION_DESPLIEGUE = 0.6          # segundos que tardan en abrirse paneles y antena
 ALTO_BASE_IMAGEN = hangar.ALTO_IMAGEN - 8     # y de la base del cohete dentro de su imagen
 BAJO_CENTRO = ALTO_BASE_IMAGEN - hangar.ALTO_IMAGEN / 2   # de su centro a su base (px)
 
@@ -61,15 +64,34 @@ def tipo_final(resultado):
     return resultado["falla"]
 
 
+def claves_montadas(ui):
+    return list(ui["lab"]["partes"].keys()) if ui.get("lab") else []
+
+
 def preparar_imagen(ui):
-    """Imagen del cohete de la misión con las partes montadas (se hace una sola vez)."""
+    """Imagen del cohete de la misión con las partes montadas y los paneles y la antena
+    PLEGADOS (despegue). Se hace una sola vez."""
     sim = ui["sim"]
     if sim["imagen"] is None:
-        claves = list(ui["lab"]["partes"].keys()) if ui.get("lab") else []
-        imagen, medidas = hangar.imagen_cohete(ui["estado"]["cohete"], claves)
+        imagen, medidas = hangar.imagen_cohete(ui["estado"]["cohete"], claves_montadas(ui), 0.0)
         sim["imagen"] = imagen
         sim["medidas"] = medidas
     return sim["imagen"], sim["medidas"]
+
+
+def imagen_abierta(ui, apertura):
+    """El mismo cohete SIN la cofia (la nave ya se separó) y con paneles y antena abiertos
+    en 'apertura' (0 a 1). Se guardan 5 imágenes (0, 0.25, 0.5, 0.75 y 1) para no dibujar
+    el cohete en cada cuadro. Sirve para recortar la nave o el satélite."""
+    sim = ui["sim"]
+    paso = round(max(0.0, min(1.0, apertura)) * 4)       # 0, 1, 2, 3 o 4
+    if "abiertas" not in sim:
+        sim["abiertas"] = {}
+    if paso not in sim["abiertas"]:
+        imagen, _ = hangar.imagen_cohete(ui["estado"]["cohete"], claves_montadas(ui), paso / 4,
+                                         con_nariz=False)
+        sim["abiertas"][paso] = imagen
+    return sim["abiertas"][paso]
 
 
 def pedazo(imagen, y_arriba, y_abajo):
@@ -135,7 +157,7 @@ def altura(t):
     """Cuántos px subió el cohete en el segundo t (acelera después del despegue)."""
     if t < T_DESPEGUE:
         return 0.0
-    return 55 * (t - T_DESPEGUE) ** 2
+    return 65 * (t - T_DESPEGUE) ** 2
 
 
 def parte_comun(sup, ui, textos, t):
@@ -199,7 +221,7 @@ def parte_comun(sup, ui, textos, t):
 
     # Cuenta regresiva
     cuenta = textos["simulacion"]["cuenta"]
-    indice = int(t / 0.6)
+    indice = int(t / config.SEGUNDOS_POR_CUENTA)
     if indice < len(cuenta):
         estilo.texto_contorno(sup, cuenta[indice], CENTRO_X, 60, config.LETRA_GIGANTE, config.AMARILLO,
                               config.NEGRO, 2)
@@ -236,9 +258,11 @@ def final_exito_leo(sup, ui, t):
         dibujar_llama(sup, CENTRO_X, int(y_base), t, 12)
     y_img = y_base - ALTO_BASE_IMAGEN                         # y de la imagen en pantalla
 
-    # Pedazos de la imagen: cofia (nariz), satélite (módulo de carga) y la etapa (tanque + motor)
+    # Pedazos de la imagen: cofia (nariz), satélite (módulo de carga) y la etapa (tanque + motor).
+    # El satélite abre sus paneles y su antena ya liberado en órbita (desde t = 1.6).
     cofia = pedazo(imagen, m.y_nariz - 18, m.y_carga)
-    satelite = pedazo(imagen, m.y_carga, m.y_franja)
+    apertura = (t - 1.6) / DURACION_DESPLIEGUE
+    satelite = pedazo(imagen_abierta(ui, apertura), m.y_carga - 18, m.y_franja)
     etapa = pedazo(imagen, m.y_franja, hangar.ALTO_IMAGEN)
 
     separa = max(0.0, t - 1.0)                                # 0 hasta el segundo 1
@@ -247,10 +271,11 @@ def final_exito_leo(sup, ui, t):
                    angulo=separa * 12)
     # Satélite: sube un poco y se va a la derecha
     sx = CENTRO_X + separa * 50
-    sy = y_img + m.y_carga + satelite.get_height() / 2 - separa * 25
+    sy = y_img + m.y_carga - 18 + satelite.get_height() / 2 - separa * 25
     pegar_centrado(sup, satelite, sx, sy)
-    # Paneles del satélite (tipo CubeSat) que se despliegan
-    if t > 1.6:
+    sy = sy + 9                                               # centro del módulo de carga
+    # Si el satélite no lleva potencia (Easy), sus paneles tipo CubeSat se abren igual
+    if t > 1.6 and "potencia" not in ui["lab"]["partes"]:
         largo = int(min(1.0, (t - 1.6) / 0.6) * 18)
         pygame.draw.rect(sup, config.AZUL, (int(sx) - 14 - largo, int(sy) - 2, largo, 5))
         pygame.draw.rect(sup, config.AZUL, (int(sx) + 14, int(sy) - 2, largo, 5))
@@ -410,13 +435,16 @@ def punto_arco(s):
     return x, y
 
 
-def nave(ui):
-    """La nave = el módulo de carga del cohete armado (con paneles, antena, caja...)."""
+def nave(ui, apertura=1.0):
+    """La nave = el módulo de carga del cohete armado (con paneles, antena, caja...).
+    apertura: cuánto están abiertos los paneles y la antena (1 = del todo, ya en órbita)."""
     sim = ui["sim"]
-    if sim.get("nave") is None:
-        imagen, m = preparar_imagen(ui)
-        sim["nave"] = pedazo(imagen, m.y_carga - 18, m.y_franja)
-    return sim["nave"]
+    _, m = preparar_imagen(ui)
+    paso = round(max(0.0, min(1.0, apertura)) * 4)
+    clave = "nave_" + str(paso)
+    if sim.get(clave) is None:
+        sim[clave] = pedazo(imagen_abierta(ui, paso / 4), m.y_carga - 18, m.y_franja)
+    return sim[clave]
 
 
 def nave_apagada(ui):
@@ -477,7 +505,8 @@ def viaje(sup, ui, destino, t, s_max=1.0):
         pygame.draw.rect(sup, config.CIAN, (int(x), int(y), 2, 2))
     s = min(s_max, t / T_VIAJE)
     x, y = punto_arco(s)
-    pegar_centrado(sup, nave(ui), x, y, escala=0.35)
+    # Recién salida de la órbita de la Tierra: abre sus paneles y su antena
+    pegar_centrado(sup, nave(ui, t / DURACION_DESPLIEGUE), x, y, escala=0.35)
     return x, y
 
 
@@ -609,7 +638,10 @@ def final_falla_generica(sup, ui, textos, t, falla, destino):
     T_FALLA = 1.2                                                  # cuándo empieza a fallar
     T_APAGADO = T_FALLA + 0.8                                      # se_apaga: ya sin energía
     apagada = False
-    imagen = nave(ui)
+    if destino == "LEO":
+        imagen = nave(ui, ta / DURACION_DESPLIEGUE)               # recién llegada a órbita: se abre
+    else:
+        imagen = nave(ui)
     if falla == "se_apaga":
         # Los paneles se apagan celda por celda (0,8 s) y luego se apaga toda la nave
         if ta >= T_APAGADO:
@@ -689,7 +721,8 @@ def dibujar(sup, ui, textos):
         parte_comun(sup, ui, textos, t)
         frase = frases["despegue"]
     else:
-        t2 = t - config.DURACION_COMUN
+        t_real = t - config.DURACION_COMUN
+        t2 = t_real * config.VELOCIDAD_FINAL         # las ramas se animan un poco más lento (D7)
         if final == "exito" and destino == "LEO":
             final_exito_leo(sup, ui, t2)
         elif final == "exito":
@@ -703,17 +736,8 @@ def dibujar(sup, ui, textos):
         else:
             final_falla_generica(sup, ui, textos, t2, final, destino)
         frase = frases.get(final, frases["despegue"])
-        if t2 >= duracion_final(final, destino):
+        if t_real >= duracion_final(final, destino):
             sim["terminada"] = True        # app.py pasa a resultados
 
     dibujar_dialogo(sup, frase.replace("{nombre}", ui["jugador"]["nombre"]))
-    estilo.texto(sup, textos["simulacion"]["ayuda_saltar"], config.ANCHO - 16, 12, config.LETRA_PEQUENA,
-                 config.COLOR_TEXTO_SUAVE, derecha=True)
-    return [Boton(textos["botones"]["saltar"], 530, 314, 94, config.ALTO_BOTON, "saltar_simulacion")]
-
-
-def tecla(ui, evento):
-    """Espacio = saltar al final."""
-    if evento.key == pygame.K_SPACE:
-        return ("saltar_simulacion", None)
-    return None
+    return []                              # sin botones: la simulación no se salta (D7)

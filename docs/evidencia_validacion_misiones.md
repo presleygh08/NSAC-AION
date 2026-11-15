@@ -1,6 +1,6 @@
 # Evidencia de Validity: las 5 misiones tienen solución
 
-Fecha: 2026-11-15 · Datos: `datos/parametros_misiones.json` (sin cambios) · Complementa a `evidencia_validacion_easy.md`.
+Fecha: 2026-11-15 (actualizada para la **v2**, decisión D2) · Datos: `datos/parametros_misiones.json` con los presupuestos nuevos y el recurso datos en kg (D8) · Complementa a `evidencia_validacion_easy.md`.
 
 ## Cómo se reproduce
 ```bash
@@ -23,48 +23,63 @@ La validación fina hace esto:
 4. El mejor reparto se **vuelve a jugar con las funciones reales** (`iniciar_mision` → `repartir` → `revisar` →
    `simular` → `revelar`) para confirmar que pasa la revisión, completa la misión y da ese puntaje y estrellas.
 
-**Margen razonable** (criterio del equipo de interfaz): sobrante ≥ 10 % del presupuesto, Σ mínimos ≤ P < Σ óptimos
-(hay trade-off: no se puede llegar al óptimo en todo) y 5 estrellas alcanzables (puntaje ≥ 86).
+**Margen razonable** (v2): sobrante ≥ 10 % del presupuesto, Σ mínimos ≤ P ≤ 1.10 × Σ óptimos y 5 estrellas
+alcanzables (puntaje ≥ 86 o diseño óptimo).
 
-## Resultados
+**Cambio de la v2 (D2):** antes se exigía P < Σ óptimos (el óptimo nunca cabía) y las 5 estrellas eran casi
+imposibles. Ahora `presupuesto_sugerido(parametros)` da el menor valor redondo (múltiplo de 0.5 si P < 50,
+de 1 si P < 100, de 5 si es mayor) ≥ **1.05 × Σ costo(óptimos)** con al menos 25 pasos de `paso_dinero`.
+El reto sigue: el jugador no ve cuánto lleva gastado (solo un indicador verde/rojo, D1), gastar de más en
+un recurso deja menos para otro y el bonus premia ahorrar.
+
+## Presupuestos nuevos (D2)
+
+| Misión | Σ óptimos | 1.05 × Σ óptimos | P antes | **P v2** | Paso − / + |
+|---|---|---|---|---|---|
+| easy_cubesat | 16.77 | 17.61 | 14.5 | **18** | 0.5 |
+| normal_leo | 67.06 | 70.41 | 57 | **71** | 1 |
+| hard_mro_marte | 145.73 | 153.02 | 125 | **155** | 5 |
+| harder_perseverance | 225.80 | 237.09 | 195 | **240** | 5 |
+| insane_artemis1 | 286.09 | 300.40 | 256 | **305** | 5 (antes 4) |
+
+## Resultados (`python3 nucleo.py --validar-fino`)
 
 | Misión | Recursos | P (M USD) | Σ mínimos | Σ óptimos | Sobrante | Repartos probados | Mejor puntaje | Estrellas | Repartos con 5★ | Margen |
 |---|---|---|---|---|---|---|---|---|---|---|
-| easy_cubesat | 2 | 14.5 | 10.99 | 16.77 | 24.2 % | 20 301 | 87 | 5 | 12.8 % | OK |
-| normal_leo | 3 | 57.0 | 43.98 | 67.06 | 22.8 % | 176 851 | 88 | 5 | 6.8 % | OK |
-| hard_mro_marte | 4 | 125.0 | 97.72 | 145.73 | 21.8 % | 635 376 | 91 | 5 | 3.8 % | OK |
-| harder_perseverance | 5 | 195.0 | 163.27 | 227.75 | 16.3 % | 324 632 | 91 | 5 | 3.3 % | OK |
-| insane_artemis1 | 6 | 256.0 | 211.49 | 284.89 | 17.4 % | 230 230 | 93 | 5 | 11.6 % | OK |
+| easy_cubesat | 2 | 18 | 10.99 | 16.77 | 39.0 % | 20 301 | 100 | 5 | 49.0 % | OK |
+| normal_leo | 3 | 71 | 43.98 | 67.06 | 38.1 % | 176 851 | 100 | 5 | 32.0 % | OK |
+| hard_mro_marte | 4 | 155 | 97.72 | 145.73 | 37.0 % | 635 376 | 100 | 5 | 16.7 % | OK |
+| harder_perseverance | 5 | 240 | 166.42 | 225.80 | 30.7 % | 324 632 | 100 | 5 | 10.3 % | OK |
+| insane_artemis1 | 6 | 305 | 215.49 | 286.09 | 29.3 % | 230 230 | 97 | 5 | 9.2 % | OK |
 
 "Repartos con 5★" = porcentaje de los repartos que ya completan la misión (todos parten de los mínimos) que
-además llegan a 5 estrellas: las misiones difíciles exigen un reparto más cuidado.
+además llegan a 5 estrellas: las misiones difíciles siguen exigiendo un reparto más cuidado.
 
 ### Grilla gruesa de `validar_mision` (escalones del 10 %), como referencia
 | Misión | Repartos | Completan | Mejor puntaje |
 |---|---|---|---|
-| easy_cubesat | 66 | 3 (4.5 %) | 87 |
-| normal_leo | 286 | 4 (1.4 %) | 86 |
-| hard_mro_marte | 1 001 | 1 (0.1 %) | 84 |
-| harder_perseverance | 3 003 | 0 | — |
+| easy_cubesat | 66 | 10 (15.2 %) | 93 |
+| normal_leo | 286 | 20 (7.0 %) | 92 |
+| hard_mro_marte | 1 001 | 5 (0.5 %) | 80 |
+| harder_perseverance | 3 003 | 6 (0.2 %) | 95 |
 | insane_artemis1 | 8 008 | 0 | — |
 
-Lectura: la mayoría de los repartos "a ojo" NO completan la misión (criterio de la sección 7.2 del bosquejo v4),
-pero con criterio siempre hay solución. En Harder e Insane el margen entre "falla" y "completa" es fino.
+Lectura: la mayoría de los repartos "a ojo" sigue SIN completar la misión, pero con criterio siempre hay solución.
+En Insane ningún reparto en escalones del 10 % la completa: hay que repartir con cuidado los 6 recursos.
 
 ## Mejores repartos encontrados
 
 | Misión | Dinero por recurso (M USD) | Cantidades que el jugador escribe en cada estación |
 |---|---|---|
-| easy_cubesat | estructura 6.21 · propulsión 8.27 | 6.2 kg · 400 m/s |
-| normal_leo | estructura 16.73 · propulsión 18.33 · potencia 21.94 | 41.8 kg · 454.6 m/s · 548.5 W |
-| hard_mro_marte | estructura 21.93 · propulsión 48.45 · potencia 31.61 · comunicaciones 23.00 | 438.6 kg · 5000 m/s · 631.8 W · 230 kbps |
-| harder_perseverance | estructura 22.12 · propulsión 91.27 · potencia 30.00 · comunicaciones 23.04 · datos 28.58 | 884.6 kg · 9100 m/s · 600 W · 230.4 kbps · 95.3 pts |
-| insane_artemis1 | estructura 42.50 · propulsión 75.98 · potencia 48.91 · comunicaciones 25.03 · datos 36.90 · tiempo 26.68 | 4250 kg · 4000 m/s · 978 W · 500.5 kbps · 92.3 pts · 26.7 días |
+| easy_cubesat | estructura 8.24 · propulsión 8.25 | 8.2 kg · 399 m/s |
+| normal_leo | estructura 17.51 · propulsión 26.79 · potencia 21.83 | 43.8 kg · 644.1 m/s · 545.9 W |
+| hard_mro_marte | estructura 22.57 · propulsión 58.00 · potencia 39.93 · comunicaciones 23.05 | 451.4 kg · 5457.6 m/s · 798 W · 230.5 kbps |
+| harder_perseverance | estructura 24.91 · propulsión 108.44 · potencia 42.26 · comunicaciones 23.62 · instrumentos 26.06 | 996.2 kg · 9770.9 m/s · 845.3 W · 236.2 kbps · 57.9 kg |
+| insane_artemis1 | estructura 46.98 · propulsión 84.94 · potencia 53.44 · comunicaciones 27.38 · instrumentos 40.95 · tiempo 24.48 | 4697.5 kg · 4299.4 m/s · 1068.5 W · 547.5 kbps · 102.4 kg · 24.5 días |
 
-Observación para Chambi/Justin: en Hard, Harder e Insane el mejor reparto deja la **propulsión justo en su
-mínimo** (el delta-v del destino): es el recurso más caro por punto, así que conviene no pasarse. Es coherente con
-la física (Tsiolkovsky), pero vale explicarlo en las pistas.
+Con la v2 el mejor reparto queda cerca del óptimo en todo (diseño "óptimo" = 5 estrellas directas) y deja algo
+de dinero sin gastar para el bonus.
 
 ## Conclusión
-Las 5 misiones tienen al menos un reparto que las completa, con sobrante ≥ 16 % y 5 estrellas alcanzables.
-**No hace falta ajustar `presupuesto_musd`.**
+Las 5 misiones tienen solución, con sobrante ≥ 29 % y 5 estrellas alcanzables. Si Chambi cambia mínimos u
+óptimos, recalcular con `presupuesto_sugerido(cargar_parametros(id))` y repetir `python3 nucleo.py --validar-fino`.

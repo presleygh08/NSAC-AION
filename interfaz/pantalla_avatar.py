@@ -83,5 +83,5 @@ def dibujar(sup, ui, textos):
     botones.append(Boton(textos["botones"]["aleatorio"], X_ETIQUETA, 304, 120, config.ALTO_BOTON,
                          "avatar_aleatorio"))
     botones.append(Boton(textos["botones"]["continuar"], 500, 304, 120, config.ALTO_BOTON,
-                         "avatar_listo", color=config.VERDE))
+                         "avatar_listo", color=config.VERDE, principal=True))
     return botones

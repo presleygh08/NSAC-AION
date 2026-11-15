@@ -6,7 +6,8 @@
 #       arriba    -> computadora ("!" azul, CML 1)
 #       derecha   -> mesa de control: una estación por recurso ("i" azul; "✓" ya confirmada)
 #       izquierda -> archivo ("!" verde = pistas; "!" morado = revisión del presupuesto)
-#   Debajo de la sala: HUD "Budget left" y el cuadro de diálogo del NPC (título del CML).
+#   Debajo de la sala: HUD "Budget: $X" con su indicador verde/rojo (v2, D1) y el cuadro de
+#   diálogo de AION (título del CML).
 #   Derecha: hangar con el cohete (tapado con cortinas hasta confirmar CML 1).
 #
 # Al estar cerca (RADIO_INTERACCION px) de un marcador activo aparece "[E] Interact";
@@ -18,7 +19,10 @@
 #
 # Regla del contrato: aquí NUNCA se lee estado["recursos"] (trae mínimos y óptimos
 # ocultos). Se usa nucleo.recursos_visibles y cotizar. Tampoco se muestra cuánto se lleva
-# gastado ni cuánto queda (especificación 4.1): el HUD solo dice el presupuesto asignado.
+# gastado ni cuánto queda (especificación 4.1): el HUD solo dice el presupuesto asignado y
+# un color (nucleo.dentro_del_presupuesto).
+#
+# Esc sin ventana abierta = menú de pausa (lo maneja app.py). Enter = botón principal.
 
 import math
 
@@ -27,8 +31,8 @@ import pygame
 import nucleo
 from interfaz import config, estilo, hangar, sprites
 from interfaz.componentes import (Boton, CajaTexto, dibujar_hud_presupuesto, dibujar_ventana,
-                                  formatear_musd, formatear_numero, nombre_destino,
-                                  nombre_recurso, texto_valor, traducir)
+                                  formatear_musd, formatear_numero, info_mision, info_recurso,
+                                  nombre_destino, nombre_recurso, unidad_recurso)
 
 # --- Distribución de la pantalla (640x360) ---
 SALA = pygame.Rect(8, 8, 376, 238)           # paredes
@@ -63,6 +67,7 @@ def nuevo_lab():
         "fase": "cml1",
         "ventana": None,
         "hechas": [],               # claves de las estaciones confirmadas al menos una vez
+        "escrito": {},              # {clave: texto que escribió el jugador} (TRY AGAIN lo conserva)
         "partes": {},               # {clave: segundo en que se confirmó} para el ensamblaje
         "cortinas_t0": None,        # segundo en que empezaron a abrirse las cortinas
         "pistas_vistas": False,
@@ -300,7 +305,8 @@ def dibujar_sala(sup, ui, textos, botones):
 
     # HUD de presupuesto (siempre visible, abajo a la izquierda, fuera del suelo).
     # Es FIJO: solo el presupuesto asignado, nunca lo gastado ni lo que queda (4.1).
-    dibujar_hud_presupuesto(sup, textos, ui["estado"]["presupuesto_musd"], SALA.x + 2, Y_HUD)
+    dibujar_hud_presupuesto(sup, textos, ui["estado"]["presupuesto_musd"], SALA.x + 2, Y_HUD,
+                            nucleo.dentro_del_presupuesto(ui["estado"]))
 
 
 def dibujar_npc(sup, ui, textos):
@@ -331,32 +337,25 @@ def dibujar_hangar(sup, ui, textos):
 # Ventanas
 # ---------------------------------------------------------------------------
 
-def campo_desplegable(sup, etiqueta, valor, x, y, ancho):
-    """Campo estilo lista desplegable con una sola opción (el dato de la misión)."""
-    estilo.texto(sup, etiqueta, x, y + 4, config.LETRA_PEQUENA, config.CIAN)
-    caja = pygame.Rect(x + 90, y, ancho - 90, 20)
-    estilo.panel(sup, caja, config.NEGRO, config.GRIS_CLARO)
-    estilo.texto(sup, valor, caja.x + 6, caja.y + 4, config.LETRA_PEQUENA)
-    # Triangulito ▼ a la derecha
-    pygame.draw.polygon(sup, config.GRIS_CLARO, [(caja.right - 14, caja.y + 7),
-                                                 (caja.right - 6, caja.y + 7),
-                                                 (caja.right - 10, caja.y + 13)])
+def fila_informativa(sup, etiqueta, valor, x, y, ancho):
+    """Una fila de texto: etiqueta en cian y el dato a su derecha. Devuelve la y siguiente."""
+    estilo.texto(sup, etiqueta + ":", x, y, config.LETRA_PEQUENA, config.CIAN)
+    return estilo.texto_multilinea(sup, valor, x + 90, y, ancho - 90, config.LETRA_PEQUENA) + 10
 
 
 def ventana_briefing(sup, ui, textos, botones):
+    """Mission briefing (v2, punto 6): solo texto informativo (meta, destino y cohete) y CONFIRM."""
     t = textos["laboratorio"]["briefing"]
     estado = ui["estado"]
-    y = dibujar_ventana(sup, VENTANA, t["titulo"], config.AZUL)
-    meta = textos["misiones_texto"].get(ui["mision_id"], {}).get("objetivo", ui["mision_nombre"])
+    y = dibujar_ventana(sup, VENTANA, t["titulo"], config.AZUL) + 6
+    meta = info_mision(textos, ui["mision_id"]).get("objetivo", ui["mision_nombre"])
     x = VENTANA.x + 16
     ancho = VENTANA.w - 32
-    estilo.texto(sup, t["meta"], x, y + 6, config.LETRA_PEQUENA, config.CIAN)
-    y_fin = estilo.texto_multilinea(sup, meta, x + 90, y + 6, ancho - 90, config.LETRA_PEQUENA)
-    y = max(y + 40, y_fin + 12)
-    campo_desplegable(sup, t["destino"], nombre_destino(textos, estado["destino"]), x, y, ancho)
-    campo_desplegable(sup, t["cohete"], estado["cohete"], x, y + 30, ancho)
+    y = fila_informativa(sup, t["meta"], meta, x, y, ancho)
+    y = fila_informativa(sup, t["destino"], nombre_destino(textos, estado["destino"]), x, y, ancho)
+    fila_informativa(sup, t["cohete"], estado["cohete"], x, y, ancho)
     botones.append(Boton(textos["botones"]["confirmar"], VENTANA.centerx - 60, VENTANA.bottom - 36,
-                         120, config.ALTO_BOTON, "confirmar_briefing", color=config.AZUL))
+                         120, config.ALTO_BOTON, "confirmar_briefing", color=config.AZUL, principal=True))
 
 
 def ventana_pistas(sup, ui, textos, botones, titulo, boton_texto, accion, color):
@@ -367,7 +366,7 @@ def ventana_pistas(sup, ui, textos, botones, titulo, boton_texto, accion, color)
         y = estilo.texto_multilinea(sup, pista, VENTANA.x + 26, y, VENTANA.w - 44,
                                     config.LETRA_PEQUENA) + 8
     botones.append(Boton(boton_texto, VENTANA.centerx - 60, VENTANA.bottom - 36, 120,
-                         config.ALTO_BOTON, accion, color=color))
+                         config.ALTO_BOTON, accion, color=color, principal=True))
 
 
 def ventana_pistas_guardadas(sup, ui, textos, botones):
@@ -376,7 +375,7 @@ def ventana_pistas_guardadas(sup, ui, textos, botones):
     estilo.texto_multilinea(sup, textos["laboratorio"]["pistas"]["guardadas"], rect.x + 14, y,
                             rect.w - 28, config.LETRA_PEQUENA)
     botones.append(Boton(textos["botones"]["aceptar"], rect.centerx - 50, rect.bottom - 32, 100,
-                         config.ALTO_BOTON, "aceptar_pistas", color=config.VERDE))
+                         config.ALTO_BOTON, "aceptar_pistas", color=config.VERDE, principal=True))
 
 
 def ventana_estacion(sup, ui, textos, botones):
@@ -386,15 +385,15 @@ def ventana_estacion(sup, ui, textos, botones):
     estado = ui["estado"]
     clave = lab["clave"]
     recurso = buscar_visible(estado, clave)
-    unidad = traducir(textos["unidades"], recurso["unidad"])
+    unidad = unidad_recurso(textos, clave, recurso["unidad"])     # v2 (D12): de la guía
 
     titulo = nombre_recurso(textos, clave) + " - " + unidad
     y = dibujar_ventana(sup, VENTANA, titulo, config.AZUL)
     x = VENTANA.x + 16
-    explicacion = textos["explicacion_recursos"].get(clave, "")
+    explicacion = info_recurso(textos, clave).get("que_es", "")
     y = estilo.texto_multilinea(sup, explicacion, x, y, VENTANA.w - 32, config.LETRA_PEQUENA,
                                 config.COLOR_TEXTO_SUAVE) + 6
-    estilo.texto(sup, t["actual"] + ": " + texto_valor(textos, recurso["valor"], recurso["unidad"])
+    estilo.texto(sup, t["actual"] + ": " + formatear_numero(recurso["valor"]) + " " + unidad
                  + "  (" + formatear_musd(recurso["dinero_musd"]) + ")", x, y, config.LETRA_PEQUENA)
 
     # Caja de cantidad (posición fija dentro de la ventana)
@@ -416,14 +415,15 @@ def ventana_estacion(sup, ui, textos, botones):
     botones.append(Boton(textos["botones"]["cancelar"], VENTANA.x + 16, VENTANA.bottom - 36, 110,
                          config.ALTO_BOTON, "cerrar_ventana"))
     botones.append(Boton(textos["botones"]["confirmar"], VENTANA.right - 126, VENTANA.bottom - 36, 110,
-                         config.ALTO_BOTON, "confirmar_estacion", color=config.VERDE))
+                         config.ALTO_BOTON, "confirmar_estacion", color=config.VERDE, principal=True))
 
 
 def ventana_revision(sup, ui, textos, botones):
     """Budget review (CML 4). Solo dice si el reparto entra o no en el presupuesto."""
     t = textos["laboratorio"]["revision"]
     revision = ui["lab"]["revision"]
-    y = dibujar_ventana(sup, VENTANA, t["titulo"], config.MORADO)
+    titulo = t["titulo"] + ": " + ui["mision_nombre"]          # "BUDGET REVIEW: <misión>" (v2, punto 7)
+    y = dibujar_ventana(sup, VENTANA, titulo, config.MORADO)
     x = VENTANA.x + 16
     ancho = VENTANA.w - 32
     if revision["ok"]:
@@ -433,13 +433,13 @@ def ventana_revision(sup, ui, textos, botones):
         # Con ok=True el núcleo ya pasó a la simulación: no hay botón para volver.
         botones.append(Boton(textos["botones"]["confirmar_lanzamiento"], VENTANA.centerx - 95,
                              VENTANA.bottom - 36, 190, config.ALTO_BOTON, "confirmar_lanzamiento",
-                             color=config.ROJO))
+                             color=config.ROJO, principal=True))
     else:
         # Se pasó: solo se dice ESO, sin cifras (4.5). No se muestran exceso_musd ni el
         # mensaje de revisar (que trae el costo total y el presupuesto).
         estilo.texto_multilinea(sup, t["excedido"], x, y + 10, ancho, config.LETRA_NORMAL, config.COLOR_ERROR)
         botones.append(Boton(textos["botones"]["aceptar"], VENTANA.centerx - 50, VENTANA.bottom - 36,
-                             100, config.ALTO_BOTON, "cerrar_ventana", color=config.MORADO))
+                             100, config.ALTO_BOTON, "cerrar_ventana", color=config.MORADO, principal=True))
 
 
 # ---------------------------------------------------------------------------
@@ -487,13 +487,38 @@ def dibujar(sup, ui, textos):
 # Acciones (las llama app.py) y teclado
 # ---------------------------------------------------------------------------
 
+def conservar_reparto(lab, estado, escrito, tiempo):
+    """TRY AGAIN (v2, punto 2): en la misión nueva, cada estación vuelve con la cantidad
+    que el jugador escribió antes ('escrito' = {clave: texto}). El costo se calcula otra vez
+    con nucleo.cotizar y se reparte con nucleo.repartir. Las estaciones quedan confirmadas
+    (✓) y sus partes ya montadas en el hangar, sin animación."""
+    for clave in escrito:
+        valor = leer_numero(escrito[clave])
+        if valor is None:
+            continue
+        nucleo.repartir(estado, clave, nucleo.cotizar(estado, clave, valor))
+        lab["escrito"][clave] = escrito[clave]
+        if clave not in lab["hechas"]:
+            lab["hechas"].append(clave)
+        lab["partes"][clave] = tiempo - config.DURACION_ENSAMBLAJE - 1    # ya terminada
+
+
+def todas_hechas(lab, estado):
+    """True si todas las estaciones de la misión se confirmaron al menos una vez."""
+    todas = [r["clave"] for r in nucleo.recursos_visibles(estado)]
+    return len(lab["hechas"]) == len(todas)
+
+
 def abrir_estacion(lab, estado, clave):
-    """Abre la ventana de una estación con la cantidad actual escrita en la caja."""
+    """Abre la ventana de una estación con la cantidad actual escrita en la caja
+    (el texto exacto que escribió el jugador, si existe)."""
     lab["ventana"] = "estacion"
     lab["clave"] = clave
     lab["error"] = False
     valor = buscar_visible(estado, clave)["valor"]
-    if valor > 0:
+    if clave in lab["escrito"]:
+        lab["caja"].texto = lab["escrito"][clave]
+    elif valor > 0:
         lab["caja"].texto = formatear_numero(valor)
     else:
         lab["caja"].texto = ""
@@ -508,13 +533,13 @@ def confirmar_estacion(lab, estado, tiempo):
     clave = lab["clave"]
     costo = nucleo.cotizar(estado, clave, valor)
     nucleo.repartir(estado, clave, costo)
+    lab["escrito"][clave] = lab["caja"].texto
     if clave not in lab["hechas"]:
         lab["hechas"].append(clave)
     lab["partes"][clave] = tiempo         # empieza la animación de ensamblaje en el hangar
     lab["ventana"] = None
     # Cuando TODAS las estaciones se confirmaron al menos una vez -> CML 4
-    todas = [r["clave"] for r in nucleo.recursos_visibles(estado)]
-    if lab["fase"] == "cml3" and len(lab["hechas"]) == len(todas):
+    if lab["fase"] == "cml3" and todas_hechas(lab, estado):
         lab["fase"] = "cml4"
 
 
@@ -538,7 +563,11 @@ def aplicar(ui, accion, valor):
         lab["pistas_vistas"] = True
     elif accion == "aceptar_pistas":
         lab["ventana"] = None
-        lab["fase"] = "cml3"
+        # Tras TRY AGAIN las estaciones ya están confirmadas: directo a CML 4.
+        if todas_hechas(lab, estado):
+            lab["fase"] = "cml4"
+        else:
+            lab["fase"] = "cml3"
     elif accion == "abrir_archivo":
         lab["ventana"] = "archivo"
     elif accion == "abrir_estacion":
@@ -557,7 +586,9 @@ def aplicar(ui, accion, valor):
 
 def tecla(ui, evento):
     """Teclado del laboratorio: E interactúa, números en la estación, Enter confirma,
-    Esc cierra. (Caminar con flechas/WASD se lee en actualizar, cada cuadro.)"""
+    Esc cierra. (Caminar con flechas/WASD se lee en actualizar, cada cuadro.)
+    Sin ventana, Esc abre la pausa (app.py); Enter en las demás ventanas activa su botón
+    principal (app.py)."""
     lab = ui["lab"]
     ventana = lab["ventana"]
     if ventana == "estacion":

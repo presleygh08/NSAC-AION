@@ -339,56 +339,97 @@ def dibujar_avatar_arriba(sup, avatar, x0, y0, direccion="abajo", cuadro=0, u=1)
         pygame.draw.circle(sup, config.CIAN, centro, int(4.4 * u), max(1, u // 2))
 
 
-EXPRESIONES_NPC = ["neutral", "feliz", "pensativo", "preocupado", "sorprendido"]
+# --- AION, el robot guía (v2, D5) -----------------------------------------------------
+# Robot pequeño y tierno de 32x32 px: cabeza redonda, ojos grandes, antena con luz.
+# Expresiones: "neutral", "feliz", "alerta", "celebrando".
+EXPRESIONES_AION = ["neutral", "feliz", "alerta", "celebrando"]
+# Las expresiones viejas del director de vuelo siguen funcionando: se traducen a las de AION.
+EXPRESIONES_NPC = EXPRESIONES_AION + ["pensativo", "preocupado", "sorprendido"]
+EQUIVALENCIA_EXPRESION = {"pensativo": "neutral", "preocupado": "alerta", "sorprendido": "celebrando"}
+
+METAL_AION = (205, 212, 228)
+METAL_AION_OSCURO = (120, 128, 150)
+PANTALLA_AION = (20, 28, 48)
+
+
+def dibujar_aion(sup, x, y, expresion="neutral", tiempo=0.0):
+    """Retrato de AION (32x32 px) con la esquina de arriba a la izquierda en (x, y).
+    'tiempo' hace parpadear la luz de la antena."""
+    expresion = EQUIVALENCIA_EXPRESION.get(expresion, expresion)
+    pygame.draw.rect(sup, config.GRIS_OSCURO, (x, y, 32, 32))           # fondo del retrato
+
+    # Antena con su luz (roja si está en alerta, amarilla al celebrar, cian normal)
+    pygame.draw.rect(sup, METAL_AION_OSCURO, (x + 15, y + 2, 2, 5))
+    if expresion == "alerta":
+        luz = config.ROJO
+    elif expresion == "celebrando":
+        luz = config.AMARILLO
+    else:
+        luz = config.CIAN
+    if int(tiempo * 2) % 2 == 0:
+        pygame.draw.rect(sup, luz, (x + 14, y + 1, 4, 3))
+    else:
+        pygame.draw.rect(sup, METAL_AION_OSCURO, (x + 14, y + 1, 4, 3))
+
+    # Cabeza: rectángulo con esquinas recortadas (se ve redonda en pixel art)
+    pygame.draw.rect(sup, METAL_AION_OSCURO, (x + 5, y + 7, 22, 18))
+    pygame.draw.rect(sup, METAL_AION, (x + 6, y + 6, 20, 18))
+    pygame.draw.rect(sup, METAL_AION, (x + 4, y + 9, 24, 12))
+    pygame.draw.rect(sup, METAL_AION_OSCURO, (x + 3, y + 12, 2, 6))     # "orejas" (tornillos)
+    pygame.draw.rect(sup, METAL_AION_OSCURO, (x + 27, y + 12, 2, 6))
+    # Pantalla de la cara
+    pygame.draw.rect(sup, PANTALLA_AION, (x + 7, y + 9, 18, 12))
+
+    # Ojos grandes
+    ojo = config.CIAN
+    if expresion == "feliz" or expresion == "celebrando":
+        # ojos cerrados de alegría: "^ ^"
+        for ox in (x + 9, x + 18):
+            pygame.draw.rect(sup, ojo, (ox, y + 13, 1, 2))
+            pygame.draw.rect(sup, ojo, (ox + 1, y + 12, 3, 1))
+            pygame.draw.rect(sup, ojo, (ox + 4, y + 13, 1, 2))
+    elif expresion == "alerta":
+        # ojos muy abiertos con una ceja inclinada
+        for ox in (x + 9, x + 18):
+            pygame.draw.rect(sup, config.AMARILLO, (ox, y + 11, 5, 5))
+            pygame.draw.rect(sup, PANTALLA_AION, (ox + 2, y + 13, 1, 1))
+    else:
+        # neutral: ojos grandes con brillo
+        for ox in (x + 9, x + 18):
+            pygame.draw.rect(sup, ojo, (ox, y + 11, 5, 5))
+            pygame.draw.rect(sup, config.BLANCO, (ox + 1, y + 12, 1, 1))
+
+    # Boca
+    if expresion == "celebrando":
+        pygame.draw.rect(sup, ojo, (x + 13, y + 17, 6, 2))              # boca abierta
+    elif expresion == "feliz":
+        pygame.draw.rect(sup, ojo, (x + 14, y + 18, 4, 1))
+        pygame.draw.rect(sup, ojo, (x + 13, y + 17, 1, 1))
+        pygame.draw.rect(sup, ojo, (x + 18, y + 17, 1, 1))
+    elif expresion == "alerta":
+        pygame.draw.rect(sup, config.AMARILLO, (x + 14, y + 18, 4, 1))
+    else:
+        pygame.draw.rect(sup, ojo, (x + 14, y + 18, 4, 1))
+
+    # Mejillas rosadas (lo hace tierno)
+    pygame.draw.rect(sup, (230, 120, 150), (x + 7, y + 19, 2, 1))
+    pygame.draw.rect(sup, (230, 120, 150), (x + 23, y + 19, 2, 1))
+
+    # Cuerpito y bracitos (levantados si celebra)
+    pygame.draw.rect(sup, METAL_AION_OSCURO, (x + 10, y + 25, 12, 7))
+    pygame.draw.rect(sup, config.AZUL, (x + 13, y + 27, 6, 3))           # luz del pecho
+    if expresion == "celebrando":
+        pygame.draw.rect(sup, METAL_AION, (x + 6, y + 22, 3, 5))
+        pygame.draw.rect(sup, METAL_AION, (x + 23, y + 22, 3, 5))
+    else:
+        pygame.draw.rect(sup, METAL_AION, (x + 7, y + 26, 3, 5))
+        pygame.draw.rect(sup, METAL_AION, (x + 22, y + 26, 3, 5))
 
 
 def dibujar_npc(sup, x, y, expresion="neutral"):
-    """Retrato del NPC (directora/director de vuelo) de 32x32 px con auriculares.
-    expresion: "neutral", "feliz", "pensativo", "preocupado" o "sorprendido"."""
-    oscuro = (30, 30, 40)
-    boca = (150, 70, 70)
-    pygame.draw.rect(sup, config.GRIS_OSCURO, (x, y, 32, 32))
-    pygame.draw.rect(sup, (200, 150, 110), (x + 9, y + 7, 14, 15))      # cara
-    pygame.draw.rect(sup, (170, 170, 175), (x + 8, y + 4, 16, 5))       # pelo gris
-
-    # Ojos y cejas
-    if expresion == "sorprendido":
-        pygame.draw.rect(sup, oscuro, (x + 12, y + 12, 2, 3))           # ojos grandes
-        pygame.draw.rect(sup, oscuro, (x + 18, y + 12, 2, 3))
-        pygame.draw.rect(sup, oscuro, (x + 11, y + 10, 4, 1))           # cejas altas
-        pygame.draw.rect(sup, oscuro, (x + 17, y + 10, 4, 1))
-    elif expresion == "pensativo":
-        pygame.draw.rect(sup, oscuro, (x + 13, y + 12, 2, 2))           # mira hacia arriba
-        pygame.draw.rect(sup, oscuro, (x + 19, y + 12, 2, 2))
-        pygame.draw.rect(sup, oscuro, (x + 17, y + 10, 4, 1))           # una ceja levantada
-    elif expresion == "preocupado":
-        pygame.draw.rect(sup, oscuro, (x + 12, y + 13, 2, 2))
-        pygame.draw.rect(sup, oscuro, (x + 18, y + 13, 2, 2))
-        pygame.draw.line(sup, oscuro, (x + 11, y + 12), (x + 14, y + 11))   # cejas inclinadas
-        pygame.draw.line(sup, oscuro, (x + 18, y + 11), (x + 21, y + 12))
-    else:                                                               # neutral y feliz
-        pygame.draw.rect(sup, oscuro, (x + 12, y + 13, 2, 2))
-        pygame.draw.rect(sup, oscuro, (x + 18, y + 13, 2, 2))
-
-    # Boca
-    if expresion == "feliz":
-        pygame.draw.rect(sup, boca, (x + 13, y + 18, 6, 1))
-        pygame.draw.rect(sup, boca, (x + 12, y + 17, 1, 1))             # comisuras arriba
-        pygame.draw.rect(sup, boca, (x + 19, y + 17, 1, 1))
-    elif expresion == "preocupado":
-        pygame.draw.rect(sup, boca, (x + 13, y + 18, 6, 1))
-        pygame.draw.rect(sup, boca, (x + 12, y + 19, 1, 1))             # comisuras abajo
-        pygame.draw.rect(sup, boca, (x + 19, y + 19, 1, 1))
-    elif expresion == "sorprendido":
-        pygame.draw.rect(sup, boca, (x + 15, y + 17, 3, 3), 1)          # boca en "o"
-    elif expresion == "pensativo":
-        pygame.draw.rect(sup, boca, (x + 15, y + 18, 4, 1))             # boca de lado
-    else:
-        pygame.draw.rect(sup, boca, (x + 13, y + 18, 6, 1))
-
-    pygame.draw.rect(sup, oscuro, (x + 6, y + 10, 3, 6))                # auricular
-    pygame.draw.rect(sup, oscuro, (x + 7, y + 16, 1, 5))                # micrófono
-    pygame.draw.rect(sup, config.AZUL, (x + 7, y + 23, 18, 9))          # uniforme
+    """El guía del juego. Desde la v2 es AION (antes, un director de vuelo).
+    Se mantiene este nombre para no cambiar las pantallas que ya lo usan."""
+    dibujar_aion(sup, x, y, expresion, pygame.time.get_ticks() / 1000)
 
 
 def dibujar_cohete(sup, cx, y_base, partes=None, tiempo=0.0, fuego=False):

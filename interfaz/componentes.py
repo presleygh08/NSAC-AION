@@ -5,7 +5,8 @@
 #   - CajaTexto: una caja donde el jugador escribe (nombre o número)
 #   - dibujar_ventana(): ventana modal (cuadro de diálogo) con título
 #   - crear_selector(): flechas ◀ ▶ para elegir una opción
-#   - dibujar_hud_presupuesto(): "Budget left: $X / $Y"
+#   - dibujar_hud_presupuesto(): "Budget: $Y" + indicador verde/rojo (sin cifras)
+#   - boton_principal(): el botón que se activa con Enter
 #   - funciones para dar formato a números y buscar traducciones
 
 import pygame
@@ -30,11 +31,14 @@ class Boton:
     visible: si es False no se dibuja (zona clicable sobre algo que dibujó la pantalla,
              por ejemplo una fila de la parrilla o un marcador del laboratorio).
     icono:  "izquierda" o "derecha" dibuja un triángulo ◀ ▶ en vez de texto.
+    principal: si es True, la tecla Enter hace lo mismo que clicarlo (v2, punto 5).
     """
 
     def __init__(self, texto, x, y, ancho, alto, accion, valor=None, activo=True,
-                 color=config.COLOR_BOTON, tamano=config.LETRA_NORMAL, visible=True, icono=None):
+                 color=config.COLOR_BOTON, tamano=config.LETRA_NORMAL, visible=True, icono=None,
+                 principal=False):
         self.texto = texto
+        self.principal = principal
         self.icono = icono
         self.visible = visible
         self.rect = pygame.Rect(x, y, ancho, alto)
@@ -71,6 +75,14 @@ class Boton:
     def fue_clicado(self, posicion):
         """True si el botón está activo y la posición (x, y) del clic cae dentro de él."""
         return self.activo and self.rect.collidepoint(posicion)
+
+
+def boton_principal(botones):
+    """El primer botón principal, visible y activo de la lista (o None). Enter lo activa."""
+    for boton in botones:
+        if boton.principal and boton.visible and boton.activo:
+            return boton
+    return None
 
 
 def dibujar_flecha(sup, cx, cy, direccion, color):
@@ -170,12 +182,17 @@ def crear_muestras(sup, botones, x, y, colores, elegido, categoria):
     return x + len(colores) * (lado + 4)
 
 
-def dibujar_hud_presupuesto(sup, textos, total, x, y):
-    """HUD fijo: 'Budget: $Y.YM' (el presupuesto ASIGNADO a la misión).
-    Regla de dificultad (especificación 4.1): durante el reparto NUNCA se muestra cuánto
-    se lleva gastado ni cuánto queda; el jugador suma mentalmente lo que gasta."""
+def dibujar_hud_presupuesto(sup, textos, total, x, y, cabe=True):
+    """HUD fijo: 'Budget: $Y.YM' (el presupuesto ASIGNADO a la misión) y, a su lado, un
+    cuadrito de color SIN cifras (v2, D1): verde si lo repartido cabe en el presupuesto,
+    rojo si se pasó. 'cabe' sale de nucleo.dentro_del_presupuesto(estado).
+    Nunca se muestra cuánto se lleva gastado, cuánto queda ni el exceso."""
     contenido = textos["laboratorio"]["presupuesto"] + ": " + formatear_musd(total)
-    estilo.texto(sup, contenido, x, y, config.LETRA_PEQUENA, config.AMARILLO)
+    rect = estilo.texto(sup, contenido, x, y, config.LETRA_PEQUENA, config.AMARILLO)
+    color = config.VERDE if cabe else config.ROJO
+    cuadro = pygame.Rect(rect.right + 6, y, 8, 8)
+    pygame.draw.rect(sup, config.NEGRO, cuadro.inflate(2, 2))
+    pygame.draw.rect(sup, color, cuadro)
 
 
 # ---------------------------------------------------------------------------
@@ -213,9 +230,26 @@ def texto_valor(textos, valor, unidad):
     return formatear_numero(valor) + " " + traducir(textos["unidades"], unidad)
 
 
+def info_recurso(textos, clave):
+    """Ficha del recurso en guia_misiones_en.json (nombre, unidad, que_es, por_que_importa),
+    o {} si no está."""
+    return textos.get("guia", {}).get("recursos", {}).get(clave, {})
+
+
 def nombre_recurso(textos, clave):
-    """Nombre del recurso en inglés, p. ej. 'Propulsion (delta-v)'."""
-    return traducir(textos["recursos"], clave)
+    """Nombre del recurso en inglés (v2, D12: de la guía), p. ej. 'Endurance'."""
+    return info_recurso(textos, clave).get("nombre") or traducir(textos["recursos"], clave)
+
+
+def unidad_recurso(textos, clave, unidad):
+    """Unidad en inglés del recurso (de la guía; si no, traducida de los datos: dias -> days)."""
+    return info_recurso(textos, clave).get("unidad") or traducir(textos["unidades"], unidad)
+
+
+def info_mision(textos, mision_id):
+    """Textos de la misión en la guía (nombre, inspirada_en, descripcion, objetivo, cohete,
+    pistas_referencia), o {} si no está."""
+    return textos.get("guia", {}).get("misiones", {}).get(mision_id, {})
 
 
 def nombre_destino(textos, destino):

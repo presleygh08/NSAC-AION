@@ -2,22 +2,19 @@
 # Ficha de la misión (sección 3.4): descripción, objetivo, cohete, destino, recursos a
 # repartir y presupuesto. A la derecha, la misma foto de la parrilla, más grande.
 #
-# Descripción y objetivo: primero de parametros_misiones.json ("descripcion", "objetivo",
-# cuando Chambi/Justin los agreguen); si no están, de textos_en.json -> "misiones_texto"
-# (textos provisionales); si tampoco, "Coming soon".
+# Descripción y objetivo (v2, D10): de interfaz/guia_misiones_en.json -> misiones.<id>;
+# si no están, "Coming soon".
 
 import nucleo
 from interfaz import config, estilo, imagenes
-from interfaz.componentes import Boton, formatear_musd, nombre_destino, nombre_recurso
+from interfaz.componentes import Boton, formatear_musd, info_mision, nombre_destino, nombre_recurso
 
 
 def textos_mision(textos, parametros):
     """(descripcion, objetivo) en inglés, o "Coming soon" si aún no existen."""
     pendiente = textos["info"]["proximamente"]
-    respaldo = textos["misiones_texto"].get(parametros["mision"], {})
-    descripcion = parametros.get("descripcion") or respaldo.get("descripcion", pendiente)
-    objetivo = parametros.get("objetivo") or respaldo.get("objetivo", pendiente)
-    return descripcion, objetivo
+    mision = info_mision(textos, parametros["mision"])
+    return mision.get("descripcion", pendiente), mision.get("objetivo", pendiente)
 
 
 def datos_ficha(ui):
@@ -28,7 +25,8 @@ def datos_ficha(ui):
         # recursos_visibles (así nunca tocamos los mínimos ni los óptimos).
         visibles = nucleo.recursos_visibles(nucleo.iniciar_mision(parametros))
         ui["ficha"] = {"id": ui["mision_id"], "parametros": parametros,
-                       "claves": [r["clave"] for r in visibles]}
+                       "claves": [r["clave"] for r in visibles],
+                       "unidades": {r["clave"]: r["unidad"] for r in visibles}}
     return ui["ficha"]
 
 
@@ -67,5 +65,5 @@ def dibujar(sup, ui, textos):
     return [
         Boton(textos["botones"]["atras"], 16, 318, 100, config.ALTO_BOTON, "volver_misiones"),
         Boton(textos["botones"]["correr"], 494, 314, 130, 32, "correr", color=config.ROJO,
-              tamano=config.LETRA_TITULO),
+              tamano=config.LETRA_TITULO, principal=True),
     ]

@@ -112,5 +112,5 @@ def dibujar(sup, ui, textos):
     se_puede = nucleo.puede_jugar(ui["progreso"], ui["mision_vista"])
     botones.append(Boton(textos["botones"]["atras"], 20, 316, 100, config.ALTO_BOTON, "ir_avatar"))
     botones.append(Boton(textos["botones"]["siguiente"], 520, 316, 100, config.ALTO_BOTON,
-                         "ir_info", activo=se_puede, color=config.VERDE))
+                         "ir_info", activo=se_puede, color=config.VERDE, principal=True))
     return botones
