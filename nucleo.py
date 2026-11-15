@@ -17,6 +17,7 @@
 
 import copy
 import json
+import math
 import itertools
 from pathlib import Path
 
@@ -205,6 +206,35 @@ def gasto_total(estado):
 def presupuesto_restante(estado):
     """M USD sin repartir (negativo si se pasó)."""
     return estado["presupuesto_musd"] - gasto_total(estado)
+
+
+PASOS_DINERO = [10, 5, 4, 2.5, 2, 1, 0.5, 0.25, 0.1]    # M USD, de mayor a menor
+
+
+def paso_dinero(estado):
+    """Paso (M USD) que debe usar la interfaz en los botones − y + de esa misión.
+    Es el paso 'redondo' más grande que cumple las tres condiciones:
+      1. divide exacto el presupuesto (se puede gastar todo);
+      2. da al menos 25 pasos;
+      3. permite comprar TODOS los mínimos sin pasarse del presupuesto.
+    Un paso fijo no sirve: con pasos de 5 M USD, Easy (14.5 M USD) sería imposible,
+    porque sus mínimos cuestan ~11 y habría que gastar 15.
+    Usar: repartir(estado, clave, round(dinero_actual + paso_dinero(estado), 6))."""
+    pres = estado["presupuesto_musd"]
+    costos = [costo_de(r, r["minimo"]) for r in estado["recursos"]]
+
+    def divide(p):
+        n = pres / p
+        return abs(n - round(n)) < 1e-6
+
+    def alcanza(p):
+        return sum(math.ceil(c / p - 1e-9) * p for c in costos) <= pres + TOLERANCIA
+
+    for min_pasos in (25, 1):
+        for p in PASOS_DINERO:
+            if divide(p) and pres / p >= min_pasos and alcanza(p):
+                return float(p)
+    return 0.1
 
 
 def recursos_visibles(estado):
@@ -518,12 +548,11 @@ def validar_mision(parametros, pasos=10):
 # ---------------------------------------------------------------------------
 # Parrilla de misiones y progreso  (BLOQUE 2)
 # ---------------------------------------------------------------------------
-# misiones.json (lo escribe Piero) es una lista; cada misión tiene al menos:
-#   {"id": "easy_cubesat", "nombre": "...", "dificultad": "Easy",
-#    "destino": "LEO", "cohete": "Electron"}
-# (también se acepta la clave "mision" en lugar de "id").
-# Una misión es JUGABLE si tiene datos en parametros_misiones.json; si no,
-# se muestra como "próximamente".
+# La parrilla se arma con parametros_misiones.json (misiones.json ya no se usa).
+# Cada misión de ese archivo trae al menos "mision" (el id), "dificultad",
+# "destino" y "cohete"; "nombre" es opcional (si falta, se arma a partir del id).
+# Una misión es JUGABLE si sus parámetros están completos y son válidos
+# (verificar_parametros); si no, se muestra como "próximamente".
 
 DIFICULTADES = ["Easy", "Normal", "Hard", "Harder", "Insane"]   # orden de la parrilla
 DESBLOQUEO_EN_ORDEN = True    # Justin decide; False = todas abiertas desde el inicio
@@ -535,60 +564,57 @@ def nuevo_progreso():
     return {"completadas": {}}
 
 
-def _id_mision(m):
-    return m["id"] if "id" in m else m["mision"]
+def _nombre_mision(m):
+    """Nombre para mostrar: el campo "nombre" si existe; si no, se arma con el id
+    ("normal_leo" -> "Normal Leo")."""
+    return m.get("nombre") or m["mision"].replace("_", " ").title()
 
 
-def _ids_con_parametros(ruta=None):
-    """Ids de las misiones cuyos parámetros están COMPLETOS y válidos
-    (las que Chambi aún no termina salen como 'próximamente')."""
-    ruta = Path(ruta) if ruta else CARPETA_DATOS / ARCHIVO_PARAMETROS
-    if not ruta.exists():
-        return set()
-    with open(ruta, encoding="utf-8") as f:
-        return {_id_mision(m) for m in json.load(f) if verificar_parametros(m) == []}
-
-
-def cargar_misiones(progreso=None, ruta_misiones=None, ruta_parametros=None):
-    """Lista para la parrilla, ordenada por dificultad. Cada elemento trae los
-    datos de misiones.json más:
-      'id', 'estado' y 'mejor_puntaje' (None si no está completada).
+def cargar_misiones(progreso=None, ruta_parametros=None):
+    """Lista para la parrilla, ordenada por dificultad. Sale de
+    parametros_misiones.json. Cada elemento trae SOLO estos campos (nunca
+    mínimos ni óptimos):
+      'id', 'nombre', 'dificultad', 'destino', 'cohete', 'presupuesto_musd',
+      'estado' y 'mejor_puntaje' (None si no está completada).
     'estado' es una de:
       'completada'    -> ya se completó (se puede repetir)
       'disponible'    -> se puede jugar
       'bloqueada'     -> hay que completar la anterior (si DESBLOQUEO_EN_ORDEN)
-      'proximamente'  -> aún no tiene parámetros (Hard, Harder, Insane...)"""
+      'proximamente'  -> sus parámetros aún están incompletos o no son válidos
+    Una misión 'proximamente' no cuenta para el desbloqueo en orden: la
+    siguiente se abre al completar la última misión jugable anterior."""
     progreso = progreso if progreso is not None else nuevo_progreso()
-    ruta = Path(ruta_misiones) if ruta_misiones else CARPETA_DATOS / "misiones.json"
+    ruta = Path(ruta_parametros) if ruta_parametros else CARPETA_DATOS / ARCHIVO_PARAMETROS
     with open(ruta, encoding="utf-8") as f:
         misiones = json.load(f)
-    jugables = _ids_con_parametros(ruta_parametros)
     orden = {d: i for i, d in enumerate(DIFICULTADES)}
-    misiones = sorted(misiones, key=lambda m: orden.get(m["dificultad"], len(orden)))
+    misiones = sorted(misiones, key=lambda m: orden.get(m.get("dificultad"), len(orden)))
 
     parrilla = []
     anterior_completada = True              # la primera misión siempre está abierta
     for m in misiones:
-        mid = _id_mision(m)
-        fila = dict(m)
-        fila["id"] = mid
-        fila["mejor_puntaje"] = progreso["completadas"].get(mid)
+        mid = m["mision"]
+        fila = {"id": mid, "nombre": _nombre_mision(m), "dificultad": m.get("dificultad"),
+                "destino": m.get("destino"), "cohete": m.get("cohete"),
+                "presupuesto_musd": m.get("presupuesto_musd"),
+                "mejor_puntaje": progreso["completadas"].get(mid)}
         if mid in progreso["completadas"]:
             fila["estado"] = "completada"
-        elif mid not in jugables:
+        elif verificar_parametros(m):       # lista de problemas no vacía
             fila["estado"] = "proximamente"
         elif DESBLOQUEO_EN_ORDEN and not anterior_completada:
             fila["estado"] = "bloqueada"
         else:
             fila["estado"] = "disponible"
-        anterior_completada = mid in progreso["completadas"]
+        if fila["estado"] != "proximamente":
+            anterior_completada = mid in progreso["completadas"]
         parrilla.append(fila)
     return parrilla
 
 
-def puede_jugar(progreso, mision_id, ruta_misiones=None, ruta_parametros=None):
+def puede_jugar(progreso, mision_id, ruta_parametros=None):
     """True si la misión está 'disponible' o 'completada' (repetirla)."""
-    for fila in cargar_misiones(progreso, ruta_misiones, ruta_parametros):
+    for fila in cargar_misiones(progreso, ruta_parametros):
         if fila["id"] == mision_id:
             return fila["estado"] in ("disponible", "completada")
     raise ValueError(f"Misión desconocida: '{mision_id}'")
@@ -791,27 +817,45 @@ if __name__ == "__main__":
     assert revisar(e)["mensaje"] is None
     print("OK  presupuesto       ->", rev["mensaje"][:45] + "...")
 
-    # ---- Bloque 2: parrilla y progreso (archivos temporales de prueba) ----
+    # ---- Paso de los botones − y + ----
+    esperado = {"easy_cubesat": 0.5, "normal_leo": 1, "hard_mro_marte": 5,
+                "harder_perseverance": 5, "insane_artemis1": 4}
+    for mid, paso in esperado.items():
+        e = iniciar_mision(cargar_parametros(mid))
+        p = paso_dinero(e)
+        assert abs(p - paso) < 1e-9, (mid, p)
+        assert e["presupuesto_musd"] / p >= 25
+        # con ese paso se compran todos los mínimos sin pasarse del presupuesto
+        assert sum(math.ceil(costo_de(r, r["minimo"]) / p - 1e-9) * p for r in e["recursos"]) \
+            <= e["presupuesto_musd"] + 1e-9
+    # con un paso fijo de 5, Easy sería imposible: 6->10 kg de estructura + 5 de propulsión = 15 > 14.5
+    e = iniciar_mision(cargar_parametros("easy_cubesat"))
+    assert sum(math.ceil(costo_de(r, r["minimo"]) / 5 - 1e-9) * 5 for r in e["recursos"]) > 14.5
+    print("OK  paso del dinero   ->", esperado)
+
+    # ---- Bloque 2: parrilla y progreso (archivo temporal de prueba) ----
+    # La parrilla sale de parametros_misiones.json: misiones.json ya no existe.
     import tempfile
     with tempfile.TemporaryDirectory() as tmp:
-        r_mis = Path(tmp) / "misiones.json"
         r_par = Path(tmp) / "parametros.json"
-        r_mis.write_text(json.dumps([
-            {"id": "hard_mro", "nombre": "MRO", "dificultad": "Hard", "destino": "órbita de Marte", "cohete": "?"},
-            {"id": "easy_cubesat", "nombre": "CubeSat", "dificultad": "Easy", "destino": "LEO", "cohete": "Electron"},
-            {"id": "normal_leo", "nombre": "LEO", "dificultad": "Normal", "destino": "LEO", "cohete": "Falcon 9"},
+        incompleta = {"mision": "hard_mro", "dificultad": "Hard", "destino": "órbita de Marte", "cohete": "?"}
+        r_par.write_text(json.dumps([
+            incompleta,                                   # Hard sin parámetros = próximamente
+            dict(MISION_PRUEBA, mision="easy_cubesat", dificultad="Easy", nombre="CubeSat"),
+            dict(MISION_PRUEBA, mision="normal_leo", dificultad="Normal"),
         ]), encoding="utf-8")
-        # Solo Easy y Normal tienen parámetros (Hard = próximamente)
-        r_par.write_text(json.dumps([dict(MISION_PRUEBA, mision="easy_cubesat"), dict(MISION_PRUEBA, mision="normal_leo")]), encoding="utf-8")
 
         def estados(prog):
-            return {f["id"]: f["estado"] for f in cargar_misiones(prog, r_mis, r_par)}
+            return {f["id"]: f["estado"] for f in cargar_misiones(prog, r_par)}
 
         prog = nuevo_progreso()
-        assert [f["id"] for f in cargar_misiones(prog, r_mis, r_par)] == ["easy_cubesat", "normal_leo", "hard_mro"]
+        parrilla = cargar_misiones(prog, r_par)
+        assert [f["id"] for f in parrilla] == ["easy_cubesat", "normal_leo", "hard_mro"]
+        assert parrilla[0]["nombre"] == "CubeSat" and parrilla[1]["nombre"] == "Normal Leo"
+        assert all("recursos" not in f and "minimo" not in f for f in parrilla)   # nada oculto
         assert estados(prog) == {"easy_cubesat": "disponible", "normal_leo": "bloqueada", "hard_mro": "proximamente"}
-        assert puede_jugar(prog, "easy_cubesat", r_mis, r_par)
-        assert not puede_jugar(prog, "normal_leo", r_mis, r_par)
+        assert puede_jugar(prog, "easy_cubesat", r_par)
+        assert not puede_jugar(prog, "normal_leo", r_par)
         print("OK  parrilla nueva   ->", estados(prog))
 
         # Completar Easy (con la misión de prueba, id cambiado) desbloquea Normal
@@ -832,7 +876,17 @@ if __name__ == "__main__":
         assert prog["completadas"]["easy_cubesat"] == 100
         print("OK  mejor puntaje    ->", prog["completadas"])
 
+        # Una misión 'próximamente' en medio no deja a la siguiente bloqueada para siempre
+        r_par.write_text(json.dumps([
+            dict(MISION_PRUEBA, mision="easy_cubesat", dificultad="Easy"),
+            {"mision": "normal_leo", "dificultad": "Normal", "destino": "LEO", "cohete": "?"},
+            dict(MISION_PRUEBA, mision="hard_mro", dificultad="Hard"),
+        ]), encoding="utf-8")
+        assert estados({"completadas": {"easy_cubesat": 80}}) == \
+            {"easy_cubesat": "completada", "normal_leo": "proximamente", "hard_mro": "disponible"}
+        print("OK  salta próximamente -> Hard se abre al completar Easy")
+
         # Todas abiertas si Justin lo decide así
         DESBLOQUEO_EN_ORDEN = False
-        assert estados(nuevo_progreso())["normal_leo"] == "disponible"
-        print("OK  sin orden        -> Normal disponible")
+        assert estados(nuevo_progreso())["hard_mro"] == "disponible"
+        print("OK  sin orden        -> todas disponibles")
