@@ -11,3 +11,6 @@ __pycache__/
 
 # Capturas del modo de prueba de textos (python3.12 revisar_textos.py --capturas)
 capturas_textos/
+
+# Clips temporales del video del pitch (104 MB, se regeneran con pitch/grabar_clips.py)
+pitch/_clips/
