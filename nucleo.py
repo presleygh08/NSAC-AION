@@ -327,9 +327,9 @@ ARCHIVO_MENSAJES = "mensajes.json"
 
 FALLA_A_MENSAJE = {"no_llega": "delta_v_insuficiente", "se_apaga": "potencia_insuficiente"}
 
-# BORRADORES de respaldo para las fallas que mensajes.json aún no cubre.
-# Justin: añade estas claves a mensajes.json con tu texto; si existen allí,
-# se usa el tuyo y este respaldo se ignora.
+# Respaldo por si mensajes.json no trae estas claves. Desde el 15 nov ya están copiadas
+# en mensajes.json (Justin puede mejorar ese texto; si existen allí, se usa el de allá
+# y este respaldo se ignora).
 MENSAJES_RESPALDO = {
     "explota": "The ship broke apart during launch: its structure is {valor} {unidad} and it needs at least {minimo} {unidad} to survive the vibration. The structure is the frame that holds everything together. Try giving more budget to the structure.",
     "incomunicada": "The mission stopped: your link sends only {valor} {unidad} and it needs at least {minimo} {unidad} to reach Earth. A weak antenna cannot send data from far away. Try investing more in communications.",
@@ -337,6 +337,12 @@ MENSAJES_RESPALDO = {
     "fuera_de_tiempo": "The mission stopped: the ship can work only {valor} {unidad} and it needs at least {minimo}. Autonomy limits how long a mission can last. Try investing more in mission time.",
 }
 MENSAJE_GENERICO = "The mission could not be completed. Try a different budget split."
+
+# Unidades que en los datos están en español: en los mensajes (en inglés) se muestran así.
+UNIDADES_EN = {"dias": "days", "puntos": "points"}
+# Lo mismo con los destinos (en los datos están en español).
+DESTINOS_EN = {"LEO": "LEO", "órbita lunar": "lunar orbit", "órbita de Marte": "Mars orbit",
+               "superficie de Marte": "the surface of Mars"}
 
 
 class _Campos(dict):
@@ -378,8 +384,9 @@ def mensajes_fallas(estado, mensajes=None):
     for clave in estado["resultado"]["bajo_minimo"]:
         r = _buscar_recurso(estado, clave)
         valor = valor_recurso(estado, clave)
-        datos = {"destino": estado["destino"], "lanzador": estado["cohete"],
-                 "recurso": clave, "unidad": r["unidad"], "valor": _num(valor),
+        datos = {"destino": DESTINOS_EN.get(estado["destino"], estado["destino"]), "lanzador": estado["cohete"],
+                 "recurso": clave, "unidad": UNIDADES_EN.get(r["unidad"], r["unidad"]),
+                 "valor": _num(valor),
                  "minimo": _num(r["minimo"]), "optimo": _num(r["optimo"]),
                  "dv_requerido_m_s": _num(r["minimo"]), "dv_disponible_m_s": _num(valor),
                  "consumo_w": _num(r["minimo"]), "generada_w": _num(valor)}
@@ -397,7 +404,8 @@ def mensaje_resultado(estado, mensajes=None):
         raise ValueError("Primero hay que simular")
     mensajes = mensajes if mensajes is not None else cargar_mensajes()
     if estado["resultado"]["exito"]:
-        return mensaje("exito", mensajes, destino=estado["destino"], lanzador=estado["cohete"])
+        return mensaje("exito", mensajes, destino=DESTINOS_EN.get(estado["destino"], estado["destino"]),
+                       lanzador=estado["cohete"])
     return "\n\n".join(f["mensaje"] for f in mensajes_fallas(estado, mensajes))
 
 
@@ -773,6 +781,107 @@ def validar_mision(parametros, pasos=10):
             "optimos": optimos, "mejor_puntaje": mejor}
 
 
+# Validación fina (añadida por la interfaz, 15 nov): más precisa que validar_mision.
+# Parte de los COSTOS DE LOS MÍNIMOS y reparte el sobrante (presupuesto − Σ mínimos) en
+# pasos pequeños, incluyendo dejar dinero sin gastar (para el bonus por ahorro).
+# Truco para que sea rápida: los puntos de cada recurso se calculan una sola vez por
+# escalón (tabla), y cada reparto solo suma valores de esas tablas.
+
+PASOS_FINOS = {1: 200, 2: 200, 3: 100, 4: 60, 5: 30, 6: 20}   # escalones del sobrante según nº de recursos
+MARGEN_SOBRANTE_MIN = 0.10    # "margen razonable": el sobrante es al menos el 10 % del presupuesto
+
+
+def _composiciones(n, total):
+    """Todas las listas de n enteros >= 0 cuya suma es <= total."""
+    if n == 0:
+        yield []
+        return
+    for k in range(total + 1):
+        for resto in _composiciones(n - 1, total - k):
+            yield [k] + resto
+
+
+def validar_mision_fina(parametros, pasos=None):
+    """Busca el mejor reparto posible repartiendo el sobrante en escalones finos y lo
+    confirma jugándolo con las funciones reales (iniciar_mision -> ... -> revelar).
+    Devuelve un diccionario con: presupuesto, suma_minimos, suma_optimos, sobrante_musd,
+    sobrante_pct, tradeoff (Σmín <= P < Σópt), completable, repartos_probados,
+    mejor_puntaje, mejor_estrellas, mejor_reparto ({clave: M USD}), mejor_valores
+    ({clave: cantidad}), pct_5_estrellas (de los repartos probados), margen_ok y sugerencia
+    (texto o None, si el margen no es razonable)."""
+    par = preparar_parametros(parametros)
+    rec = par["recursos"]
+    claves = [r["clave"] for r in rec]
+    pres = par["presupuesto_musd"]
+    n = len(rec)
+    if pasos is None:
+        pasos = PASOS_FINOS.get(n, 20)
+    costos_min = [costo_de(r, r["minimo"]) for r in rec]
+    costos_opt = [costo_de(r, r["optimo"]) for r in rec]
+    suma_min, suma_opt = sum(costos_min), sum(costos_opt)
+    sobrante = pres - suma_min
+    salida = {"mision": par["mision"], "presupuesto": pres, "suma_minimos": suma_min,
+              "suma_optimos": suma_opt, "sobrante_musd": sobrante,
+              "sobrante_pct": 100 * sobrante / pres, "tradeoff": suma_min <= pres < suma_opt,
+              "recursos": n, "pasos": pasos}
+    if sobrante < 0:
+        salida.update(completable=False, margen_ok=False,
+                      sugerencia=f"subir presupuesto_musd a {suma_min / (1 - MARGEN_SOBRANTE_MIN):.2f} M USD")
+        return salida
+
+    # Tabla de puntos por recurso y escalón. Cada mínimo lleva un margen fijo EPS (para no
+    # caer bajo él por redondeo de decimales) que se descuenta del sobrante, así ningún
+    # reparto se pasa del presupuesto.
+    EPS = 1e-6
+    paso = (sobrante - 2 * n * EPS) / pasos
+    tablas = []
+    for r, c in zip(rec, costos_min):
+        fila = []
+        for k in range(pasos + 1):
+            fila.append(puntos_recurso(convertir(r, c + EPS + k * paso), r["optimo"]))
+        tablas.append(fila)
+
+    umbrales = umbrales_estrellas(par)
+    mejor, mejor_combo, probados, con_cinco = -1, None, 0, 0
+    for combo in _composiciones(n, pasos):
+        probados += 1
+        cercania = sum(tablas[i][combo[i]] for i in range(n)) / n
+        ahorro_musd = pres - suma_min - n * EPS - sum(combo) * paso
+        pts = min(100, round(cercania + BONUS_AHORRO_MAX * ahorro_musd / pres))
+        if pts >= umbrales[-1]:
+            con_cinco += 1
+        if pts > mejor:
+            mejor, mejor_combo = pts, combo
+
+    # Confirmación con las funciones reales del juego
+    reparto = {c: costos_min[i] + EPS + mejor_combo[i] * paso for i, c in enumerate(claves)}
+    e = iniciar_mision(parametros)
+    for c, d in reparto.items():
+        repartir(e, c, d)
+    assert revisar(e)["ok"], "el mejor reparto no entra en el presupuesto"
+    assert simular(e)["exito"], "el mejor reparto no completa la misión"
+    info = revelar(e)
+    salida.update(completable=True, repartos_probados=probados, mejor_puntaje=info["puntaje"],
+                  mejor_estrellas=info["estrellas"], mejor_reparto=reparto,
+                  mejor_valores={f["clave"]: f["valor"] for f in info["recursos"]},
+                  pct_5_estrellas=100 * con_cinco / probados)
+    salida["margen_ok"] = (salida["sobrante_pct"] >= 100 * MARGEN_SOBRANTE_MIN
+                           and info["estrellas"] == ESTRELLAS_MAX and salida["tradeoff"])
+    sugerencia = None
+    if not salida["margen_ok"]:
+        partes = []
+        if salida["sobrante_pct"] < 100 * MARGEN_SOBRANTE_MIN:
+            partes.append(f"subir presupuesto_musd de {pres} a {suma_min / (1 - MARGEN_SOBRANTE_MIN):.2f} M USD "
+                          f"(sobrante del 10 %)")
+        if not salida["tradeoff"]:
+            partes.append(f"bajar presupuesto_musd por debajo de Σ óptimos = {suma_opt:.2f} M USD")
+        if info["estrellas"] < ESTRELLAS_MAX:
+            partes.append("las 5 estrellas no son alcanzables: revisar presupuesto u óptimos")
+        sugerencia = "; ".join(partes)
+    salida["sugerencia"] = sugerencia
+    return salida
+
+
 # ---------------------------------------------------------------------------
 # Parrilla de misiones y progreso  (BLOQUE 2)
 # ---------------------------------------------------------------------------
@@ -911,6 +1020,19 @@ def _mision_lista(estructura_musd, propulsion_musd):
 
 if __name__ == "__main__":
     import sys
+    if "--validar-fino" in sys.argv:     # python nucleo.py --validar-fino
+        print(f"{'misión':<20}{'P':>7}{'Σmín':>8}{'Σópt':>8}{'sobra':>8}{'repartos':>10}{'mejor':>7}{'★':>3}{'%5★':>7}  margen")
+        for mid in [f["id"] for f in cargar_misiones()]:
+            r = validar_mision_fina(cargar_parametros(mid))
+            print(f"{mid:<20}{r['presupuesto']:>7}{r['suma_minimos']:>8.2f}{r['suma_optimos']:>8.2f}"
+                  f"{r['sobrante_pct']:>7.1f}%{r.get('repartos_probados', 0):>10}{r.get('mejor_puntaje', 0):>7}"
+                  f"{r.get('mejor_estrellas', 0):>3}{r.get('pct_5_estrellas', 0):>6.1f}%  "
+                  f"{'OK' if r['margen_ok'] else 'AJUSTAR: ' + r['sugerencia']}")
+            if r.get("completable"):
+                print("   mejor reparto:", {c: round(v, 2) for c, v in r["mejor_reparto"].items()}, "M USD")
+                print("   cantidades:  ", {c: round(v, 1) for c, v in r["mejor_valores"].items()})
+        sys.exit()
+
     if "--verificar" in sys.argv:        # python nucleo.py --verificar [ruta.json]
         ruta = sys.argv[sys.argv.index("--verificar") + 1:][:1]
         prov = provisionales_archivo(ruta[0] if ruta else None)
@@ -1048,7 +1170,7 @@ if __name__ == "__main__":
     assert info["falla"] == "se_apaga" and "{" not in info["mensaje"] and "350 W" in info["mensaje"]
     print("OK  mensaje se_apaga  -> pide 350 W")
 
-    # 16. explota -> usa el respaldo (mensajes.json aún no la trae)
+    # 16. explota -> mensaje completo (de mensajes.json o del respaldo)
     info = jugar(easy, estructura=3.0, propulsion=6.0)
     assert info["falla"] == "explota" and "{" not in info["mensaje"] and "6 kg" in info["mensaje"]
     print("OK  mensaje explota   ->", info["mensaje"][:45] + "...")
@@ -1060,6 +1182,23 @@ if __name__ == "__main__":
                       consumo_w=2, generada_w=1)
         assert txt != MENSAJE_GENERICO and "{" not in txt, falla
     print("OK  todas las fallas  -> tienen mensaje:", FALLAS_VALIDAS)
+
+    # 17b. Las unidades en español de los datos salen en inglés en los mensajes
+    arte = cargar_parametros("insane_artemis1")
+    e = iniciar_mision(arte)
+    for r in preparar_parametros(arte)["recursos"]:
+        repartir(e, r["clave"], costo_de(r, r["minimo"]) * (0.5 if r["clave"] in ("datos", "tiempo") else 1.01))
+    revisar(e); simular(e)
+    textos_fallas = " ".join(f["mensaje"] for f in mensajes_fallas(e))
+    assert "days" in textos_fallas and "points" in textos_fallas, textos_fallas
+    assert " dias" not in textos_fallas and " puntos" not in textos_fallas
+    print("OK  unidades en inglés -> days, points")
+    e = iniciar_mision(arte)
+    for r in preparar_parametros(arte)["recursos"]:
+        repartir(e, r["clave"], costo_de(r, r["minimo"]) * 1.01)
+    revisar(e); simular(e)
+    assert "lunar orbit" in mensaje_resultado(e) and "órbita" not in mensaje_resultado(e)
+    print("OK  destinos en inglés -> lunar orbit")
 
     # 18. Presupuesto excedido: revisar trae el mensaje con el gasto y el presupuesto
     e = iniciar_mision(easy)
@@ -1179,6 +1318,13 @@ if __name__ == "__main__":
         maximos[mid] = puntaje_maximo(par)
         assert maximos[mid] >= umbrales_estrellas(par)[-1], (mid, maximos[mid])
     print("OK  5 estrellas posibles -> mejor puntaje estimado:", maximos)
+
+    # 25. Validación fina: cada misión se puede completar, con margen razonable y 5 estrellas
+    for mid in IDS_NIVELES:
+        r = validar_mision_fina(cargar_parametros(mid))
+        assert r["completable"] and r["tradeoff"], (mid, r)
+        assert r["mejor_estrellas"] == ESTRELLAS_MAX and r["margen_ok"], (mid, r["sugerencia"])
+    print("OK  validación fina   -> las 5 misiones completables, 5 estrellas alcanzables")
 
     # ---- Paso de los botones − y + ----
     esperado = {"easy_cubesat": 0.5, "normal_leo": 1, "hard_mro_marte": 5,

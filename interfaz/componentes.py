@@ -170,12 +170,12 @@ def crear_muestras(sup, botones, x, y, colores, elegido, categoria):
     return x + len(colores) * (lado + 4)
 
 
-def dibujar_hud_presupuesto(sup, textos, restante, total, x, y):
-    """Texto 'Budget left: $X.XM / $Y.YM', en rojo si es negativo."""
-    color = config.COLOR_ERROR if restante < 0 else config.COLOR_OK
-    contenido = (textos["laboratorio"]["presupuesto_restante"] + ": "
-                 + formatear_musd(restante) + " / " + formatear_musd(total))
-    estilo.texto(sup, contenido, x, y, config.LETRA_PEQUENA, color)
+def dibujar_hud_presupuesto(sup, textos, total, x, y):
+    """HUD fijo: 'Budget: $Y.YM' (el presupuesto ASIGNADO a la misión).
+    Regla de dificultad (especificación 4.1): durante el reparto NUNCA se muestra cuánto
+    se lleva gastado ni cuánto queda; el jugador suma mentalmente lo que gasta."""
+    contenido = textos["laboratorio"]["presupuesto"] + ": " + formatear_musd(total)
+    estilo.texto(sup, contenido, x, y, config.LETRA_PEQUENA, config.AMARILLO)
 
 
 # ---------------------------------------------------------------------------

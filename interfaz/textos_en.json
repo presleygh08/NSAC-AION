@@ -87,7 +87,7 @@
   },
 
   "laboratorio": {
-    "presupuesto_restante": "Budget left",
+    "presupuesto": "Budget",
     "interactuar": "[E] Interact",
     "ayuda_mover": "Arrows/WASD: move   E: interact   Esc: close",
     "hangar": "HANGAR",
@@ -127,7 +127,6 @@
     "estacion": {
       "cantidad": "Amount",
       "costo": "Cost",
-      "queda": "Budget left after this",
       "invalido": "Enter a valid number",
       "actual": "Current"
     },
@@ -135,7 +134,7 @@
       "titulo": "BUDGET REVIEW",
       "ok": "Costs are within the assigned budget.",
       "aviso_ok": "After launch confirmation you can't change your design.",
-      "excedido": "You have exceeded the budget by {exceso}. Adjust your resources."
+      "excedido": "The total cost exceeds the assigned budget. Adjust your resources."
     }
   },
 
@@ -210,7 +209,8 @@
   "notificaciones": {
     "bienvenida": "Here are the station's missions. Start with Easy to master the budget split. Each mission you complete unlocks a new real engineering challenge.",
     "desbloqueo": "Great work, {nombre}! New mission unlocked: {mision}.",
-    "reintento": "Don't give up, {nombre}! Check the revealed minimums and try again."
+    "reintento": "Don't give up, {nombre}! Check the revealed minimums and try again.",
+    "depuracion": "Debug: all missions unlocked."
   },
 
   "recursos": {

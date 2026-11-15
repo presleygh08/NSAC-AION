@@ -12,6 +12,8 @@ datos/parametros_misiones.json  datos/destinos.json  datos/mensajes.json
 `datos/misiones.json` YA NO SE USA: la parrilla sale de `parametros_misiones.json`.
 Probar sin interfaz: `python jugar_consola.py` (usa solo estas funciones).
 Verificar los datos: `python nucleo.py --verificar`.
+Validación fina (cada misión tiene solución, mejor puntaje y reparto): `python nucleo.py --validar-fino`
+o `validar_mision_fina(parametros)`; evidencia en `docs/evidencia_validacion_misiones.md`.
 
 ## Niveles
 Hay 5 niveles fijos: Easy, Normal, Hard, Harder, Insane. Cada nivel tiene UNA misión,
@@ -152,6 +154,6 @@ función fuera de su fase (por ejemplo `simular` antes de `revisar`) o la misió
 
 ## Pendiente de otros
 - Pistas (`estado["pistas"]`) siguen en español: Justin decide su traducción y dónde se guarda.
-- Faltan en `mensajes.json` las claves `explota`, `incomunicada`, `sin_ciencia` y `fuera_de_tiempo` (hay borradores de respaldo en el código).
+- `mensajes.json` ya trae `explota`, `incomunicada`, `sin_ciencia` y `fuera_de_tiempo` (copiados de los respaldos de `nucleo.py` el 15 nov; Justin puede mejorar su texto).
 - Los presupuestos por nivel son de referencia; Chambi puede cambiarlos tras su investigación. Si cambian, repetir `python nucleo.py` (comprueba que las 5 estrellas sigan siendo alcanzables).
 - `destino` y los nombres de recursos se muestran traducidos por la interfaz (el núcleo los devuelve como están en los JSON).

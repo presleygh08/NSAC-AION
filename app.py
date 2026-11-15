@@ -183,6 +183,14 @@ def aplicar_accion(ui, accion, valor):
         ui["pantalla"] = "laboratorio"
 
 
+def desbloquear_todo(ui):
+    """Tecla de depuración (F2): todas las misiones quedan disponibles mientras el juego
+    está abierto. Usa la regla que ya tiene nucleo.cargar_misiones (DESBLOQUEO_EN_ORDEN)."""
+    if nucleo.DESBLOQUEO_EN_ORDEN:
+        nucleo.DESBLOQUEO_EN_ORDEN = False
+        notificaciones.mostrar_notificacion(ui, textos_juego["notificaciones"]["depuracion"], "sorprendido", 3)
+
+
 def misiones_jugables(ui):
     """Ids de las misiones que ya se pueden jugar (para saber cuál se acaba de desbloquear)."""
     return [fila["id"] for fila in nucleo.cargar_misiones(ui["progreso"])
@@ -227,6 +235,8 @@ def procesar_eventos(ui, botones):
                     aplicar_accion(ui, boton.accion, boton.valor)
                     hubo_clic = True
                     break   # solo un botón por clic
+        elif evento.type == pygame.KEYDOWN and config.DEPURACION and evento.key == config.TECLA_DESBLOQUEAR:
+            desbloquear_todo(ui)                     # F2: tecla de depuración (ver config.py)
         elif evento.type == pygame.KEYDOWN and evento.key in (pygame.K_RETURN, pygame.K_KP_ENTER) \
                 and ui["pantalla"] != "inicio" and notificaciones.hay_notificacion(ui):
             notificaciones.cerrar(ui)               # Enter cierra la notificación del asistente

@@ -429,6 +429,32 @@ def nave_apagada(ui):
     return sim["nave_apagada"]
 
 
+def nave_paneles_apagados(ui, celdas):
+    """La nave con 'celdas' segmentos de sus paneles solares apagados (0 a 6), de las
+    puntas hacia el cuerpo, alternando izquierda y derecha. Si la nave no tiene paneles
+    (no se montó potencia), devuelve la nave tal cual."""
+    sim = ui["sim"]
+    if "potencia" not in ui["lab"]["partes"] or celdas <= 0:
+        return nave(ui)
+    clave = "paneles_" + str(celdas)
+    if sim.get(clave) is None:
+        _, m = preparar_imagen(ui)
+        copia = nave(ui).copy()
+        y = m.y_paneles - (m.y_carga - 18)                       # fila de los paneles dentro de la nave
+        orden = [m.izq - 30, m.der + 20, m.izq - 20, m.der + 10, m.izq - 10, m.der]   # de afuera hacia adentro
+        for x in orden[:celdas]:
+            pygame.draw.rect(copia, config.GRIS_OSCURO, (x, y, 10, 8))
+            pygame.draw.line(copia, config.NEGRO, (x, y), (x, y + 7))
+        sim[clave] = copia
+    return sim[clave]
+
+
+def luz_de_estado(sup, x, y, color):
+    """Lucecita de estado de la nave (verde = bien, amarilla = alerta, roja = apagada)."""
+    pygame.draw.rect(sup, config.NEGRO, (int(x) - 1, int(y) - 1, 6, 6))
+    pygame.draw.rect(sup, color, (int(x), int(y), 4, 4))
+
+
 def etiqueta(sup, contenido, x, y, color):
     """Cartelito tipo ícono de estado ("NO SIGNAL", "POWER 0%"...)."""
     ancho = estilo.fuente(config.LETRA_PEQUENA).size(contenido)[0] + 10
@@ -461,7 +487,8 @@ def posicion_en_orbita(angulo, radio_x=150, radio_y=55):
 
 def orbita(sup, ui, destino, ta, imagen_nave, gira=True, deriva=0.0):
     """Planeta grande con la nave en órbita elíptica (detrás del planeta en la mitad de arriba).
-    gira=False: la nave se detiene delante del planeta y se aleja 'deriva' segundos.
+    gira=False: la nave se detiene delante del planeta y queda a la deriva 'deriva' segundos:
+    se aleja despacio y da vueltas sobre sí misma (ya no la controla nadie).
     Devuelve la posición de la nave."""
     fondo_espacio(sup)
     if destino == "órbita lunar":                                # la Tierra asoma en una esquina
@@ -474,14 +501,15 @@ def orbita(sup, ui, destino, ta, imagen_nave, gira=True, deriva=0.0):
     x = x - deriva * 8                                           # a la deriva, alejándose
     y = y + deriva * 4
     detras = math.sin(angulo) < 0 and gira
+    giro = deriva * 25                                           # vueltas lentas a la deriva
     if detras:
-        pegar_centrado(sup, imagen_nave, x, y, escala=0.5)
+        pegar_centrado(sup, imagen_nave, x, y, angulo=giro, escala=0.5)
     if destino == "LEO":
         dibujar_tierra_curva(sup, 230)
     else:
         dibujar_planeta(sup, destino, CENTRO_PLANETA[0], CENTRO_PLANETA[1], RADIO_PLANETA)
     if not detras:
-        pegar_centrado(sup, imagen_nave, x, y, escala=0.5)
+        pegar_centrado(sup, imagen_nave, x, y, angulo=giro, escala=0.5)
     return x, y
 
 
@@ -579,14 +607,19 @@ def final_falla_generica(sup, ui, textos, t, falla, destino):
         ta = t
 
     T_FALLA = 1.2                                                  # cuándo empieza a fallar
+    T_APAGADO = T_FALLA + 0.8                                      # se_apaga: ya sin energía
     apagada = False
+    imagen = nave(ui)
     if falla == "se_apaga":
-        # parpadea entre 1.2 y 1.8 s y luego queda apagada
-        if ta >= T_FALLA + 0.6 or (ta >= T_FALLA and int(ta * 10) % 2 == 0):
+        # Los paneles se apagan celda por celda (0,8 s) y luego se apaga toda la nave
+        if ta >= T_APAGADO:
             apagada = True
+            imagen = nave_apagada(ui)
+        elif ta >= T_FALLA:
+            imagen = nave_paneles_apagados(ui, 1 + int((ta - T_FALLA) / 0.8 * 6))
     if falla == "fuera_de_tiempo" and ta >= T_FALLA + 0.8:
         apagada = True
-    imagen = nave_apagada(ui) if apagada else nave(ui)
+        imagen = nave_apagada(ui)
     # Sin energía, sin datos o sin tiempo, la nave deja de maniobrar y se va a la deriva
     detenida = apagada or (falla == "sin_ciencia" and ta > T_FALLA + 0.6)
     if detenida:
@@ -594,8 +627,16 @@ def final_falla_generica(sup, ui, textos, t, falla, destino):
     else:
         x, y = orbita(sup, ui, destino, ta, imagen)
 
-    if falla == "se_apaga" and ta >= T_FALLA + 0.6:
-        etiqueta(sup, iconos["sin_energia"], x, y - 26, config.ROJO)
+    if falla == "se_apaga":
+        # Luz de estado: verde, luego amarilla parpadeando y al final roja
+        if ta < T_FALLA:
+            luz_de_estado(sup, x + 12, y - 16, config.VERDE)
+        elif ta < T_APAGADO:
+            if int(ta * 8) % 2 == 0:
+                luz_de_estado(sup, x + 12, y - 16, config.AMARILLO)
+        else:
+            luz_de_estado(sup, x + 12, y - 16, config.ROJO)
+            etiqueta(sup, iconos["sin_energia"], x, y - 30, config.ROJO)
     elif falla == "incomunicada":
         # Ondas hacia la Tierra (arriba a la izquierda) que se cortan a mitad de camino
         tierra = (40, 40)

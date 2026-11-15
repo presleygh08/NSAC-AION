@@ -17,6 +17,7 @@ No build, lint, or test framework yet. Tests are `assert`-based self-checks in e
 ```bash
 python3 nucleo.py              # game logic self-tests (also validates Easy and Normal)
 python3 nucleo.py --verificar  # checks datos/parametros_misiones.json
+python3 nucleo.py --validar-fino  # finer search: every mission solvable, best score (docs/evidencia_validacion_misiones.md)
 python3 fisica.py              # rocket equation checks
 python3 potencia_costo.py      # power + cost checks
 python3 jugar_consola.py       # play the flow in the terminal

@@ -5,6 +5,8 @@
 
 import os
 
+import pygame
+
 # --- Resolución (estilo 16 bits) ---
 # Todo se dibuja en una superficie pequeña de 640x360 y luego se agranda ESCALA veces
 # (x2 = ventana de 1280x720) sin suavizar, para que se vean los píxeles.
@@ -131,3 +133,11 @@ DURACION_FINAL_LEJOS = 5.0   # Marte y Luna: viaje + llegada
 
 # --- Notificaciones del asistente ---
 DURACION_NOTIFICACION = 6.0  # segundos que queda en pantalla (o hasta un clic / Enter)
+
+# --- Depuración ---
+# F2 desbloquea TODAS las misiones (en cualquier pantalla). Sirve para probar Normal, Hard,
+# Harder e Insane sin ganar las anteriores, y para la demo. No cambia ningún archivo ni el
+# progreso guardado: solo apaga el desbloqueo en orden mientras el juego está abierto.
+# Para la versión de entrega poner DEPURACION = False (F2 deja de hacer algo).
+DEPURACION = True
+TECLA_DESBLOQUEAR = pygame.K_F2

@@ -17,7 +17,8 @@
 #   "briefing", "pistas", "pistas_guardadas", "archivo", "estacion", "revision" o None.
 #
 # Regla del contrato: aquí NUNCA se lee estado["recursos"] (trae mínimos y óptimos
-# ocultos). Se usa nucleo.recursos_visibles, cotizar y presupuesto_restante.
+# ocultos). Se usa nucleo.recursos_visibles y cotizar. Tampoco se muestra cuánto se lleva
+# gastado ni cuánto queda (especificación 4.1): el HUD solo dice el presupuesto asignado.
 
 import math
 
@@ -297,10 +298,9 @@ def dibujar_sala(sup, ui, textos, botones):
         estilo.texto(sup, contenido, caja.centerx, caja.centery, config.LETRA_PEQUENA, config.AMARILLO,
                      centrado=True, sombra=False)
 
-    # HUD de presupuesto (siempre visible, abajo a la izquierda, fuera del suelo)
-    estado = ui["estado"]
-    dibujar_hud_presupuesto(sup, textos, nucleo.presupuesto_restante(estado),
-                            estado["presupuesto_musd"], SALA.x + 2, Y_HUD)
+    # HUD de presupuesto (siempre visible, abajo a la izquierda, fuera del suelo).
+    # Es FIJO: solo el presupuesto asignado, nunca lo gastado ni lo que queda (4.1).
+    dibujar_hud_presupuesto(sup, textos, ui["estado"]["presupuesto_musd"], SALA.x + 2, Y_HUD)
 
 
 def dibujar_npc(sup, ui, textos):
@@ -403,19 +403,15 @@ def ventana_estacion(sup, ui, textos, botones):
                  config.CIAN)
     caja.dibujar(sup, ui["tiempo"])
 
-    # Costo en vivo
+    # Costo en vivo de ESTE recurso solamente (4.4): nada de total gastado ni de lo que queda.
     y = caja.rect.bottom + 12
     valor = leer_numero(caja.texto)
     if valor is not None:
         costo = nucleo.cotizar(estado, clave, valor)
-        # Lo que quedaría: el restante de ahora + lo que ya tenía este recurso - el costo nuevo.
-        queda = nucleo.presupuesto_restante(estado) + recurso["dinero_musd"] - costo
         estilo.texto(sup, t["costo"] + ": " + formatear_musd(costo), x, y, config.LETRA_NORMAL,
                      config.AMARILLO)
-        color = config.COLOR_ERROR if queda < 0 else config.COLOR_OK
-        estilo.texto(sup, t["queda"] + ": " + formatear_musd(queda), x, y + 22, config.LETRA_NORMAL, color)
     if lab["error"]:
-        estilo.texto(sup, t["invalido"], x, y + 46, config.LETRA_PEQUENA, config.COLOR_ERROR)
+        estilo.texto(sup, t["invalido"], x, y + 24, config.LETRA_PEQUENA, config.COLOR_ERROR)
 
     botones.append(Boton(textos["botones"]["cancelar"], VENTANA.x + 16, VENTANA.bottom - 36, 110,
                          config.ALTO_BOTON, "cerrar_ventana"))
@@ -424,7 +420,7 @@ def ventana_estacion(sup, ui, textos, botones):
 
 
 def ventana_revision(sup, ui, textos, botones):
-    """Budget review (CML 4). Muestra lo que devolvió nucleo.revisar()."""
+    """Budget review (CML 4). Solo dice si el reparto entra o no en el presupuesto."""
     t = textos["laboratorio"]["revision"]
     revision = ui["lab"]["revision"]
     y = dibujar_ventana(sup, VENTANA, t["titulo"], config.MORADO)
@@ -439,11 +435,9 @@ def ventana_revision(sup, ui, textos, botones):
                              VENTANA.bottom - 36, 190, config.ALTO_BOTON, "confirmar_lanzamiento",
                              color=config.ROJO))
     else:
-        aviso = t["excedido"].replace("{exceso}", formatear_musd(revision["exceso_musd"]))
-        y = estilo.texto_multilinea(sup, aviso, x, y + 10, ancho, config.LETRA_NORMAL, config.COLOR_ERROR)
-        if revision["mensaje"]:
-            estilo.texto_multilinea(sup, revision["mensaje"], x, y + 8, ancho, config.LETRA_PEQUENA,
-                                    config.COLOR_TEXTO_SUAVE)
+        # Se pasó: solo se dice ESO, sin cifras (4.5). No se muestran exceso_musd ni el
+        # mensaje de revisar (que trae el costo total y el presupuesto).
+        estilo.texto_multilinea(sup, t["excedido"], x, y + 10, ancho, config.LETRA_NORMAL, config.COLOR_ERROR)
         botones.append(Boton(textos["botones"]["aceptar"], VENTANA.centerx - 50, VENTANA.bottom - 36,
                              100, config.ALTO_BOTON, "cerrar_ventana", color=config.MORADO))
 
