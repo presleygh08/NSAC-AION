@@ -37,7 +37,7 @@ if __name__ == "__main__":
         assert math.isclose(dv_vuelta, dv, rel_tol=1e-9), f"Inconsistente: {dv_vuelta}"
 
         print(f"OK  dv={dv}, isp={isp}, m_seca={ms} -> propelente {mp:.1f} kg")
-
+        
     try:
         masa_propelente(3100, 0, 500)
     except ValueError as e:
