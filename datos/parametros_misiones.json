@@ -34,6 +34,10 @@
       }
     ],
     "pistas": [
+      "During liftoff the rocket shakes violently: without enough structural mass, the payload breaks apart.",
+      "The launcher leaves you in low Earth orbit, but you need your own propulsion to reach and hold your final altitude."
+    ],
+    "pistas_es": [
       "En el despegue el cohete sufre vibraciones intensas: sin suficiente masa estructural la carga util colapsa.",
       "El lanzador te deja en orbita baja, pero necesitas impulso propio para alcanzar y mantener tu altitud final."
     ]
@@ -83,6 +87,10 @@
       }
     ],
     "pistas": [
+      "At 1.0 AU you receive 1,361 W/m² of sunlight, but the spacecraft passes through Earth's shadow and must still power all its instruments.",
+      "Your satellite needs a structure strong enough for the launch loads and a propellant reserve to trim and maintain its orbit."
+    ],
+    "pistas_es": [
       "A 1.0 UA recibes 1361 W/m2 de luz solar, pero la nave entra en sombra terrestre y debe alimentar todos sus instrumentos.",
       "Un cohete mas potente exige mayor masa estructural y mayor reserva de combustible para ajustar la orbita."
     ]
@@ -142,6 +150,10 @@
       }
     ],
     "pistas": [
+      "Mars is 1.524 AU from the Sun: the solar energy reaching your panels is less than half of what it is at Earth.",
+      "Sending science images across more than 225 million km requires investing in an X-band high-gain antenna."
+    ],
+    "pistas_es": [
       "Marte esta a 1.524 UA del Sol: la energia solar que llega a los paneles es menos de la mitad que en la Tierra.",
       "Enviar imagenes cientificas a mas de 225 millones de km requiere invertir en una antena de alta ganancia en banda X."
     ]
@@ -211,6 +223,10 @@
       }
     ],
     "pistas": [
+      "Landing on Mars requires much more delta-v and structure than just orbiting it.",
+      "Arriving intact is not enough: if you cut the science instruments too much, the mission fails its objective."
+    ],
+    "pistas_es": [
       "Aterrizar en Marte requiere mucho mas delta-v y estructura que solo orbitarlo.",
       "No basta con llegar vivo: si recortas demasiado en instrumentos cientificos, la mision no cumple su objetivo."
     ]
@@ -290,6 +306,10 @@
       }
     ],
     "pistas": [
+      "Artemis I was a heavy uncrewed lunar test flight: you must balance all six resources at once.",
+      "The real mission lasted 25.5 days, including about six days in a distant orbit around the Moon: cut endurance or power too much and it cannot finish."
+    ],
+    "pistas_es": [
       "Artemis I es una nave pesada de prueba lunar: requiere equilibrar los seis recursos a la vez.",
       "La mision real dura casi cuatro semanas en orbita lunar; si recortas demasiado en tiempo o potencia, no logra completarse."
     ]

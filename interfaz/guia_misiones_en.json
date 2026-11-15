@@ -33,8 +33,8 @@
       "pistas_referencia": {
         "estructura": "A big orbiter's structure can be more than a third of its dry mass. This orbiter's dry mass is 1,030 kg.",
         "propulsion": "Going from low Earth orbit into Mars orbit takes several thousand m/s of delta-v: many times more than staying near Earth.",
-        "potencia": "At Mars (1.52 AU from the Sun) sunlight is only about 586 W per square meter, less than half of what reaches Earth.",
-        "comunicaciones": "Real Mars orbiters send data to Earth at tens to a few hundred kbps on X-band radio."
+        "potencia": "At Mars (1.52 AU from the Sun) sunlight is only about 586 W per square meter, less than half of Earth's. A large orbiter still needs on the order of a kilowatt.",
+        "comunicaciones": "Modern Mars orbiters with big high-gain antennas can send data to Earth at several megabits per second (Mbps)."
       }
     },
     "harder_perseverance": {
@@ -46,7 +46,7 @@
       "pistas_referencia": {
         "estructura": "Landing needs a reinforced structure: a heat shield, a back shell and a descent stage on top of the rover itself.",
         "propulsion": "Landing on Mars needs thousands of m/s more delta-v than just orbiting it.",
-        "potencia": "Rovers need hundreds of watts to drive, heat and run their instruments. (The real Perseverance uses a nuclear generator of about 110 W plus batteries; in this game power comes from solar panels.)",
+        "potencia": "Perseverance does not use solar panels: a nuclear power source (MMRTG) gives on the order of a hundred watts, day and night, and batteries cover the peaks.",
         "comunicaciones": "A rover on the surface talks to Earth at tens to a few hundred kbps, often relaying through orbiters.",
         "datos": "Rover science payloads weigh tens of kilograms. The real Perseverance carries seven science instruments."
       }
@@ -60,7 +60,7 @@
       "pistas_referencia": {
         "estructura": "A crew capsule is heavy: its structure must protect the whole ship, including the heat shield for the return to Earth. This ship's dry mass is about 10,300 kg.",
         "propulsion": "Reaching lunar orbit from low Earth orbit takes a few thousand m/s of delta-v.",
-        "potencia": "A capsule this size needs around a kilowatt for its systems.",
+        "potencia": "Orion's European Service Module unfolds four large solar array wings that generate several kilowatts.",
         "comunicaciones": "Links from the Moon can reach hundreds of kbps.",
         "datos": "Artemis I flew two radiation-measuring torso mannequins (the MARE experiment) to study the dose future astronauts would receive.",
         "tiempo": "The real Artemis I mission lasted almost four weeks."
@@ -83,7 +83,7 @@
     "potencia": {
       "nombre": "Power",
       "unidad": "W",
-      "que_es": "The electricity your solar panels produce for all the ship's systems.",
+      "que_es": "The electrical power available for all the ship's systems, from solar arrays or, for some rovers, a nuclear power source.",
       "por_que_importa": "Sunlight gets weaker the farther you are from the Sun, and in a planet's shadow you get none. Without enough power the ship shuts down."
     },
     "comunicaciones": {
@@ -145,7 +145,8 @@
     "titulo": "Campaign complete!",
     "frase": "You balanced real missions with real limits. Every minimum, margin and budget you played with comes from data published by NASA, ESA, Cal Poly, SpaceX and Rocket Lab. You already think like a mission designer.",
     "equipo": "Team AION SPACE: Emanuel Gonzales, Gonzalo Bejarano, Bryan Chambi, Justin Aguilar, Piero Arista",
-    "ia": "Built with Python and Pygame. AI tools (Claude, Claude Code) assisted with code and documentation."
+    "ia": "Built with Python and Pygame. AI tools (Claude, Claude Code) assisted with code and documentation.",
+    "estimaciones": "Values from official sources are cited in docs/auditoria-datos.md; values marked as estimates are the team's approximations for gameplay."
   },
   "fuentes": {
     "cubesat_launch_initiative": "https://www.nasa.gov/smallsat-institute/recent-nasa-launches/",
@@ -156,6 +157,14 @@
     "lanzadores": "datos/lanzadores.json",
     "destinos": "datos/destinos.json",
     "perseverance_payload": "https://www.rocketstem.org/2020/07/20/mars-2020-mission-overview/",
-    "mare_artemis1": "https://www.dlr.de/en/research-and-transfer/featured-topics/mission-moon/artemis-programme/the-mare-cosmic-radiation-experiment-on-board-artemis-i"
+    "mare_artemis1": "https://www.dlr.de/en/research-and-transfer/featured-topics/mission-moon/artemis-programme/the-mare-cosmic-radiation-experiment-on-board-artemis-i",
+    "mars_fact_sheet": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html",
+    "mro_spacecraft_jpl": "https://webarchive.library.unt.edu/web/20090813145340/http://mars.jpl.nasa.gov/mro/mission/sc.html",
+    "mro_power_comms_nssdca": "https://www.planetary.org/mission-spending/mro-spending",
+    "orion_esm_airbus": "https://www.airbus.com/en/products-services/space/space-exploration/moon-missions/orion-european-service-module",
+    "sls": "https://www.nasa.gov/humans-in-space/space-launch-system/the-great-escape-sls-provides-power-for-missions-to-the-moon-duzxi/",
+    "artemis1_splashdown": "https://www.nasa.gov/?p=285100",
+    "falcon_heavy": "https://new.spacex.com/vehicles/falcon-heavy",
+    "electron": "https://rocketlabcorp.com/news/updates/rocket-lab-increases-electron-payload-capacity-enabling-interplanetary-missions-and-reusability/"
   }
 }
