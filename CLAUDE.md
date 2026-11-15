@@ -53,14 +53,13 @@ If v3 and v4 conflict, follow v4. Both supersede older plan items (e.g. the gree
 Roles, screens, function/data contract and the 48 h schedule: @docs/plan-equipo-resumen.md
 Official challenge statement, deliverables, judging criteria and plan-vs-challenge gaps: @docs/reto.md
 All user-facing text (game UI, messages, README) must be in English per Space Apps rules; code identifiers stay in Spanish.
-Team (5, roles per v4): Gonzalo (Pygame UI: app.py, interfaz/), Emanuel (game architecture: juego.py, fisica.py, potencia_costo.py), Chambi (research: datos/parametros_misiones.json), Justin (game definition, mensajes.json, textos_en.json, pitch), Piero (visual design: assets/, README, submission).
+Team (5, roles per v4): Gonzalo (Pygame UI: app.py, interfaz/), Emanuel (game architecture: nucleo.py, fisica.py, potencia_costo.py), Chambi (research: datos/parametros_misiones.json), Justin (game definition, mensajes.json, textos_en.json, pitch), Piero (visual design: assets/, README, submission).
 
 ## UI rules (Pygame)
-- The UI only calls functions from fisica.py / juego.py; no physics or game logic inside screens.
-- Game state lives in a dict in the main loop (not st.session_state).
-- Screens (v4): avatar → parrilla (Easy–Insane) → objetivo (CML1) → presupuesto y pistas (CML2) → taller de reparto (CML3) → revisión (CML4, only budget) → simulación (4 failures + success) → resultados con revelado de mínimo/óptimo. See docs/reparto-v4.md.
-- Contract with juego.py (names fixed by Emanuel; until then use stubs with these names): cargar_misiones(), iniciar_mision(id), repartir(estado, recurso, dinero), presupuesto_restante(estado), revisar(estado), simular(estado), puntaje(estado), revelar(estado).
-- Result texts are read from datos/mensajes.json (keys: exito, delta_v_insuficiente,
-  potencia_insuficiente, masa_excede_lanzador, presupuesto_excedido, falla_aleatoria).
-- Use the exact function names, JSON columns and message keys from the contract; if something doesn't fit, ask instead of inventing new names.
-- Units everywhere: kg, m/s, W, millions of USD.
+- UI spec (screens, 16-bit style, lab with CML phases, simulation, results, priorities): @docs/especificacion-interfaz.md — follow it for everything visual.
+- Game logic API: @CONTRATO_API.md — the UI only calls functions of nucleo.py listed there (nucleo.py replaced juego.py, now juego_v1.py). During allocation never read estado["recursos"]; use recursos_visibles. Missing functions (cotizar, estrellas, faltante_pct, bonus por ahorro) are added directly to nucleo.py following docs/pedidos-emanuel.md.
+- You may edit ANY file in the repo (nucleo.py, fisica.py, potencia_costo.py, datos/, docs, README) when needed to meet the spec or fix a bug. Rules: keep existing function names and data keys used by CONTRATO_API.md (only add), update CONTRATO_API.md when adding functions, rerun the module self-tests/pruebas.py and validar_mision after touching game logic, never invent NASA numbers (mark estimates as such), and list in your final summary which teammates' files you changed.
+- Game state lives in a dict in the main loop of app.py.
+- Files that stop being used are renamed with a _v1 suffix (not deleted).
+- Run with: python3.12 app.py (the Anaconda python3 has no pygame).
+- Units: kg, m/s, W, kbps, days, millions of USD.
