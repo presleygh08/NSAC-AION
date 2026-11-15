@@ -1,5 +1,5 @@
 # nucleo.py
-# Núcleo del juego con el flujo de REPARTO DE PRESUPUESTO.
+# Núcleo del juego con el flujo de REPARTO DE PRESUPUESTO:
 #
 # Flujo:  iniciar_mision -> repartir (varias veces) -> revisar -> simular
 #         -> puntaje / revelar
