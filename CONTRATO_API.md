@@ -7,7 +7,7 @@ Hasta el cierre del Bloque 8 se pueden AÑADIR campos, pero no cambian los nombr
 ## Archivos que deben estar juntos
 ```
 nucleo.py  fisica.py  potencia_costo.py
-datos/parametros_misiones.json  datos/destinos.json  datos/mensajes.json
+datos/parametros_misiones.json  datos/destinos.json  datos/mensajes.json  datos/mensajes_es.json
 ```
 `datos/misiones.json` YA NO SE USA: la parrilla sale de `parametros_misiones.json`.
 Probar sin interfaz: `python jugar_consola.py` (usa solo estas funciones).
@@ -53,13 +53,24 @@ if puede_jugar(progreso, "easy_cubesat"):
 | `dentro_del_presupuesto(estado)` | HUD del laboratorio (v2, D1) | `True` si lo repartido cabe en el presupuesto. La interfaz solo pinta un indicador verde/rojo, sin cifras |
 | `revisar(estado)` | botón "lanzar" | `{'ok', 'exceso_musd', 'mensaje'}` |
 | `simular(estado)` | tras `revisar` ok | `{'exito', 'falla', 'fallas', 'bajo_minimo'}` |
-| `revelar(estado)` | pantalla de resultados | ver abajo |
+| `revelar(estado, idioma="en")` | pantalla de resultados | ver abajo. `idioma` (v3): `"en"` (por defecto) o `"es"` cambia el idioma de `mensaje`, `fallas` y `pista` |
+| `cargar_mensajes(ruta=None, idioma="en")` | (interna; v3) | plantillas de `mensajes.json`; con `"es"`, `mensajes_es.json` encima (lo que falte queda en inglés) |
 | `estrellas(estado)` | tras `simular` | 0 a 5 (lo mismo que `revelar(...)["estrellas"]`) |
 | `registrar_resultado(progreso, estado)` | tras `simular` | `progreso` (guarda mejor puntaje y mejores estrellas) |
 | `presupuesto_sugerido(parametros)` | herramienta (Chambi / validación) | menor presupuesto redondo ≥ 1.05 × costo de los óptimos (v2, D2) |
 
 Campos de `estado` que la interfaz puede leer: `mision`, `destino`, `cohete`,
-`presupuesto_musd`, `pistas` (lista de textos), `fase`.
+`presupuesto_musd`, `pistas` (lista de textos, inglés), `pistas_es` (v3: las mismas en español),
+`tipo_potencia` (v3: `"solar"` o `"mmrtg"`; Harder usa el generador nuclear y no tiene paneles), `fase`.
+
+## Idioma (v3, E)
+- La interfaz guarda `ui["idioma"]` (`"en"` al abrir el juego) y llama `revelar(estado, idioma=ui["idioma"])`.
+- Pistas: `estado["pistas"]` o `estado["pistas_es"]`. Mensajes: `datos/mensajes.json` y `datos/mensajes_es.json`.
+- Sin el parámetro, todo sigue en inglés como antes (no se rompe nada).
+
+## Unidades (v3, A)
+La unidad de cada recurso viene en `recursos_visibles(...)["unidad"]` y la interfaz muestra ESA unidad
+(Hard usa **Mbps** en comunicaciones; las demás misiones, kbps).
 
 ## Éxito, fallas y estrellas
 - **Éxito:** ningún recurso quedó bajo su mínimo. Lo demás (puntaje) solo decide las estrellas.
@@ -152,14 +163,14 @@ Con `ok: True`, `mensaje` es `None` y la misión pasa a la fase de simulación
   `minimo`, `optimo` ni `faltante_pct` salvo con 5 estrellas (D3); con menos, usa `zona` y `pista`.
 - `faltante_pct` (en cada recurso) = `max(0, (mínimo − valor) / mínimo × 100)`: cuánto le faltó para el mínimo.
 - `ahorro_musd` = dinero sin gastar; `presupuesto_usado_pct` = % del presupuesto gastado.
-- Si la misión falló, `puntaje` es 0. Los mensajes vienen de `datos/mensajes.json`, en inglés.
+- Si la misión falló, `puntaje` es 0. Los mensajes vienen de `datos/mensajes.json` (inglés) o `datos/mensajes_es.json` (español, con `idioma="es"`).
 
 ## Errores que la interfaz debe esperar
 `ValueError` si: se reparte dinero negativo, el recurso no existe, se llama una
 función fuera de su fase (por ejemplo `simular` antes de `revisar`) o la misión no existe.
 
 ## Pendiente de otros
-- Pistas (`estado["pistas"]`) siguen en español: Justin decide su traducción y dónde se guarda.
+- Pistas: ya en inglés en `pistas` y en español en `pistas_es` (v3).
 - `mensajes.json` ya trae `explota`, `incomunicada`, `sin_ciencia` y `fuera_de_tiempo` (copiados de los respaldos de `nucleo.py` el 15 nov; Justin puede mejorar su texto).
-- Presupuestos v2 (D2): `presupuesto_musd` = `presupuesto_sugerido(parametros)` (18, 71, 155, 240, 305). Si Chambi cambia mínimos u óptimos, recalcularlo y repetir `python nucleo.py` y `python nucleo.py --validar-fino`. `verificar_parametros` avisa si el presupuesto no alcanza para los mínimos o supera 1.10 × costo de los óptimos.
+- Presupuestos v2 (D2): `presupuesto_musd` = `presupuesto_sugerido(parametros)` (18, 71, 155, 240, 305). En la v3 (datos corregidos de potencia y comunicaciones) se recalcularon y dan los mismos valores. Si Chambi cambia mínimos u óptimos, recalcularlo y repetir `python nucleo.py` y `python nucleo.py --validar-fino`. `verificar_parametros` avisa si el presupuesto no alcanza para los mínimos o supera 1.10 × costo de los óptimos.
 - `destino` y los nombres de recursos se muestran traducidos por la interfaz (el núcleo los devuelve como están en los JSON).

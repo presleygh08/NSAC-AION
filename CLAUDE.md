@@ -21,6 +21,7 @@ python3 nucleo.py --validar-fino  # finer search: every mission solvable, best s
 python3 fisica.py              # rocket equation checks
 python3 potencia_costo.py      # power + cost checks
 python3 jugar_consola.py       # play the flow in the terminal
+python3.12 revisar_textos.py   # v3 test mode: every screen in EN and ES, warns if a text leaves its box (--capturas saves PNGs)
 ```
 
 Run the game (needs pygame, which is installed for python3.12, not for the Anaconda python3):

@@ -130,6 +130,11 @@ def iniciar_mision(parametros):
         "cohete": parametros["cohete"],
         "presupuesto_musd": parametros["presupuesto_musd"],
         "pistas": list(parametros.get("pistas", [])),
+        # v3 (E): las mismas pistas en español (si la misión no las trae, se usan las inglesas)
+        "pistas_es": list(parametros.get("pistas_es") or parametros.get("pistas", [])),
+        # v3 (A): de dónde sale la potencia: "solar" (paneles) o "mmrtg" (generador nuclear,
+        # Harder). La interfaz lo usa para dibujar paneles o el MMRTG.
+        "tipo_potencia": parametros.get("tipo_potencia", "solar"),
         "recursos": parametros["recursos"],     # incluye mínimos y óptimos: NO mostrarlos
         "reparto": {r["clave"]: 0.0 for r in parametros["recursos"]},   # M USD por recurso
         "fase": "reparto",                      # reparto, simulacion, resultado
@@ -365,6 +370,9 @@ def simular(estado):
 # presupuesto_musd. Un campo desconocido se deja tal cual (no rompe el juego).
 
 ARCHIVO_MENSAJES = "mensajes.json"
+# v3 (E): textos en español. Si falta una clave en español se usa la inglesa.
+ARCHIVOS_MENSAJES = {"en": "mensajes.json", "es": "mensajes_es.json"}
+IDIOMA_POR_DEFECTO = "en"
 
 FALLA_A_MENSAJE = {"no_llega": "delta_v_insuficiente", "se_apaga": "potencia_insuficiente"}
 
@@ -384,6 +392,22 @@ UNIDADES_EN = {"dias": "days", "puntos": "points"}
 # Lo mismo con los destinos (en los datos están en español).
 DESTINOS_EN = {"LEO": "LEO", "órbita lunar": "lunar orbit", "órbita de Marte": "Mars orbit",
                "superficie de Marte": "the surface of Mars"}
+# v3 (E): lo mismo en español (los datos ya están en español, solo se ajusta el texto).
+UNIDADES_ES = {"dias": "días", "puntos": "puntos"}
+DESTINOS_ES = {"LEO": "la órbita terrestre baja (LEO)", "órbita lunar": "la órbita lunar",
+               "órbita de Marte": "la órbita de Marte", "superficie de Marte": "la superficie de Marte"}
+
+
+def _destino_texto(destino, idioma):
+    """Destino para los mensajes, en el idioma pedido."""
+    tabla = DESTINOS_ES if idioma == "es" else DESTINOS_EN
+    return tabla.get(destino, destino)
+
+
+def _unidad_texto(unidad, idioma):
+    """Unidad para los mensajes, en el idioma pedido (dias -> days / días)."""
+    tabla = UNIDADES_ES if idioma == "es" else UNIDADES_EN
+    return tabla.get(unidad, unidad)
 
 
 class _Campos(dict):
@@ -397,13 +421,24 @@ def _num(x):
     return str(int(round(x))) if abs(x - round(x)) < 0.05 else f"{x:.1f}"
 
 
-def cargar_mensajes(ruta=None):
-    """Lee datos/mensajes.json. Devuelve {} si el archivo no existe."""
-    ruta = Path(ruta) if ruta else CARPETA_DATOS / ARCHIVO_MENSAJES
+def _leer_mensajes(ruta):
+    """Lee un archivo de mensajes. Devuelve {} si no existe."""
     if not ruta.exists():
         return {}
     with open(ruta, encoding="utf-8") as f:
         return json.load(f)
+
+
+def cargar_mensajes(ruta=None, idioma=IDIOMA_POR_DEFECTO):
+    """Lee datos/mensajes.json (idioma "en", por defecto) o datos/mensajes_es.json ("es").
+    En español, cada clave que falte se toma del archivo inglés (nunca queda vacía).
+    Si se pasa 'ruta', se lee solo ese archivo. Devuelve {} si el archivo no existe."""
+    if ruta:
+        return _leer_mensajes(Path(ruta))
+    mensajes = _leer_mensajes(CARPETA_DATOS / ARCHIVO_MENSAJES)
+    if idioma != "en" and idioma in ARCHIVOS_MENSAJES:
+        mensajes.update(_leer_mensajes(CARPETA_DATOS / ARCHIVOS_MENSAJES[idioma]))
+    return mensajes
 
 
 def mensaje(clave, mensajes=None, **datos):
@@ -414,19 +449,19 @@ def mensaje(clave, mensajes=None, **datos):
     return plantilla.format_map(_Campos(datos))
 
 
-def mensajes_fallas(estado, mensajes=None):
+def mensajes_fallas(estado, mensajes=None, idioma=IDIOMA_POR_DEFECTO):
     """Una entrada por CADA recurso que quedó bajo su mínimo, todas con el mismo peso:
     [{'clave': 'propulsion', 'falla': 'no_llega', 'mensaje': texto}, ...].
-    Lista vacía si hubo éxito. Solo después de simular()."""
+    Lista vacía si hubo éxito. Solo después de simular(). idioma: "en" o "es" (v3)."""
     if estado["fase"] != "resultado":
         raise ValueError("Primero hay que simular")
-    mensajes = mensajes if mensajes is not None else cargar_mensajes()
+    mensajes = mensajes if mensajes is not None else cargar_mensajes(idioma=idioma)
     salida = []
     for clave in estado["resultado"]["bajo_minimo"]:
         r = _buscar_recurso(estado, clave)
         valor = valor_recurso(estado, clave)
-        datos = {"destino": DESTINOS_EN.get(estado["destino"], estado["destino"]), "lanzador": estado["cohete"],
-                 "recurso": clave, "unidad": UNIDADES_EN.get(r["unidad"], r["unidad"]),
+        datos = {"destino": _destino_texto(estado["destino"], idioma), "lanzador": estado["cohete"],
+                 "recurso": clave, "unidad": _unidad_texto(r["unidad"], idioma),
                  "valor": _num(valor),
                  "minimo": _num(r["minimo"]), "optimo": _num(r["optimo"]),
                  "dv_requerido_m_s": _num(r["minimo"]), "dv_disponible_m_s": _num(valor),
@@ -437,17 +472,17 @@ def mensajes_fallas(estado, mensajes=None):
     return salida
 
 
-def mensaje_resultado(estado, mensajes=None):
+def mensaje_resultado(estado, mensajes=None, idioma=IDIOMA_POR_DEFECTO):
     """Texto explicativo del resultado (lo usa revelar). Solo después de simular().
     Éxito: el mensaje "exito". Falla: los mensajes de TODAS las fallas, uno por
     párrafo, en el orden del JSON (para mostrarlos por separado, usar mensajes_fallas)."""
     if estado["fase"] != "resultado":
         raise ValueError("Primero hay que simular")
-    mensajes = mensajes if mensajes is not None else cargar_mensajes()
+    mensajes = mensajes if mensajes is not None else cargar_mensajes(idioma=idioma)
     if estado["resultado"]["exito"]:
-        return mensaje("exito", mensajes, destino=DESTINOS_EN.get(estado["destino"], estado["destino"]),
+        return mensaje("exito", mensajes, destino=_destino_texto(estado["destino"], idioma),
                        lanzador=estado["cohete"])
-    return "\n\n".join(f["mensaje"] for f in mensajes_fallas(estado, mensajes))
+    return "\n\n".join(f["mensaje"] for f in mensajes_fallas(estado, mensajes, idioma))
 
 
 def mensaje_presupuesto(estado, mensajes=None):
@@ -610,6 +645,13 @@ PISTAS_ZONA = {
     "optimo": "Close to optimal",
     "exceso": "More than needed",
 }
+# v3 (E): las mismas pistas en español
+PISTAS_ZONA_ES = {
+    "bajo_minimo": "Necesita mucho más",
+    "aceptable": "Necesita un poco más",
+    "optimo": "Cerca del óptimo",
+    "exceso": "Más de lo necesario",
+}
 
 
 def zona_recurso(valor, minimo, optimo):
@@ -623,7 +665,7 @@ def zona_recurso(valor, minimo, optimo):
     return "aceptable"
 
 
-def revelar(estado):
+def revelar(estado, idioma=IDIOMA_POR_DEFECTO):
     """Datos para la pantalla de resultados: por recurso, lo elegido, el mínimo,
     el óptimo, sus puntos y si quedó bajo el mínimo / cerca del óptimo.
     Devuelve: {'puntaje', 'exito', 'optimo', 'falla', 'fallas', 'mensaje',
@@ -640,7 +682,8 @@ def revelar(estado):
       'ahorro_musd' -> M USD sin gastar; 'presupuesto_usado_pct' -> % del presupuesto gastado
       En cada recurso, 'faltante_pct' -> cuánto le faltó para el mínimo, en %
                    (0 si no quedó bajo el mínimo); 'zona' -> 'bajo_minimo', 'aceptable',
-                   'optimo' o 'exceso'; 'pista' -> texto en inglés de esa zona (PISTAS_ZONA)."""
+                   'optimo' o 'exceso'; 'pista' -> texto de esa zona (PISTAS_ZONA).
+      idioma (v3): "en" (por defecto) o "es": idioma de 'mensaje', 'fallas' y 'pista'."""
     if estado["fase"] != "resultado":
         raise ValueError("Primero hay que simular")
     filas = []
@@ -648,7 +691,7 @@ def revelar(estado):
         valor = valor_recurso(estado, r["clave"])
         zona = zona_recurso(valor, r["minimo"], r["optimo"])
         filas.append({
-            "zona": zona, "pista": PISTAS_ZONA[zona],
+            "zona": zona, "pista": (PISTAS_ZONA_ES if idioma == "es" else PISTAS_ZONA)[zona],
             "clave": r["clave"], "unidad": r["unidad"], "valor": valor,
             "minimo": r["minimo"], "optimo": r["optimo"],
             "puntos": round(puntos_recurso(valor, r["optimo"])),
@@ -668,8 +711,8 @@ def revelar(estado):
     return {"puntaje": pts, "exito": exito,
             "optimo": es_optimo(estado),
             "falla": estado["resultado"]["falla"],
-            "fallas": mensajes_fallas(estado),
-            "mensaje": mensaje_resultado(estado),
+            "fallas": mensajes_fallas(estado, idioma=idioma),
+            "mensaje": mensaje_resultado(estado, idioma=idioma),
             "estrellas": n_estrellas,
             "siguiente_estrella_pts": siguiente,
             "ahorro_musd": ahorro(estado),
@@ -1440,6 +1483,41 @@ if __name__ == "__main__":
     e = iniciar_mision(cargar_parametros("easy_cubesat"))
     assert sum(math.ceil(costo_de(r, r["minimo"]) / 5 - 1e-9) * 5 for r in e["recursos"]) == 15
     print("OK  paso del dinero   ->", esperado)
+
+    # ---- v3 (A): datos corregidos con fuentes oficiales ----
+    hard = cargar_parametros("hard_mro_marte")
+    com = [r for r in hard["recursos"] if r["clave"] == "comunicaciones"][0]
+    assert com["unidad"] == "Mbps" and com["optimo"] == 6.0
+    pot = [r for r in hard["recursos"] if r["clave"] == "potencia"][0]
+    assert pot["optimo"] == 1000 and pot["fisica"]["tipo"] == "potencia"        # MRO: solar, 1000 W en Marte
+    rover = cargar_parametros("harder_perseverance")
+    pot = [r for r in rover["recursos"] if r["clave"] == "potencia"][0]
+    assert "fisica" not in pot and pot["optimo"] == 110                          # MMRTG: cálculo lineal
+    e = iniciar_mision(rover)
+    assert e["tipo_potencia"] == "mmrtg" and iniciar_mision(hard)["tipo_potencia"] == "solar"
+    assert abs(cotizar(e, "potencia", 110) - 110 * pot["musd_por_unidad"]) < 1e-9
+    artemis = cargar_parametros("insane_artemis1")
+    pot = [r for r in artemis["recursos"] if r["clave"] == "potencia"][0]
+    assert pot["optimo"] == 11200                                                # Orion ESM ~11.2 kW
+    print("OK  datos v3          -> MRO 1000 W y 6 Mbps, Perseverance MMRTG 110 W, Orion 11.2 kW")
+
+    # ---- v3 (E): mensajes y pistas en español, sin romper el inglés ----
+    es = cargar_mensajes(idioma="es")
+    en = cargar_mensajes()
+    assert set(en) <= set(es)                       # en español no falta ninguna clave
+    assert en["explota"] != es["explota"]
+    e = iniciar_mision(cargar_parametros("easy_cubesat"))
+    assert e["pistas_es"] and e["pistas_es"] != e["pistas"]
+    repartir_valor(e, "estructura", 3.0)
+    repartir_valor(e, "propulsion", 400)
+    revisar(e)
+    simular(e)
+    info_es = revelar(e, idioma="es")
+    info_en = revelar(e)
+    assert "estructura" in info_es["mensaje"] and "{" not in info_es["mensaje"]
+    assert info_en["mensaje"] != info_es["mensaje"] and info_en["puntaje"] == info_es["puntaje"]
+    assert info_es["recursos"][0]["pista"] == PISTAS_ZONA_ES["bajo_minimo"]
+    print("OK  idioma es         ->", info_es["recursos"][0]["pista"])
 
     # ---- Bloque 2: parrilla y progreso (archivo temporal de prueba) ----
     # La parrilla sale de parametros_misiones.json: misiones.json ya no existe.

@@ -156,7 +156,11 @@ def dibujar_ventana(sup, rect, titulo, color_titulo=config.CIAN):
 
     r = pygame.Rect(rect)
     estilo.panel(sup, r, config.COLOR_PANEL, config.COLOR_BORDE)
-    estilo.texto(sup, titulo, r.x + 10, r.y + 6, config.LETRA_NORMAL, color_titulo)
+    # Título: si es largo (p. ej. "Revisión del presupuesto: <misión>") baja a letra pequeña,
+    # centrado en la franja de arriba (v3, C)
+    tamano = estilo.tamano_que_cabe(titulo, r.w - 20, config.LETRA_NORMAL)
+    alto = estilo.fuente(tamano).size("A")[1]
+    estilo.texto_ajustado(sup, titulo, r.x + 10, r.y + 4 + (22 - alto) // 2, r.w - 20, tamano, color_titulo)
     pygame.draw.line(sup, config.COLOR_BORDE, (r.x + 6, r.y + 28), (r.right - 7, r.y + 28))
     return r.y + 36
 
@@ -210,7 +214,11 @@ def formatear_numero(x):
 
 
 def formatear_musd(x, decimales=2):
-    """Millones de USD como en la especificación: 14.5 -> '$14.5M', -1.5 -> '-$1.5M'."""
+    """Millones de USD como en la especificación: 14.5 -> '$14.5M', -1.5 -> '-$1.5M'.
+    Cifras absurdas (más de 99 999 M USD, p. ej. un delta-v gigante) se muestran como
+    '>$99999M' para que el texto quepa en su cuadro (v3, C)."""
+    if x > 99999:
+        return ">$99999M"
     contenido = ("%." + str(decimales) + "f") % abs(x)     # "14.50"
     if "." in contenido:
         contenido = contenido.rstrip("0").rstrip(".")      # "14.50" -> "14.5"
@@ -242,14 +250,29 @@ def nombre_recurso(textos, clave):
 
 
 def unidad_recurso(textos, clave, unidad):
-    """Unidad en inglés del recurso (de la guía; si no, traducida de los datos: dias -> days)."""
-    return info_recurso(textos, clave).get("unidad") or traducir(textos["unidades"], unidad)
+    """Unidad del recurso en el idioma del juego. v3: manda la unidad de los DATOS
+    (Hard usa Mbps y las demás kbps), traducida (dias -> days / días). Solo si no viene
+    ninguna se usa la de la guía."""
+    if unidad:
+        return traducir(textos["unidades"], unidad)
+    return info_recurso(textos, clave).get("unidad", "")
 
 
 def info_mision(textos, mision_id):
     """Textos de la misión en la guía (nombre, inspirada_en, descripcion, objetivo, cohete,
     pistas_referencia), o {} si no está."""
     return textos.get("guia", {}).get("misiones", {}).get(mision_id, {})
+
+
+def nombre_mision(textos, mision_id, respaldo=""):
+    """Nombre de la misión en el idioma del juego (de la guía); si no está, 'respaldo'
+    (el nombre en inglés que da nucleo.cargar_misiones)."""
+    return info_mision(textos, mision_id).get("nombre") or respaldo
+
+
+def nombre_dificultad(textos, dificultad):
+    """'Easy' -> 'Easy' / 'Fácil' según el idioma (v3, E)."""
+    return traducir(textos.get("dificultades", {}), dificultad)
 
 
 def nombre_destino(textos, destino):

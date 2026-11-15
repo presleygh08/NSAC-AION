@@ -6,6 +6,7 @@
 #   Restart mission   -> la misma misión desde CML 1, sin conservar nada
 #   Back to missions  -> la parrilla de misiones
 #   Main menu         -> la pantalla de inicio (el progreso se mantiene)
+#   Language / Idioma -> cambia entre inglés y español al instante (v3, E; lo hace app.py)
 # El estado es ui["pausa"] (True / False). Las acciones que cambian de pantalla las
 # termina app.py (empezar_mision, ir_a_misiones...).
 
@@ -14,7 +15,7 @@ import pygame
 from interfaz import config
 from interfaz.componentes import Boton, dibujar_ventana
 
-VENTANA = pygame.Rect(190, 90, 260, 180)
+VENTANA = pygame.Rect(190, 74, 260, 212)
 ANCHO_BOTON = 220
 
 # (clave del texto en textos_en.json -> "pausa", acción, color)
@@ -23,6 +24,7 @@ OPCIONES = [
     ("reiniciar", "pausa_reiniciar", config.COLOR_BOTON),
     ("misiones", "pausa_misiones", config.COLOR_BOTON),
     ("menu", "pausa_menu", config.COLOR_BOTON),
+    ("idioma", "pausa_idioma", config.CIAN_OSCURO),      # v3 (E): Language / Idioma
 ]
 
 
@@ -32,8 +34,13 @@ def dibujar(sup, ui, textos):
     y = dibujar_ventana(sup, VENTANA, t["titulo"], config.AMARILLO)
     botones = []
     for clave, accion, color in OPCIONES:
+        if clave == "idioma":
+            # "Language / Idioma: EN" (o ES): el mismo texto en los dos idiomas
+            etiqueta = textos["idioma"]["etiqueta"] + ": " + textos["idioma"][ui["idioma"]]
+        else:
+            etiqueta = t[clave]
         # "Resume" es el botón principal: Enter lo activa.
-        botones.append(Boton(t[clave], VENTANA.centerx - ANCHO_BOTON // 2, y + 2, ANCHO_BOTON,
+        botones.append(Boton(etiqueta, VENTANA.centerx - ANCHO_BOTON // 2, y + 2, ANCHO_BOTON,
                              config.ALTO_BOTON, accion, color=color,
                              principal=(accion == "pausa_reanudar")))
         y = y + config.ALTO_BOTON + 8

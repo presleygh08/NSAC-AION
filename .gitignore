@@ -8,3 +8,6 @@ venv/
 __pycache__/
 *.pyc
 .DS_Store
+
+# Capturas del modo de prueba de textos (python3.12 revisar_textos.py --capturas)
+capturas_textos/

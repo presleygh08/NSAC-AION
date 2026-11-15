@@ -1,6 +1,7 @@
 # pantalla_inicio.py
 # Pantalla de inicio: título STAR FORGE, la Tierra con un cohete despegando y la caja
 # para escribir el nombre del jugador (callsign). Botón CREDITS -> créditos (v2, punto 13).
+# Botones EN | ES para elegir el idioma (v3, E); el juego abre en inglés.
 #
 # Cada pantalla tiene:
 #   dibujar(sup, ui, textos) -> lista de botones
@@ -29,10 +30,18 @@ def dibujar(sup, ui, textos):
 
     estilo.texto(sup, t["ayuda"], centro, 238, config.LETRA_PEQUENA, config.COLOR_TEXTO_SUAVE,
                  centrado=True)
-    return [Boton(textos["botones"]["jugar"], centro - 50, 200, 100, config.ALTO_BOTON,
-                  "jugar", color=config.VERDE, principal=True),
-            Boton(textos["botones"]["creditos"], config.ANCHO - 116, 326, 100, config.ALTO_BOTON,
-                  "ver_creditos")]
+    botones = [Boton(textos["botones"]["jugar"], centro - 50, 200, 100, config.ALTO_BOTON,
+                     "jugar", color=config.VERDE, principal=True),
+               Boton(textos["botones"]["creditos"], config.ANCHO - 116, 326, 100, config.ALTO_BOTON,
+                     "ver_creditos")]
+    # Idioma (v3, E): botones EN | ES abajo a la izquierda; el activo va en verde.
+    x = 16
+    for idioma in config.IDIOMAS:
+        color = config.VERDE if ui["idioma"] == idioma else config.COLOR_BOTON
+        botones.append(Boton(textos["idioma"][idioma], x, 326, 40, config.ALTO_BOTON, "idioma",
+                             idioma, color=color))
+        x = x + 46
+    return botones
 
 
 def tecla(ui, evento):

@@ -204,8 +204,8 @@ def dibujar_victoria(sup, ui, textos, revelado):
     dibujar_estrellas(sup, revelado["estrellas"], segundos, config.ANCHO // 2, 62)
 
     if revelado["optimo"]:
-        estilo.panel(sup, (470, 44, 150, 30), config.VERDE, config.AMARILLO)
-        estilo.texto(sup, t["optimo"], 545, 59, config.LETRA_NORMAL, centrado=True)
+        estilo.panel(sup, (440, 44, 180, 30), config.VERDE, config.AMARILLO)
+        estilo.texto_ajustado(sup, t["optimo"], 530, 59, 170, config.LETRA_NORMAL, centrado=True)
     elif revelado["siguiente_estrella_pts"] is not None:
         aviso = t["siguiente_estrella"].replace("{pts}", str(revelado["siguiente_estrella_pts"]))
         estilo.texto(sup, aviso, config.ANCHO - X_IZQ, 58, config.LETRA_PEQUENA,
@@ -215,8 +215,9 @@ def dibujar_victoria(sup, ui, textos, revelado):
         # 5 estrellas: recién aquí se revelan las cifras exactas (D3)
         y = dibujar_tabla(sup, textos, revelado, 90, 20)
     else:
-        estilo.texto(sup, t["revelado_parcial"], X_IZQ + 4, 80, config.LETRA_PEQUENA, config.CIAN)
-        y = dibujar_tabla_sin_cifras(sup, textos, revelado, 92, 20)
+        # Debajo del puntaje grande (que llega hasta y = 84)
+        estilo.texto(sup, t["revelado_parcial"], X_IZQ + 4, 86, config.LETRA_PEQUENA, config.CIAN)
+        y = dibujar_tabla_sin_cifras(sup, textos, revelado, 98, 20)
     texto_limitado(sup, revelado["mensaje"], X_IZQ + 4, y + 8, ANCHO_UTIL - 8)
 
 

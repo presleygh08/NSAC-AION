@@ -39,7 +39,10 @@ def dibujar_vista_previa(sup, ui, textos):
     # Vista desde arriba: cambia de dirección cada segundo y da pasos 4 veces por segundo.
     direccion = sprites.DIRECCIONES[int(ui["tiempo"]) % 4]
     cuadro = int(ui["tiempo"] * 4) % 2
-    estilo.texto(sup, textos["avatar"]["vista_lab"], 172, 166, config.LETRA_PEQUENA,
+    # Centrado sobre la vista de arriba, pero sin salirse del panel (v3, C: en español es más largo)
+    ancho_etiqueta = estilo.fuente(config.LETRA_PEQUENA).size(textos["avatar"]["vista_lab"])[0]
+    x_etiqueta = min(172, 214 - ancho_etiqueta // 2)
+    estilo.texto(sup, textos["avatar"]["vista_lab"], x_etiqueta, 166, config.LETRA_PEQUENA,
                  config.COLOR_TEXTO_SUAVE, centrado=True)
     estilo.panel(sup, (142, 176, 60, 60), config.GRIS_SUELO, config.GRIS)
     sprites.dibujar_avatar_arriba(sup, avatar, 148, 182, direccion, cuadro, 3)   # 48 x 48 px

@@ -104,6 +104,11 @@ RUTA_PROYECTO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RUTA_TEXTOS = os.path.join(RUTA_PROYECTO, "interfaz", "textos_en.json")
 # Contenido en inglés de la v2 (misiones, recursos, AION, créditos): docs/v2-cambios.md
 RUTA_GUIA = os.path.join(RUTA_PROYECTO, "interfaz", "guia_misiones_en.json")
+# v3 (E): textos en español. Si falta una clave en español se usa la inglesa.
+RUTA_TEXTOS_ES = os.path.join(RUTA_PROYECTO, "interfaz", "textos_es.json")
+RUTA_GUIA_ES = os.path.join(RUTA_PROYECTO, "interfaz", "guia_misiones_es.json")
+IDIOMA_INICIAL = "en"      # el juego siempre abre en inglés
+IDIOMAS = ["en", "es"]
 RUTA_FUENTES = os.path.join(RUTA_PROYECTO, "assets", "fuentes")
 RUTA_IMAGENES_MISIONES = os.path.join(RUTA_PROYECTO, "assets", "misiones")
 

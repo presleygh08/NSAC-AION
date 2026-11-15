@@ -37,7 +37,7 @@ import nucleo
 from interfaz import config, estilo, hangar, sonido, sprites
 from interfaz.componentes import (Boton, CajaTexto, dibujar_hud_presupuesto, dibujar_ventana,
                                   formatear_musd, formatear_numero, info_mision, info_recurso,
-                                  nombre_destino, nombre_recurso, unidad_recurso)
+                                  nombre_destino, nombre_mision, nombre_recurso, unidad_recurso)
 
 # --- Distribución de la pantalla (640x360) ---
 SALA = pygame.Rect(8, 8, 376, 238)           # paredes
@@ -76,10 +76,12 @@ ALTO_PIES = 8
 TIEMPO_PASO = 0.15             # segundos entre un paso y el siguiente (animación)
 
 
-def nuevo_lab():
-    """Sub-estado del laboratorio al empezar (o reintentar) una misión."""
+def nuevo_lab(tipo_potencia="solar"):
+    """Sub-estado del laboratorio al empezar (o reintentar) una misión.
+    tipo_potencia (v3): "solar" o "mmrtg"; el hangar dibuja paneles o el generador nuclear."""
     return {
         "fase": "cml1",
+        "tipo_potencia": tipo_potencia,
         "ventana": None,
         "hechas": [],               # claves de las estaciones confirmadas al menos una vez
         "escrito": {},              # {clave: texto que escribió el jugador} (TRY AGAIN lo conserva)
@@ -116,6 +118,26 @@ def leer_numero(contenido):
     if valor < 0:
         return None
     return valor
+
+
+def pistas_del_idioma(ui):
+    """Pistas de la misión en el idioma del juego (v3, E). Si no hay en español, en inglés."""
+    if ui.get("idioma") == "es" and ui["estado"].get("pistas_es"):
+        return ui["estado"]["pistas_es"]
+    return ui["estado"]["pistas"]
+
+
+def cotizar_seguro(estado, clave, valor):
+    """nucleo.cotizar, pero devuelve None si la cantidad es tan grande que el cálculo se
+    desborda (por ejemplo 9999999999 m/s de delta-v: la ecuación del cohete da un número
+    imposible). Así el juego no se cierra y la estación pide un número válido."""
+    try:
+        costo = nucleo.cotizar(estado, clave, valor)
+    except OverflowError:
+        return None
+    if costo != costo or costo == float("inf"):      # NaN o infinito
+        return None
+    return costo
 
 
 def buscar_visible(estado, clave):
@@ -355,8 +377,10 @@ def dibujar_muebles(sup, ui, textos):
     pygame.draw.rect(sup, config.CIAN, (MESA_COMPUTADORA.centerx - 14, MESA_COMPUTADORA.y + 6, 28, 12))
     if int(ui["tiempo"] * 2) % 2 == 0:                       # cursor que parpadea en el monitor
         pygame.draw.rect(sup, config.AZUL_OSCURO, (MESA_COMPUTADORA.centerx - 11, MESA_COMPUTADORA.y + 14, 4, 2))
-    estilo.texto(sup, t["computadora"], MESA_COMPUTADORA.x - 6, MESA_COMPUTADORA.y + 8,
-                 config.LETRA_PEQUENA, derecha=True)
+    # Entre la consola de la izquierda y la mesa hay ~52 px: el texto no puede pasar de ahí
+    estilo.texto_ajustado(sup, t["computadora"], MESA_COMPUTADORA.x - 6, MESA_COMPUTADORA.y + 8,
+                          MESA_COMPUTADORA.x - 6 - CONSOLA_ARRIBA.right - 2, config.LETRA_PEQUENA,
+                          derecha=True)
     # Mesa de control larga
     pygame.draw.rect(sup, config.GRIS, MESA_CONTROL)
     pygame.draw.rect(sup, config.GRIS_CLARO, (MESA_CONTROL.x, MESA_CONTROL.y, MESA_CONTROL.w, 2))
@@ -477,10 +501,20 @@ def dibujar_hangar(sup, ui, textos):
 # Ventanas
 # ---------------------------------------------------------------------------
 
-def fila_informativa(sup, etiqueta, valor, x, y, ancho):
-    """Una fila de texto: etiqueta en cian y el dato a su derecha. Devuelve la y siguiente."""
+def fila_informativa(sup, etiqueta, valor, x, y, ancho, columna=90):
+    """Una fila de texto: etiqueta en cian y el dato a su derecha (desde x + columna).
+    Devuelve la y siguiente."""
     estilo.texto(sup, etiqueta + ":", x, y, config.LETRA_PEQUENA, config.CIAN)
-    return estilo.texto_multilinea(sup, valor, x + 90, y, ancho - 90, config.LETRA_PEQUENA) + 10
+    return estilo.texto_multilinea(sup, valor, x + columna, y, ancho - columna, config.LETRA_PEQUENA) + 10
+
+
+def ancho_columna(etiquetas):
+    """Dónde empiezan los datos: después de la etiqueta más larga + 8 px (v3, C: en
+    español "Vehículo de lanzamiento:" es mucho más larga que "Rocket:")."""
+    ancho = 90
+    for etiqueta in etiquetas:
+        ancho = max(ancho, estilo.fuente(config.LETRA_PEQUENA).size(etiqueta + ":")[0] + 8)
+    return ancho
 
 
 def ventana_briefing(sup, ui, textos, botones):
@@ -488,20 +522,21 @@ def ventana_briefing(sup, ui, textos, botones):
     t = textos["laboratorio"]["briefing"]
     estado = ui["estado"]
     y = dibujar_ventana(sup, VENTANA, t["titulo"], config.AZUL) + 6
-    meta = info_mision(textos, ui["mision_id"]).get("objetivo", ui["mision_nombre"])
+    meta = info_mision(textos, ui["mision_id"]).get("objetivo", nombre_mision(textos, ui["mision_id"], ui["mision_nombre"]))
     x = VENTANA.x + 16
     ancho = VENTANA.w - 32
-    y = fila_informativa(sup, t["meta"], meta, x, y, ancho)
-    y = fila_informativa(sup, t["destino"], nombre_destino(textos, estado["destino"]), x, y, ancho)
-    fila_informativa(sup, t["cohete"], estado["cohete"], x, y, ancho)
+    columna = ancho_columna([t["meta"], t["destino"], t["cohete"]])
+    y = fila_informativa(sup, t["meta"], meta, x, y, ancho, columna)
+    y = fila_informativa(sup, t["destino"], nombre_destino(textos, estado["destino"]), x, y, ancho, columna)
+    fila_informativa(sup, t["cohete"], estado["cohete"], x, y, ancho, columna)
     botones.append(Boton(textos["botones"]["confirmar"], VENTANA.centerx - 60, VENTANA.bottom - 36,
                          120, config.ALTO_BOTON, "confirmar_briefing", color=config.AZUL, principal=True))
 
 
 def ventana_pistas(sup, ui, textos, botones, titulo, boton_texto, accion, color):
-    """Lista de pistas (estado["pistas"], se muestran tal cual vienen)."""
+    """Lista de pistas: estado["pistas"] (inglés) o estado["pistas_es"] (español, v3)."""
     y = dibujar_ventana(sup, VENTANA, titulo, color)
-    for pista in ui["estado"]["pistas"]:
+    for pista in pistas_del_idioma(ui):
         estilo.texto(sup, "-", VENTANA.x + 14, y, config.LETRA_PEQUENA, config.VERDE)
         y = estilo.texto_multilinea(sup, pista, VENTANA.x + 26, y, VENTANA.w - 44,
                                     config.LETRA_PEQUENA) + 8
@@ -545,8 +580,10 @@ def ventana_estacion(sup, ui, textos, botones):
     # Costo en vivo de ESTE recurso solamente (4.4): nada de total gastado ni de lo que queda.
     y = caja.rect.bottom + 12
     valor = leer_numero(caja.texto)
+    costo = None
     if valor is not None:
-        costo = nucleo.cotizar(estado, clave, valor)
+        costo = cotizar_seguro(estado, clave, valor)
+    if costo is not None:
         estilo.texto(sup, t["costo"] + ": " + formatear_musd(costo), x, y, config.LETRA_NORMAL,
                      config.AMARILLO)
     if lab["error"]:
@@ -591,7 +628,7 @@ def ventana_revision(sup, ui, textos, botones):
     """Budget review (CML 4). Solo dice si el reparto entra o no en el presupuesto."""
     t = textos["laboratorio"]["revision"]
     revision = ui["lab"]["revision"]
-    titulo = t["titulo"] + ": " + ui["mision_nombre"]          # "BUDGET REVIEW: <misión>" (v2, punto 7)
+    titulo = t["titulo"] + ": " + nombre_mision(textos, ui["mision_id"], ui["mision_nombre"])          # "BUDGET REVIEW: <misión>" (v2, punto 7)
     y = dibujar_ventana(sup, VENTANA, titulo, config.MORADO)
     x = VENTANA.x + 16
     ancho = VENTANA.w - 32
@@ -667,11 +704,36 @@ def conservar_reparto(lab, estado, escrito, tiempo):
         valor = leer_numero(escrito[clave])
         if valor is None:
             continue
-        nucleo.repartir(estado, clave, nucleo.cotizar(estado, clave, valor))
+        costo = cotizar_seguro(estado, clave, valor)
+        if costo is None:
+            continue
+        nucleo.repartir(estado, clave, costo)
         lab["escrito"][clave] = escrito[clave]
         if clave not in lab["hechas"]:
             lab["hechas"].append(clave)
         lab["partes"][clave] = tiempo - config.DURACION_ENSAMBLAJE - 1    # ya terminada
+
+
+# Dónde aparece el avatar al reintentar (v3, B): delante de la mesa de control, mirando hacia ella.
+POS_REINTENTO = (300, 140)
+
+
+def preparar_cml4(lab, estado, tiempo):
+    """TRY AGAIN (v3, B): el laboratorio sigue directo en CML 4, sin repetir CML 1-3.
+    Puertas del hangar abiertas, pistas ya vistas (archivo verde disponible), estaciones
+    confirmadas (las repuso conservar_reparto), marcador morado activo y el avatar junto a
+    la mesa de control. Si alguna estación no se pudo reponer, queda en CML 3 para completarla."""
+    lab["cortinas_t0"] = tiempo - config.DURACION_CORTINAS - 1     # puertas ya abiertas
+    lab["pistas_vistas"] = True
+    lab["ventana"] = None
+    lab["t_inicio"] = tiempo
+    if todas_hechas(lab, estado):
+        lab["fase"] = "cml4"
+    else:
+        lab["fase"] = "cml3"
+    lab["x"] = float(POS_REINTENTO[0])
+    lab["y"] = float(POS_REINTENTO[1])
+    lab["direccion"] = "derecha"
 
 
 def todas_hechas(lab, estado):
@@ -702,7 +764,10 @@ def confirmar_estacion(lab, estado, tiempo):
         lab["error"] = True
         return
     clave = lab["clave"]
-    costo = nucleo.cotizar(estado, clave, valor)
+    costo = cotizar_seguro(estado, clave, valor)
+    if costo is None:                     # cantidad imposible (el cálculo se desborda)
+        lab["error"] = True
+        return
     nucleo.repartir(estado, clave, costo)
     lab["escrito"][clave] = lab["caja"].texto
     if clave not in lab["hechas"]:

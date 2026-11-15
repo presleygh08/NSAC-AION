@@ -7,7 +7,8 @@
 
 import nucleo
 from interfaz import config, estilo, imagenes
-from interfaz.componentes import Boton, formatear_musd, info_mision, nombre_destino, nombre_recurso
+from interfaz.componentes import (Boton, formatear_musd, info_mision, nombre_destino, nombre_mision,
+                                  nombre_recurso)
 
 
 def textos_mision(textos, parametros):
@@ -41,7 +42,9 @@ def dibujar(sup, ui, textos):
     estilo.panel(sup, (16, 16, 340, 290))
     x = 28
     ancho = 316
-    estilo.texto(sup, ui["mision_nombre"], x, 26, config.LETRA_TITULO, config.AMARILLO)
+    # El nombre usa la letra más grande que quepa en el panel (v3, C)
+    estilo.texto_ajustado(sup, nombre_mision(textos, ui["mision_id"], ui["mision_nombre"]), x, 26,
+                          ancho, config.LETRA_TITULO, config.AMARILLO)
     y = 60
     estilo.texto(sup, t["descripcion"], x, y, config.LETRA_PEQUENA, config.CIAN)
     y = estilo.texto_multilinea(sup, descripcion, x, y + 15, ancho, config.LETRA_PEQUENA) + 6
@@ -54,13 +57,18 @@ def dibujar(sup, ui, textos):
         (t["recursos"], ", ".join(nombre_recurso(textos, c) for c in claves)),
         (t["presupuesto"], formatear_musd(parametros["presupuesto_musd"])),
     ]
+    # La columna de valores empieza después de la etiqueta más larga (en español son más
+    # largas: "Vehículo de lanzamiento:"), para que nunca se monten (v3, C).
+    columna = 0
+    for etiqueta, _ in filas:
+        columna = max(columna, estilo.fuente(config.LETRA_PEQUENA).size(etiqueta + ":")[0] + 8)
     for etiqueta, valor in filas:
         estilo.texto(sup, etiqueta + ":", x, y, config.LETRA_PEQUENA, config.CIAN)
-        y = estilo.texto_multilinea(sup, valor, x + 140, y, ancho - 140, config.LETRA_PEQUENA) + 4
+        y = estilo.texto_multilinea(sup, valor, x + columna, y, ancho - columna, config.LETRA_PEQUENA) + 4
 
     estilo.panel(sup, (370, 16, 254, 290))
     imagenes.dibujar_imagen_mision(sup, (378, 24, 238, 274), ui["mision_id"], parametros["destino"],
-                                   ui["mision_nombre"], ui["tiempo"])
+                                   nombre_mision(textos, ui["mision_id"], ui["mision_nombre"]), ui["tiempo"])
 
     return [
         Boton(textos["botones"]["atras"], 16, 318, 100, config.ALTO_BOTON, "volver_misiones"),

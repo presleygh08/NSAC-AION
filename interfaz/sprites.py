@@ -57,14 +57,17 @@ CANTIDAD_OPCIONES = {
     "color_pelo": len(COLORES_PELO),
     "ojos": 4,
     "color_ojos": len(COLORES_OJOS),
-    "accesorio": 6,
+    "accesorio": 7,
     "polo": len(POLOS),
     "pantalon": len(PANTALONES),
 }
 
 # Estilos de pelo y accesorios por número (el nombre en inglés está en textos_en.json).
 PELO_CORTO, PELO_LARGO, PELO_RIZADO, PELO_AFRO, PELO_TRENZAS, PELO_RAPADO, PELO_CALVO = range(7)
-ACC_NINGUNO, ACC_LENTES, ACC_GORRA, ACC_AUDIFONOS, ACC_PANUELO, ACC_CASCO = range(6)
+ACC_NINGUNO, ACC_LENTES, ACC_GORRA, ACC_AUDIFONOS, ACC_PANUELO, ACC_CASCO, ACC_GORRO_NAVIDAD = range(7)
+COLOR_GORRO_NAVIDAD = (200, 40, 50)      # v3 (F): gorro navideño rojo con borde y pompón blancos
+# Accesorios que tapan la parte de arriba del pelo (se ven solo los lados)
+ACC_TAPAN_PELO = (ACC_GORRA, ACC_GORRO_NAVIDAD)
 COLOR_PANUELO = (150, 80, 200)
 COLOR_GORRA = (210, 60, 60)
 COLOR_OSCURO = (30, 30, 40)
@@ -226,6 +229,14 @@ def _accesorio(sup, avatar, x0, y0, u):
         pygame.draw.circle(sup, config.CIAN, centro, int(4.8 * u), max(1, u // 3))
         _celda(sup, config.BLANCO, x0, y0, u, 5, 1.6, 1, 1)          # brillo del vidrio
         _celda(sup, config.GRIS_CLARO, x0, y0, u, 5.5, 9.2, 5, 0.8)  # cuello del casco
+    elif accesorio == ACC_GORRO_NAVIDAD:
+        # v3 (F): copa roja con la punta caída hacia la derecha, borde blanco y pompón blanco
+        _poligono(sup, COLOR_GORRO_NAVIDAD, x0, y0, u,
+                  [(5.2, 2.3), (10.8, 2.3), (10.4, 0.8), (8.6, 0), (6.4, 0.4)])
+        _poligono(sup, COLOR_GORRO_NAVIDAD, x0, y0, u,
+                  [(9.4, 0.2), (11, 1.2), (12.6, 3.2), (11.8, 3.8), (9.6, 2.2)])
+        _celda(sup, config.BLANCO, x0, y0, u, 4.6, 2, 6.8, 1.1)     # borde de piel blanca
+        _celda(sup, config.BLANCO, x0, y0, u, 11.7, 3.2, 1.5, 1.5)  # pompón
 
 
 def dibujar_avatar(sup, avatar, x0, y0, u):
@@ -245,10 +256,10 @@ def dibujar_avatar(sup, avatar, x0, y0, u):
     _celda(sup, piel, x0, y0, u, 10.9, 4.3, 0.6, 1.6)
     _ojos(sup, avatar, x0, y0, u)
     _celda(sup, (170, 80, 80), x0, y0, u, 7.3, 7, 1.4, 0.4)            # boca
-    if not con_panuelo and avatar["accesorio"] != ACC_GORRA:
+    if not con_panuelo and avatar["accesorio"] not in ACC_TAPAN_PELO:
         _pelo_arriba(sup, avatar, x0, y0, u)
-    elif avatar["accesorio"] == ACC_GORRA and avatar["pelo"] in (PELO_RIZADO, PELO_CORTO, PELO_LARGO, PELO_TRENZAS):
-        # Con gorra se ven los lados del pelo
+    elif avatar["accesorio"] in ACC_TAPAN_PELO and avatar["pelo"] in (PELO_RIZADO, PELO_CORTO, PELO_LARGO, PELO_TRENZAS):
+        # Con gorra (o gorro navideño) se ven los lados del pelo
         pelo = COLORES_PELO[avatar["color_pelo"]]
         _celda(sup, pelo, x0, y0, u, 4.6, 2.5, 0.9, 2.5)
         _celda(sup, pelo, x0, y0, u, 10.5, 2.5, 0.9, 2.5)
@@ -337,6 +348,13 @@ def dibujar_avatar_arriba(sup, avatar, x0, y0, direccion="abajo", cuadro=0, u=1)
         _celda(sup, COLOR_OSCURO, x0, y0, u, 11.2, 3.8, 1, 2)
     elif accesorio == ACC_CASCO:
         pygame.draw.circle(sup, config.CIAN, centro, int(4.4 * u), max(1, u // 2))
+    elif accesorio == ACC_GORRO_NAVIDAD:
+        # v3 (F): visto desde arriba, copa roja con borde blanco y el pompón hacia atrás
+        pygame.draw.circle(sup, COLOR_GORRO_NAVIDAD, centro, int(3.4 * u))
+        pygame.draw.circle(sup, config.BLANCO, centro, int(3.6 * u), max(1, u // 2))
+        pompon = {"abajo": (7.3, 0.6), "arriba": (7.3, 7), "izquierda": (10.6, 3.8),
+                  "derecha": (4, 3.8)}[direccion]
+        _celda(sup, config.BLANCO, x0, y0, u, pompon[0], pompon[1], 1.6, 1.6)
 
 
 # --- AION, el robot guía (v2, D5) -----------------------------------------------------

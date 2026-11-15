@@ -30,7 +30,7 @@ from interfaz import config, sonido, sprites
 from interfaz import (pantalla_inicio, pantalla_avatar, pantalla_misiones, pantalla_info,
                       pantalla_didactica, laboratorio, simulacion, resultados, notificaciones,
                       pausa, pantalla_creditos)
-from interfaz.componentes import CajaTexto, boton_principal
+from interfaz.componentes import CajaTexto, boton_principal, nombre_mision
 
 # Qué módulo dibuja cada pantalla.
 PANTALLAS = {
@@ -59,16 +59,45 @@ def cargar_json(ruta):
         return json.load(archivo)
 
 
-def cargar_textos():
-    """textos_en.json + la guía de la v2 dentro de textos["guia"]."""
+def mezclar(base, extra):
+    """Copia de 'base' con los valores de 'extra' encima (v3, E). Si en 'extra' falta
+    una clave, queda la de 'base': así un texto sin traducir sale en inglés y nunca
+    se muestra la clave cruda. Entra en los diccionarios de adentro (recursiva)."""
+    resultado = dict(base)
+    for clave in extra:
+        if isinstance(base.get(clave), dict) and isinstance(extra[clave], dict):
+            resultado[clave] = mezclar(base[clave], extra[clave])
+        else:
+            resultado[clave] = extra[clave]
+    return resultado
+
+
+def cargar_textos(idioma="en"):
+    """textos_en.json + la guía de la v2 dentro de textos["guia"].
+    Con idioma "es" (v3, E) se ponen encima textos_es.json y guia_misiones_es.json."""
     textos = cargar_json(config.RUTA_TEXTOS)
     textos["guia"] = cargar_json(config.RUTA_GUIA)
+    if idioma == "es":
+        textos_es = cargar_json(config.RUTA_TEXTOS_ES)
+        textos_es["guia"] = cargar_json(config.RUTA_GUIA_ES)
+        textos = mezclar(textos, textos_es)
     return textos
 
 
-# Los textos se leen una sola vez al empezar. aplicar_accion los usa para los
-# mensajes del asistente.
-textos_juego = cargar_textos()
+# Los textos se leen al empezar (en inglés). aplicar_accion los usa para los
+# mensajes del asistente. Al cambiar de idioma se cambia el CONTENIDO de este mismo
+# diccionario, así todas las pantallas lo ven al instante.
+textos_juego = cargar_textos(config.IDIOMA_INICIAL)
+
+
+def cambiar_idioma(ui, idioma):
+    """Cambia el idioma al instante, sin reiniciar la misión (v3, E)."""
+    nuevos = cargar_textos(idioma)
+    textos_juego.clear()
+    textos_juego.update(nuevos)
+    ui["idioma"] = idioma
+    if pygame.display.get_init() and pygame.display.get_surface() is not None:
+        pygame.display.set_caption(textos_juego["titulo_ventana"])
 
 
 # ---------------------------------------------------------------------------
@@ -79,6 +108,7 @@ def crear_ui():
     """Diccionario con todo lo que la interfaz necesita recordar."""
     return {
         "pantalla": "inicio",                 # qué pantalla se ve
+        "idioma": config.IDIOMA_INICIAL,      # "en" o "es" (v3, E)
         "tiempo": 0.0,                        # segundos desde que empezó el juego (animaciones)
         "jugador": {"nombre": config.NOMBRE_POR_DEFECTO, "avatar": sprites.avatar_inicial()},
         "caja_nombre": CajaTexto(config.ANCHO // 2 - 80, 164, 160, 24,
@@ -106,20 +136,22 @@ def empezar_mision(ui):
     """Crea una misión nueva de ui["mision_id"], desde CML 1 y sin nada repartido."""
     parametros = nucleo.cargar_parametros(ui["mision_id"])
     ui["estado"] = nucleo.iniciar_mision(parametros)
-    ui["lab"] = laboratorio.nuevo_lab()
+    ui["lab"] = laboratorio.nuevo_lab(ui["estado"].get("tipo_potencia", "solar"))
     ui["sim"] = None
     ui["revelado"] = None
     ui["pausa"] = False
 
 
 def reintentar_mision(ui):
-    """TRY AGAIN (v2, punto 2): misión nueva, pero cada estación conserva la cantidad
-    que el jugador escribió antes. El reparto se rehace con cotizar + repartir."""
+    """TRY AGAIN (v2 punto 2 + v3 B): misión nueva, cada estación conserva la cantidad
+    que el jugador escribió antes (se rehace con cotizar + repartir) y el laboratorio
+    continúa directo en CML 4 (sin repetir CML 1-3 ni la pantalla didáctica)."""
     escrito = {}
     if ui["lab"] is not None:
         escrito = dict(ui["lab"]["escrito"])
     empezar_mision(ui)
     laboratorio.conservar_reparto(ui["lab"], ui["estado"], escrito, ui["tiempo"])
+    laboratorio.preparar_cml4(ui["lab"], ui["estado"], ui["tiempo"])
 
 
 def elegir_mision(ui, mision_id):
@@ -149,6 +181,7 @@ def ir_a_misiones(ui):
 def ir_a_creditos(ui, vuelta):
     """Pantalla de créditos; 'vuelta' es la pantalla a la que se vuelve después."""
     ui["creditos_t0"] = ui["tiempo"]
+    ui["creditos_pagina"] = 0                # v3 (G): 0 = créditos, 1... = fuentes
     ui["creditos_vuelta"] = vuelta
     ui["pantalla"] = "creditos"
 
@@ -159,6 +192,14 @@ def ir_a_creditos(ui, vuelta):
 
 def aplicar_accion(ui, accion, valor):
     """Cambia "ui" según la acción. "valor" es el dato extra del botón."""
+    # Cambio de idioma (v3, E): botones EN | ES del inicio y opción del menú de pausa.
+    if accion == "idioma":
+        cambiar_idioma(ui, valor)
+        return
+    if accion == "pausa_idioma":
+        siguiente = config.IDIOMAS[(config.IDIOMAS.index(ui["idioma"]) + 1) % len(config.IDIOMAS)]
+        cambiar_idioma(ui, siguiente)           # el menú de pausa sigue abierto
+        return
     # Primero, el menú de pausa (si está abierto) y las acciones propias del laboratorio.
     if pausa.aplicar(ui, accion):
         return
@@ -246,6 +287,9 @@ def aplicar_accion(ui, accion, valor):
     elif accion == "ver_creditos":
         ir_a_creditos(ui, ui["pantalla"])
 
+    elif accion == "creditos_pagina":
+        ui["creditos_pagina"] = valor            # v3 (G): páginas de fuentes
+
     elif accion == "salir_creditos":
         if ui["creditos_vuelta"] == "misiones":
             ir_a_misiones(ui)
@@ -281,7 +325,7 @@ def misiones_jugables(ui):
 def ir_a_resultados(ui):
     """Revela y registra el resultado UNA sola vez (así el progreso se guarda aunque
     luego pulse "Try again")."""
-    ui["revelado"] = nucleo.revelar(ui["estado"])
+    ui["revelado"] = nucleo.revelar(ui["estado"], idioma=ui["idioma"])
     antes = misiones_jugables(ui)
     nucleo.registrar_resultado(ui["progreso"], ui["estado"])
     parrilla = nucleo.cargar_misiones(ui["progreso"])
@@ -290,7 +334,8 @@ def ir_a_resultados(ui):
     # Qué dirá el asistente al volver a la parrilla
     t = textos_juego["notificaciones"]
     if nuevas:
-        ui["aviso_parrilla"] = (t["desbloqueo"].replace("{mision}", nuevas[0]["nombre"]), "sorprendido")
+        nombre = nombre_mision(textos_juego, nuevas[0]["id"], nuevas[0]["nombre"])
+        ui["aviso_parrilla"] = (t["desbloqueo"].replace("{mision}", nombre), "sorprendido")
     elif not ui["revelado"]["exito"]:
         ui["aviso_parrilla"] = (t["reintento"], "preocupado")
     else:

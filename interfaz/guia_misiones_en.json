@@ -6,7 +6,7 @@
       "inspirada_en": "Inspired by the CubeSats NASA flies through its CubeSat Launch Initiative",
       "descripcion": "A shoebox-sized CubeSat rides a small rocket to low Earth orbit. NASA's CubeSat Launch Initiative has flown more than 150 CubeSats built by universities and schools.",
       "objetivo": "Survive the shaking of the launch and use your own small thruster to reach your final orbit.",
-      "cohete": "Electron (Rocket Lab): a small launcher that carries up to about 300 kg to low Earth orbit. Its Rutherford engines use battery-powered electric pumps.",
+      "cohete": "Electron (Rocket Lab): a small launch vehicle that carries up to about 300 kg to low Earth orbit. Its Rutherford engines use battery-powered electric pumps.",
       "pistas_referencia": {
         "estructura": "In small satellites, the structure is usually about a quarter to a third of the dry mass. This CubeSat's dry mass is 20 kg.",
         "propulsion": "CubeSat thrusters usually give a few hundred m/s of delta-v: enough to raise and hold an orbit, not to leave Earth."
@@ -15,9 +15,9 @@
     "normal_leo": {
       "nombre": "Exoplanet SmallSat to LEO",
       "inspirada_en": "Inspired by NASA's Pandora small satellite (launched on a Falcon 9 rideshare, Jan 11, 2026)",
-      "descripcion": "A small science satellite heads to a sun-synchronous low Earth orbit to watch distant stars and their planets, like NASA's Pandora. It now needs solar panels to keep its instruments running.",
+      "descripcion": "A small science satellite heads to a sun-synchronous low Earth orbit to watch distant stars and their planets, like NASA's Pandora. It now needs solar arrays to keep its instruments running.",
       "objetivo": "Reach your orbit and generate enough electricity for the whole mission, even when the satellite passes through Earth's shadow.",
-      "cohete": "Falcon 9 (SpaceX): carries up to 22,800 kg to low Earth orbit and its first stage lands back to be reused. Small satellites share the ride on rideshare missions.",
+      "cohete": "Falcon 9 (SpaceX): carries up to 22,800 kg to low Earth orbit and its first stage lands to be reused. Small satellites share the ride on rideshare missions.",
       "pistas_referencia": {
         "estructura": "The structure is roughly a quarter of the dry mass. This satellite's dry mass is 140 kg.",
         "propulsion": "A satellite this size needs a few hundred m/s to adjust and keep its orbit for years.",
@@ -33,20 +33,20 @@
       "pistas_referencia": {
         "estructura": "A big orbiter's structure can be more than a third of its dry mass. This orbiter's dry mass is 1,030 kg.",
         "propulsion": "Going from low Earth orbit into Mars orbit takes several thousand m/s of delta-v: many times more than staying near Earth.",
-        "potencia": "At Mars (1.52 AU from the Sun) sunlight is only about 586 W per square meter, less than half of Earth's. A large orbiter still needs on the order of a kilowatt.",
-        "comunicaciones": "Modern Mars orbiters with big high-gain antennas can send data to Earth at several megabits per second (Mbps)."
+        "potencia": "At Mars (1.52 AU from the Sun) sunlight is only about 586 W per square meter, less than half of Earth's. A large orbiter's solar arrays still deliver on the order of a kilowatt.",
+        "comunicaciones": "Modern Mars orbiters with large high-gain antennas can send data to Earth at several megabits per second (Mbps) over X-band."
       }
     },
     "harder_perseverance": {
       "nombre": "Mars Rover",
       "inspirada_en": "Inspired by NASA's Perseverance rover (Mars 2020)",
       "descripcion": "A car-sized rover must survive entry, descent and landing on Mars and then explore with its science instruments, like Perseverance, which launched on Jul 30, 2020 and landed in Jezero Crater on Feb 18, 2021.",
-      "objetivo": "Land safely on the surface, power the rover, stay in contact with Earth and carry enough science instruments to fulfil the mission.",
+      "objetivo": "Land safely on the surface, power the rover, stay in contact with Earth and carry enough science instruments to fulfill the mission.",
       "cohete": "Falcon Heavy (SpaceX). The real Perseverance flew on an Atlas V 541; this game uses Falcon Heavy because its Mars capacity is published.",
       "pistas_referencia": {
-        "estructura": "Landing needs a reinforced structure: a heat shield, a back shell and a descent stage on top of the rover itself.",
-        "propulsion": "Landing on Mars needs thousands of m/s more delta-v than just orbiting it.",
-        "potencia": "Perseverance does not use solar panels: a nuclear power source (MMRTG) gives on the order of a hundred watts, day and night, and batteries cover the peaks.",
+        "estructura": "Landing needs a reinforced structure: a heat shield, a backshell and a descent stage on top of the rover itself.",
+        "propulsion": "Entry, descent and landing (EDL) on Mars needs thousands of m/s more delta-v than just orbiting it.",
+        "potencia": "Perseverance does not use solar arrays: a Multi-Mission Radioisotope Thermoelectric Generator (MMRTG) gives on the order of a hundred watts, day and night, and batteries cover the peaks.",
         "comunicaciones": "A rover on the surface talks to Earth at tens to a few hundred kbps, often relaying through orbiters.",
         "datos": "Rover science payloads weigh tens of kilograms. The real Perseverance carries seven science instruments."
       }
@@ -56,11 +56,11 @@
       "inspirada_en": "Inspired by NASA's Artemis I mission",
       "descripcion": "A heavy uncrewed capsule flies around the Moon to test everything future astronauts will need, like Artemis I, which launched on Nov 16, 2022 and splashed down on Dec 11, 2022.",
       "objetivo": "Balance all six resources at once: reach lunar orbit, stay powered and in contact, carry your test instruments and last the whole mission.",
-      "cohete": "SLS Block 1 (NASA Space Launch System): the rocket that launched Artemis I, able to lift about 95,000 kg to low Earth orbit and 27,000 kg toward the Moon.",
+      "cohete": "SLS Block 1 (NASA Space Launch System): the launch vehicle that flew Artemis I, able to lift about 95,000 kg to low Earth orbit and 27,000 kg toward the Moon.",
       "pistas_referencia": {
-        "estructura": "A crew capsule is heavy: its structure must protect the whole ship, including the heat shield for the return to Earth. This ship's dry mass is about 10,300 kg.",
-        "propulsion": "Reaching lunar orbit from low Earth orbit takes a few thousand m/s of delta-v.",
-        "potencia": "Orion's European Service Module unfolds four large solar array wings that generate several kilowatts.",
+        "estructura": "A crew capsule is heavy: its structure must protect the whole spacecraft, including the heat shield for the return to Earth. This spacecraft's dry mass is about 10,300 kg.",
+        "propulsion": "Reaching lunar orbit from low Earth orbit takes a few thousand m/s of delta-v (trans-lunar injection plus lunar orbit insertion).",
+        "potencia": "Orion's European Service Module unfolds four solar array wings that generate on the order of ten kilowatts.",
         "comunicaciones": "Links from the Moon can reach hundreds of kbps.",
         "datos": "Artemis I flew two radiation-measuring torso mannequins (the MARE experiment) to study the dose future astronauts would receive.",
         "tiempo": "The real Artemis I mission lasted almost four weeks."
@@ -71,62 +71,62 @@
     "estructura": {
       "nombre": "Structure",
       "unidad": "kg",
-      "que_es": "The frame and panels that hold the ship together.",
-      "por_que_importa": "During launch the rocket shakes and pushes with several times Earth's gravity. Too little structure and the ship breaks apart; too much and you waste mass and money."
+      "que_es": "The frame and panels that hold the spacecraft together.",
+      "por_que_importa": "During launch the rocket shakes and pushes with several times Earth's gravity. Too little structure and the spacecraft breaks apart; too much and you waste mass and money."
     },
     "propulsion": {
       "nombre": "Propulsion (delta-v)",
       "unidad": "m/s",
-      "que_es": "Delta-v is how much your ship can change its speed with its own engine and fuel.",
-      "por_que_importa": "Every destination costs a certain delta-v. If you run out, you never reach your target orbit or planet. More fuel also means more mass to push (rocket equation)."
+      "que_es": "Delta-v is how much your spacecraft can change its velocity with its own engine and propellant.",
+      "por_que_importa": "Every destination costs a certain delta-v. If you run out, you never reach your target orbit or planet. More propellant also means more mass to push (rocket equation)."
     },
     "potencia": {
       "nombre": "Power",
       "unidad": "W",
-      "que_es": "The electrical power available for all the ship's systems, from solar arrays or, for some rovers, a nuclear power source.",
-      "por_que_importa": "Sunlight gets weaker the farther you are from the Sun, and in a planet's shadow you get none. Without enough power the ship shuts down."
+      "que_es": "The electrical power available for all the spacecraft's systems, from solar arrays or, for some rovers, a radioisotope power source (MMRTG).",
+      "por_que_importa": "Sunlight gets weaker the farther you are from the Sun, and in a planet's shadow you get none. Without enough power the spacecraft shuts down."
     },
     "comunicaciones": {
       "nombre": "Communications",
       "unidad": "kbps",
-      "que_es": "How fast the ship can send data back to Earth (kilobits per second).",
-      "por_que_importa": "The signal weakens with distance. A mission that cannot send its data home is lost, even if the ship is fine."
+      "que_es": "How fast the spacecraft can send data back to Earth, in kilobits (kbps) or megabits (Mbps) per second.",
+      "por_que_importa": "The signal weakens with distance. A mission that cannot send its data home is lost, even if the spacecraft is fine."
     },
     "datos": {
       "nombre": "Science instruments",
       "unidad": "kg",
       "que_es": "The mass of science instruments on board: cameras, spectrometers and sensors.",
-      "por_que_importa": "The reason to fly. If you cut them too much, the ship arrives but the mission fails its goal."
+      "por_que_importa": "They are the reason to fly. If you cut them too much, the spacecraft arrives but the mission fails its objective."
     },
     "tiempo": {
       "nombre": "Endurance",
       "unidad": "days",
-      "que_es": "How many days the ship can keep operating (consumables, batteries and systems life).",
-      "por_que_importa": "If the ship cannot last as long as the mission plan, it runs out of time before finishing."
+      "que_es": "How many days the spacecraft can keep operating (consumables, batteries and system lifetime).",
+      "por_que_importa": "If the spacecraft cannot last as long as the mission plan, it runs out of time before finishing."
     }
   },
   "pantalla_didactica": {
     "titulo": "Mission briefing with AION",
     "intro": "Before you design, let's review what you are working with.",
     "regla_presupuesto": "Your budget is enough for a great design, but only if you spend it wisely: overspending on one resource leaves less for the others.",
-    "boton": "LET'S DESIGN"
+    "boton": "Let's design"
   },
   "aion_faq": [
     {
       "pregunta": "What is delta-v?",
-      "respuesta": "It is the total change in speed your engine can give your ship. Each destination needs a certain amount: Mars needs much more than low Earth orbit."
+      "respuesta": "It is the total change in velocity your engine can give your spacecraft. Each destination needs a certain amount: Mars needs much more than low Earth orbit."
     },
     {
-      "pregunta": "Why does the ship need structure?",
+      "pregunta": "Why does the spacecraft need structure?",
       "respuesta": "Launch shakes the rocket hard and pushes it with several times Earth's gravity. The structure keeps everything in one piece."
     },
     {
       "pregunta": "Why is there less power at Mars?",
-      "respuesta": "Sunlight spreads out as it travels. Mars is 1.52 times farther from the Sun than Earth, so each panel gets less than half the light."
+      "respuesta": "Sunlight spreads out as it travels. Mars is 1.52 times farther from the Sun than Earth, so each solar array gets less than half the light. That is one reason Perseverance uses an MMRTG."
     },
     {
       "pregunta": "Why is communication harder far away?",
-      "respuesta": "Radio signals get weaker with distance. Far missions need bigger antennas or more power to send the same data."
+      "respuesta": "Radio signals get weaker with distance. Distant missions need larger high-gain antennas or more transmitter power to send the same data."
     },
     {
       "pregunta": "How is my score calculated?",
@@ -138,15 +138,15 @@
     },
     {
       "pregunta": "What is a Concept Maturity Level?",
-      "respuesta": "NASA's JPL uses Concept Maturity Levels to grow a mission from a first idea (CML 1) to a detailed design. You follow the same steps in the lab."
+      "respuesta": "NASA's Jet Propulsion Laboratory (JPL) uses Concept Maturity Levels (CML) to grow a mission from a first idea (CML 1) to a detailed design. You follow the same steps in the lab."
     }
   ],
   "creditos_finales": {
     "titulo": "Campaign complete!",
-    "frase": "You balanced real missions with real limits. Every minimum, margin and budget you played with comes from data published by NASA, ESA, Cal Poly, SpaceX and Rocket Lab. You already think like a mission designer.",
+    "frase": "You balanced real missions with real limits. Every minimum, margin and budget you played with is based on data published by NASA, ESA, DLR, Airbus, Cal Poly, SpaceX and Rocket Lab, or on the team's estimates. You already think like a mission designer.",
     "equipo": "Team AION SPACE: Emanuel Gonzales, Gonzalo Bejarano, Bryan Chambi, Justin Aguilar, Piero Arista",
     "ia": "Built with Python and Pygame. AI tools (Claude, Claude Code) assisted with code and documentation.",
-    "estimaciones": "Values from official sources are cited in docs/auditoria-datos.md; values marked as estimates are the team's approximations for gameplay."
+    "estimaciones": "Values from official sources are listed here and cited in docs/auditoria-datos.md. Minimum values, costs per unit and some masses are the team's estimates for gameplay, not official figures."
   },
   "fuentes": {
     "cubesat_launch_initiative": "https://www.nasa.gov/smallsat-institute/recent-nasa-launches/",
@@ -165,6 +165,27 @@
     "sls": "https://www.nasa.gov/humans-in-space/space-launch-system/the-great-escape-sls-provides-power-for-missions-to-the-moon-duzxi/",
     "artemis1_splashdown": "https://www.nasa.gov/?p=285100",
     "falcon_heavy": "https://new.spacex.com/vehicles/falcon-heavy",
-    "electron": "https://rocketlabcorp.com/news/updates/rocket-lab-increases-electron-payload-capacity-enabling-interplanetary-missions-and-reusability/"
+    "electron": "https://rocketlabcorp.com/news/updates/rocket-lab-increases-electron-payload-capacity-enabling-interplanetary-missions-and-reusability/",
+    "mmrtg": "https://rps.nasa.gov/power-and-thermal-systems/power-systems/current/"
+  },
+  "fuentes_etiquetas": {
+    "cubesat_launch_initiative": "NASA CubeSat Launch Initiative",
+    "pandora": "NASA Small Satellites blog (Pandora)",
+    "mro": "NASA Mars Reconnaissance Orbiter",
+    "perseverance_quick_facts": "NASA/JPL Mars 2020 quick facts",
+    "artemis": "NASA Artemis",
+    "lanzadores": "Launch vehicle data (game file)",
+    "destinos": "Destination delta-v data (game file)",
+    "perseverance_payload": "Mars 2020 mission overview (RocketSTEM)",
+    "mare_artemis1": "DLR MARE experiment on Artemis I",
+    "mars_fact_sheet": "NASA NSSDCA Mars Fact Sheet",
+    "mro_spacecraft_jpl": "NASA/JPL MRO spacecraft (archived)",
+    "mro_power_comms_nssdca": "MRO power and data rate (Planetary Society)",
+    "orion_esm_airbus": "Airbus Orion European Service Module",
+    "sls": "NASA Space Launch System",
+    "artemis1_splashdown": "NASA Artemis I splashdown",
+    "falcon_heavy": "SpaceX Falcon Heavy",
+    "electron": "Rocket Lab Electron payload capacity",
+    "mmrtg": "NASA Radioisotope Power Systems (MMRTG)"
   }
 }

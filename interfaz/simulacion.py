@@ -99,6 +99,21 @@ def tipo_final(resultado):
     return resultado["falla"]
 
 
+def tipo_potencia(ui):
+    """"solar" o "mmrtg" (v3, A: Harder usa un generador nuclear, sin paneles)."""
+    return ui["estado"].get("tipo_potencia", "solar")
+
+
+def bateria(sup, x, y, nivel):
+    """Indicador de batería (v3, A): nivel de 0 a 1. Se pone rojo cuando queda poco."""
+    pygame.draw.rect(sup, config.BLANCO, (x, y, 26, 12), 1)
+    pygame.draw.rect(sup, config.BLANCO, (x + 26, y + 3, 2, 6))
+    color = config.VERDE if nivel > 0.5 else (config.AMARILLO if nivel > 0.2 else config.ROJO)
+    ancho = int(22 * max(0.0, min(1.0, nivel)))
+    if ancho > 0:
+        pygame.draw.rect(sup, color, (x + 2, y + 2, ancho, 8))
+
+
 def claves_montadas(ui):
     return list(ui["lab"]["partes"].keys()) if ui.get("lab") else []
 
@@ -108,7 +123,8 @@ def preparar_imagen(ui):
     PLEGADOS (despegue). Se hace una sola vez."""
     sim = ui["sim"]
     if sim["imagen"] is None:
-        imagen, medidas = hangar.imagen_cohete(ui["estado"]["cohete"], claves_montadas(ui), 0.0)
+        imagen, medidas = hangar.imagen_cohete(ui["estado"]["cohete"], claves_montadas(ui), 0.0,
+                                               tipo_potencia=tipo_potencia(ui))
         sim["imagen"] = imagen
         sim["medidas"] = medidas
     return sim["imagen"], sim["medidas"]
@@ -124,7 +140,7 @@ def imagen_abierta(ui, apertura):
         sim["abiertas"] = {}
     if paso not in sim["abiertas"]:
         imagen, _ = hangar.imagen_cohete(ui["estado"]["cohete"], claves_montadas(ui), paso / 4,
-                                         con_nariz=False)
+                                         con_nariz=False, tipo_potencia=tipo_potencia(ui))
         sim["abiertas"][paso] = imagen
     return sim["abiertas"][paso]
 
@@ -818,11 +834,12 @@ def final_falla_generica(sup, ui, textos, t, falla, destino):
     else:
         imagen = nave(ui)
     if falla == "se_apaga":
-        # Los paneles se apagan celda por celda (0,8 s) y luego se apaga toda la nave
+        # Los paneles se apagan celda por celda (0,8 s) y luego se apaga toda la nave.
+        # Con MMRTG (v3) no hay paneles: las baterías se agotan y la nave se apaga.
         if ta >= T_APAGADO:
             apagada = True
             imagen = nave_apagada(ui)
-        elif ta >= T_FALLA:
+        elif ta >= T_FALLA and tipo_potencia(ui) == "solar":
             imagen = nave_paneles_apagados(ui, 1 + int((ta - T_FALLA) / 0.8 * 6))
     if falla == "fuera_de_tiempo" and ta >= T_FALLA + 0.8:
         apagada = True
@@ -834,6 +851,8 @@ def final_falla_generica(sup, ui, textos, t, falla, destino):
     else:
         x, y = orbita(sup, ui, destino, ta, imagen)
 
+    if falla == "se_apaga" and tipo_potencia(ui) == "mmrtg":
+        bateria(sup, 36, 44, 1 - ta / T_APAGADO)                  # baterías que se agotan
     if falla == "se_apaga":
         # Luz de estado: verde, luego amarilla parpadeando y al final roja
         if ta < T_FALLA:

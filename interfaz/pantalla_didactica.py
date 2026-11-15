@@ -13,22 +13,64 @@
 import pygame
 
 from interfaz import config, estilo, pantalla_info, sprites
-from interfaz.componentes import (Boton, info_mision, info_recurso, nombre_recurso,
+from interfaz.componentes import (Boton, info_mision, info_recurso, nombre_mision, nombre_recurso,
                                   unidad_recurso)
 
 PANEL_IZQ = pygame.Rect(12, 30, 248, 284)
 PANEL_DER = pygame.Rect(268, 30, 360, 284)
-POR_PAGINA = 2
-ALTO_TARJETA = 132
+Y_TARJETAS = PANEL_DER.y + 20                # debajo del título "Resources of this mission"
+SEPARACION_TARJETAS = 6
+# v3 (C): cada tarjeta mide lo que mida su texto (el español es ~20 % más largo) y en cada
+# página entran las tarjetas que quepan, así ningún texto se sale.
 
 
-def cantidad_paginas(claves):
-    return (len(claves) + POR_PAGINA - 1) // POR_PAGINA      # división redondeando hacia arriba
+def lineas_tarjeta(textos, mision, clave, unidad_datos):
+    """Los textos de una tarjeta, en orden: lista de (texto, color)."""
+    info = info_recurso(textos, clave)
+    titulo = nombre_recurso(textos, clave) + " (" + unidad_recurso(textos, clave, unidad_datos) + ")"
+    partes = [(titulo, config.AMARILLO),
+              (info.get("que_es", ""), config.COLOR_TEXTO),
+              (info.get("por_que_importa", ""), config.COLOR_TEXTO_SUAVE)]
+    referencia = mision.get("pistas_referencia", {}).get(clave)
+    if referencia:
+        partes.append((textos["didactica"]["referencia"] + ": " + referencia, config.VERDE))
+    return partes
 
 
-def pagina_actual(ui, claves):
+def ancho_texto_tarjeta():
+    return PANEL_DER.w - 16 - 16           # tarjeta (8 px a cada lado) y margen interno (8 px)
+
+
+def alto_tarjeta(textos, mision, clave, unidad_datos):
+    """Alto en px de la tarjeta: márgenes + líneas de texto + 3 px entre párrafos."""
+    alto_linea = estilo.fuente(config.LETRA_PEQUENA).get_linesize()
+    alto = 12
+    for contenido, _ in lineas_tarjeta(textos, mision, clave, unidad_datos):
+        alto = alto + len(estilo.partir_lineas(contenido, ancho_texto_tarjeta(), config.LETRA_PEQUENA)) * alto_linea + 3
+    return alto
+
+
+def paginas_tarjetas(textos, mision, claves, unidades):
+    """Reparte las claves en páginas según el alto de cada tarjeta."""
+    alto_max = PANEL_DER.bottom - 4 - Y_TARJETAS
+    paginas = []
+    pagina = []
+    alto = 0
+    for clave in claves:
+        h = alto_tarjeta(textos, mision, clave, unidades[clave])
+        if pagina and alto + h > alto_max:
+            paginas.append(pagina)
+            pagina = []
+            alto = 0
+        pagina.append(clave)
+        alto = alto + h + SEPARACION_TARJETAS
+    if pagina:
+        paginas.append(pagina)
+    return paginas
+
+
+def pagina_actual(ui, total):
     """Página que se ve (se corrige si quedó fuera de rango)."""
-    total = cantidad_paginas(claves)
     pagina = max(0, min(ui["pagina_didactica"], total - 1))
     ui["pagina_didactica"] = pagina
     return pagina
@@ -53,33 +95,28 @@ def dibujar_izquierda(sup, ui, textos, mision):
     estilo.texto_multilinea(sup, guia["intro"], x + 74, PANEL_IZQ.y + 14, ancho - 74,
                             config.LETRA_PEQUENA)
 
-    y = PANEL_IZQ.y + 92
-    y = estilo.texto_multilinea(sup, ui["mision_nombre"], x, y, ancho, config.LETRA_NORMAL,
+    y = PANEL_IZQ.y + 90
+    y = estilo.texto_multilinea(sup, nombre_mision(textos, ui["mision_id"], ui["mision_nombre"]), x, y, ancho, config.LETRA_NORMAL,
                                 config.AMARILLO) + 4
     y = estilo.texto_multilinea(sup, mision.get("inspirada_en", ""), x, y, ancho, config.LETRA_PEQUENA,
-                                config.CIAN) + 6
-    y = estilo.texto_multilinea(sup, mision.get("cohete", ""), x, y, ancho, config.LETRA_PEQUENA) + 6
+                                config.CIAN) + 3
+    y = estilo.texto_multilinea(sup, mision.get("cohete", ""), x, y, ancho, config.LETRA_PEQUENA) + 3
     estilo.texto_multilinea(sup, guia["regla_presupuesto"], x, y, ancho, config.LETRA_PEQUENA,
                             config.VERDE)
 
 
 def dibujar_tarjeta(sup, textos, mision, clave, unidad_datos, y):
-    """Tarjeta de un recurso: nombre (unidad), qué es, por qué importa y la referencia."""
-    rect = pygame.Rect(PANEL_DER.x + 8, y, PANEL_DER.w - 16, ALTO_TARJETA - 6)
+    """Tarjeta de un recurso: nombre (unidad), qué es, por qué importa y la referencia.
+    Devuelve su alto."""
+    alto = alto_tarjeta(textos, mision, clave, unidad_datos)
+    rect = pygame.Rect(PANEL_DER.x + 8, y, PANEL_DER.w - 16, alto)
     estilo.panel(sup, rect, config.AZUL_PANEL, config.COLOR_BORDE)
     x = rect.x + 8
-    ancho = rect.w - 16
-    info = info_recurso(textos, clave)
-    titulo = nombre_recurso(textos, clave) + " (" + unidad_recurso(textos, clave, unidad_datos) + ")"
-    estilo.texto(sup, titulo, x, rect.y + 6, config.LETRA_PEQUENA, config.AMARILLO)
-    yy = rect.y + 20
-    yy = estilo.texto_multilinea(sup, info.get("que_es", ""), x, yy, ancho, config.LETRA_PEQUENA) + 3
-    yy = estilo.texto_multilinea(sup, info.get("por_que_importa", ""), x, yy, ancho, config.LETRA_PEQUENA,
-                                 config.COLOR_TEXTO_SUAVE) + 3
-    referencia = mision.get("pistas_referencia", {}).get(clave)
-    if referencia:
-        estilo.texto_multilinea(sup, textos["didactica"]["referencia"] + ": " + referencia, x, yy, ancho,
-                                config.LETRA_PEQUENA, config.VERDE)
+    yy = rect.y + 6
+    for contenido, color in lineas_tarjeta(textos, mision, clave, unidad_datos):
+        yy = estilo.texto_multilinea(sup, contenido, x, yy, ancho_texto_tarjeta(), config.LETRA_PEQUENA,
+                                     color) + 3
+    return alto
 
 
 def dibujar(sup, ui, textos):
@@ -96,13 +133,13 @@ def dibujar(sup, ui, textos):
 
     # Derecha: tarjetas de la página actual
     estilo.panel(sup, PANEL_DER)
-    pagina = pagina_actual(ui, claves)
-    total = cantidad_paginas(claves)
+    paginas = paginas_tarjetas(textos, mision, claves, ficha["unidades"])
+    total = len(paginas)
+    pagina = pagina_actual(ui, total)
     estilo.texto(sup, t["recursos"], PANEL_DER.x + 10, PANEL_DER.y + 6, config.LETRA_PEQUENA, config.CIAN)
-    y = PANEL_DER.y + 20
-    for clave in claves[pagina * POR_PAGINA:(pagina + 1) * POR_PAGINA]:
-        dibujar_tarjeta(sup, textos, mision, clave, ficha["unidades"][clave], y)
-        y = y + ALTO_TARJETA
+    y = Y_TARJETAS
+    for clave in paginas[pagina]:
+        y = y + dibujar_tarjeta(sup, textos, mision, clave, ficha["unidades"][clave], y) + SEPARACION_TARJETAS
 
     botones = []
     if total > 1:

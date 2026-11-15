@@ -38,8 +38,8 @@
       "The launcher leaves you in low Earth orbit, but you need your own propulsion to reach and hold your final altitude."
     ],
     "pistas_es": [
-      "En el despegue el cohete sufre vibraciones intensas: sin suficiente masa estructural la carga util colapsa.",
-      "El lanzador te deja en orbita baja, pero necesitas impulso propio para alcanzar y mantener tu altitud final."
+      "En el despegue el cohete vibra con violencia: sin suficiente masa estructural, la carga útil se desarma.",
+      "El lanzador te deja en la órbita terrestre baja, pero necesitas tu propia propulsión para alcanzar y mantener tu altitud final."
     ]
   },
   {
@@ -91,8 +91,8 @@
       "Your satellite needs a structure strong enough for the launch loads and a propellant reserve to trim and maintain its orbit."
     ],
     "pistas_es": [
-      "A 1.0 UA recibes 1361 W/m2 de luz solar, pero la nave entra en sombra terrestre y debe alimentar todos sus instrumentos.",
-      "Un cohete mas potente exige mayor masa estructural y mayor reserva de combustible para ajustar la orbita."
+      "A 1.0 UA recibes 1361 W/m² de luz solar, pero la nave pasa por la sombra de la Tierra y aun así debe alimentar todos sus instrumentos.",
+      "Tu satélite necesita una estructura capaz de resistir las cargas del lanzamiento y una reserva de propelente para ajustar y mantener su órbita."
     ]
   },
   {
@@ -105,7 +105,7 @@
     "isp_s": 320,
     "eficiencia_panel": 0.28,
     "musd_por_kg_propelente": 0.012,
-    "musd_por_m2_panel": 8.21,
+    "musd_por_m2_panel": 6.57,
     "presupuesto_musd": 155.0,
     "recursos": [
       {
@@ -131,31 +131,31 @@
       {
         "clave": "potencia",
         "unidad": "W",
-        "minimo": 550,
-        "optimo": 800,
+        "minimo": 850,
+        "optimo": 1000,
         "musd_por_unidad": 0.05,
         "falla": "se_apaga",
-        "fuente": "https://science.nasa.gov/missions/mars-reconnaissance-orbiter/ | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
-        "nota": "En Marte (1.524 UA, 586 W/m2, ef=0.28): min 550 W (3.35 m2, $27.5 M), opt 800 W (4.88 m2, $40.0 M). Equivale a $8.21 M/m2."
+        "fuente": "https://www.planetary.org/mission-spending/mro-spending | https://science.nasa.gov/missions/mars-reconnaissance-orbiter/ | https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html",
+        "nota": "DATO REAL: los paneles de MRO producen ~1000 W en Marte (NSSDCA via Planetary Society) = optimo. Minimo 850 W = ESTIMADO del equipo (~85%). En Marte (1.524 UA, 586 W/m2, ef=0.28): costo ESTIMADO 6.57 M USD/m2 de panel (ajustado en v3 para que el optimo cueste lo mismo que antes): min $34.0 M, opt $40.0 M."
       },
       {
         "clave": "comunicaciones",
-        "unidad": "kbps",
-        "minimo": 30,
-        "optimo": 230,
-        "musd_por_unidad": 0.1,
+        "unidad": "Mbps",
+        "minimo": 1.0,
+        "optimo": 6.0,
+        "musd_por_unidad": 3.833,
         "falla": "incomunicada",
-        "fuente": "https://descanso.jpl.nasa.gov/monograph/series13/DeepCommoOverall--141030A_ama.pdf | https://www.esa.int/Enabling_Support/Operations/Conjunction_over_engineers_wake_Mars_Express",
-        "nota": "Comunicaciones en espacio profundo (NASA JPL) + tasa real banda X ESA Mars Express (30-230 kbps). 0.1 M USD/kbps: min $3.0 M, opt $23.0 M."
+        "fuente": "https://www.planetary.org/mission-spending/mro-spending | https://descanso.jpl.nasa.gov/monograph/series13/DeepCommoOverall--141030A_ama.pdf",
+        "nota": "DATO REAL: tasa maxima de MRO hacia la Tierra 6 Mbps (NSSDCA via Planetary Society) = optimo. Minimo 1.0 Mbps = ESTIMADO del equipo. Costo ESTIMADO 3.833 M USD/Mbps (ajustado en v3): min $3.8 M, opt $23.0 M."
       }
     ],
     "pistas": [
-      "Mars is 1.524 AU from the Sun: the solar energy reaching your panels is less than half of what it is at Earth.",
+      "Mars is 1.524 AU from the Sun: the sunlight reaching your solar arrays is less than half of what it is at Earth.",
       "Sending science images across more than 225 million km requires investing in an X-band high-gain antenna."
     ],
     "pistas_es": [
-      "Marte esta a 1.524 UA del Sol: la energia solar que llega a los paneles es menos de la mitad que en la Tierra.",
-      "Enviar imagenes cientificas a mas de 225 millones de km requiere invertir en una antena de alta ganancia en banda X."
+      "Marte está a 1.524 UA del Sol: la luz solar que llega a tus paneles solares es menos de la mitad que en la Tierra.",
+      "Enviar imágenes científicas a más de 225 millones de km requiere invertir en una antena de alta ganancia en banda X."
     ]
   },
   {
@@ -166,9 +166,8 @@
     "cohete": "Falcon Heavy",
     "masa_seca_kg": 1900.0,
     "isp_s": 450,
-    "eficiencia_panel": 0.3,
+    "tipo_potencia": "mmrtg",
     "musd_por_kg_propelente": 0.007,
-    "musd_por_m2_panel": 8.79,
     "presupuesto_musd": 240.0,
     "recursos": [
       {
@@ -194,12 +193,12 @@
       {
         "clave": "potencia",
         "unidad": "W",
-        "minimo": 600,
-        "optimo": 850,
-        "musd_por_unidad": 0.05,
+        "minimo": 100,
+        "optimo": 110,
+        "musd_por_unidad": 0.386,
         "falla": "se_apaga",
-        "fuente": "https://www.jpl.nasa.gov/missions/ | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
-        "nota": "Potencia en Marte (1.524 UA, ef=0.30) con margen 20% ESA: min 600 W ($30.0 M), opt 850 W ($42.5 M)."
+        "fuente": "https://science.nasa.gov/mission/mars-2020-perseverance/rover-components/ | https://rps.nasa.gov/power-and-thermal-systems/power-systems/current/",
+        "nota": "DATO REAL: Perseverance no usa paneles solares; su generador nuclear MMRTG da ~110 W (NASA/JPL) = optimo, con baterias para los picos. Minimo 100 W = ESTIMADO. Calculo lineal; costo ESTIMADO 0.386 M USD/W (ajustado en v3): min $38.6 M, opt $42.5 M."
       },
       {
         "clave": "comunicaciones",
@@ -227,8 +226,8 @@
       "Arriving intact is not enough: if you cut the science instruments too much, the mission fails its objective."
     ],
     "pistas_es": [
-      "Aterrizar en Marte requiere mucho mas delta-v y estructura que solo orbitarlo.",
-      "No basta con llegar vivo: si recortas demasiado en instrumentos cientificos, la mision no cumple su objetivo."
+      "Aterrizar en Marte requiere mucho más delta-v y estructura que solo orbitarlo.",
+      "Llegar entero no basta: si recortas demasiado los instrumentos científicos, la misión no cumple su objetivo."
     ]
   },
   {
@@ -241,7 +240,7 @@
     "isp_s": 450,
     "eficiencia_panel": 0.3,
     "musd_por_kg_propelente": 0.005,
-    "musd_por_m2_panel": 20.42,
+    "musd_por_m2_panel": 2.006,
     "presupuesto_musd": 305.0,
     "recursos": [
       {
@@ -267,12 +266,12 @@
       {
         "clave": "potencia",
         "unidad": "W",
-        "minimo": 800,
-        "optimo": 1100,
+        "minimo": 9000,
+        "optimo": 11200,
         "musd_por_unidad": 0.05,
         "falla": "se_apaga",
-        "fuente": "https://www.nasa.gov/humans-in-space/artemis/ | https://sci.esa.int/documents/34375/36249/1567260131067-Margin_philosophy_for_science_assessment_studies_1.3.pdf",
-        "nota": "Demanda electrica de nave lunar completa a 1.0 UA (ef=0.30) + margen 20% ESA. 0.05 M USD/W: min $40.0 M, opt $55.0 M."
+        "fuente": "https://www.airbus.com/en/products-services/space/space-exploration/moon-missions/orion-european-service-module | https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/Orion",
+        "nota": "DATO REAL: el Modulo de Servicio Europeo de Orion genera ~11.2 kW con 4 alas de paneles (Airbus/ESA) = optimo. Minimo 9000 W = ESTIMADO. A 1.0 UA (ef=0.30): costo ESTIMADO 2.006 M USD/m2 (ajustado en v3): min $44.2 M, opt $55.0 M."
       },
       {
         "clave": "comunicaciones",
@@ -310,8 +309,8 @@
       "The real mission lasted 25.5 days, including about six days in a distant orbit around the Moon: cut endurance or power too much and it cannot finish."
     ],
     "pistas_es": [
-      "Artemis I es una nave pesada de prueba lunar: requiere equilibrar los seis recursos a la vez.",
-      "La mision real dura casi cuatro semanas en orbita lunar; si recortas demasiado en tiempo o potencia, no logra completarse."
+      "Artemis I fue un vuelo lunar de prueba, pesado y sin tripulación: debes equilibrar los seis recursos a la vez.",
+      "La misión real duró 25.5 días, con unos seis días en una órbita lejana alrededor de la Luna: si recortas demasiado la autonomía o la potencia, no puede terminar."
     ]
   }
 ]

@@ -2,27 +2,35 @@
   "titulo_ventana": "STAR FORGE - Space Mission Design Game",
 
   "botones": {
-    "jugar": "PLAY",
-    "aleatorio": "RANDOM",
-    "continuar": "CONTINUE",
-    "atras": "BACK",
-    "siguiente": "NEXT",
-    "correr": "RUN",
-    "confirmar": "CONFIRM",
-    "cancelar": "CANCEL",
-    "aceptar": "ACCEPT",
-    "confirmar_lanzamiento": "CONFIRM LAUNCH",
-    "creditos": "CREDITS",
-    "reintentar": "TRY AGAIN",
-    "volver_misiones": "BACK TO MISSIONS",
-    "cerrar": "CLOSE"
+    "jugar": "Play",
+    "aleatorio": "Random",
+    "continuar": "Continue",
+    "atras": "Back",
+    "siguiente": "Next",
+    "correr": "Run",
+    "confirmar": "Confirm",
+    "cancelar": "Cancel",
+    "aceptar": "Accept",
+    "confirmar_lanzamiento": "Confirm launch",
+    "creditos": "Credits",
+    "reintentar": "Try again",
+    "volver_misiones": "Back to missions",
+    "cerrar": "Close",
+    "fuentes": "Sources",
+    "anterior": "Previous"
+  },
+
+  "idioma": {
+    "en": "EN",
+    "es": "ES",
+    "etiqueta": "Language / Idioma"
   },
 
   "inicio": {
     "titulo": "STAR FORGE",
     "subtitulo": "Space Mission Design Game",
     "pide_nombre": "Enter your callsign:",
-    "ayuda": "Press ENTER or click PLAY"
+    "ayuda": "Press Enter or click Play"
   },
 
   "avatar": {
@@ -42,9 +50,9 @@
     },
     "opciones": {
       "cuerpo": ["Body 1", "Body 2", "Body 3"],
-      "pelo": ["Short", "Long", "Curly", "Afro", "Braids", "Buzz", "Bald"],
+      "pelo": ["Short", "Long", "Curly", "Afro", "Braids", "Buzz cut", "Bald"],
       "ojos": ["Round", "Narrow", "Wide", "Sleepy"],
-      "accesorio": ["None", "Glasses", "Cap", "Headphones", "Headscarf", "Space helmet"],
+      "accesorio": ["None", "Glasses", "Cap", "Headphones", "Headscarf", "Space helmet", "Santa hat"],
       "polo": ["Blue tee", "Striped tee", "Hoodie", "Jacket", "Flight suit"],
       "pantalon": ["Jeans + sneakers", "Pants + boots", "Shorts + sneakers", "Joggers", "Flight suit + boots"]
     }
@@ -52,7 +60,7 @@
 
   "misiones": {
     "titulo": "Choose your mission",
-    "ayuda": "Start with Easy to master the budget split. Each mission you complete unlocks a new one.",
+    "ayuda": "Start with Easy to master the budget split. Each mission you complete unlocks the next one.",
     "estados": {
       "disponible": "Available",
       "completada": "Completed",
@@ -61,14 +69,22 @@
     },
     "mejor_puntaje": "Best",
     "destino": "Destination",
-    "cohete": "Rocket",
+    "cohete": "Launch vehicle",
     "presupuesto": "Budget"
+  },
+
+  "dificultades": {
+    "Easy": "Easy",
+    "Normal": "Normal",
+    "Hard": "Hard",
+    "Harder": "Harder",
+    "Insane": "Insane"
   },
 
   "info": {
     "descripcion": "Description",
     "objetivo": "Objective",
-    "cohete": "Rocket",
+    "cohete": "Launch vehicle",
     "destino": "Destination",
     "recursos": "Resources to balance",
     "presupuesto": "Budget",
@@ -84,7 +100,7 @@
   },
 
   "pausa": {
-    "titulo": "PAUSED",
+    "titulo": "Paused",
     "reanudar": "Resume",
     "reiniciar": "Restart mission",
     "misiones": "Back to missions",
@@ -124,9 +140,9 @@
     },
     "briefing": {
       "titulo": "Mission briefing",
-      "meta": "Goal",
+      "meta": "Objective",
       "destino": "Destination",
-      "cohete": "Rocket"
+      "cohete": "Launch vehicle"
     },
     "pistas": {
       "titulo": "Update information",
@@ -140,9 +156,9 @@
       "actual": "Current"
     },
     "revision": {
-      "titulo": "BUDGET REVIEW",
+      "titulo": "Budget review",
       "ok": "Costs are within the assigned budget.",
-      "aviso_ok": "After launch confirmation you can't change your design.",
+      "aviso_ok": "Once you confirm the launch, you can't change your design.",
       "excedido": "The total cost exceeds the assigned budget. Adjust your resources."
     }
   },
@@ -150,13 +166,13 @@
   "simulacion": {
     "cuenta": ["T-3", "T-2", "T-1", "IGNITION!"],
     "frases": {
-      "despegue": "T-3, 2, 1... Ignition! Engines at full power. Let's see if your numbers hold.",
-      "explota": "Structural alert! The vibration was stronger than the ship.",
-      "no_llega": "Engines cut off too early! Not enough delta-v to reach the target.",
-      "se_apaga": "Batteries at zero! We used more energy than we generated.",
+      "despegue": "T-3, 2, 1... Ignition! Engines at full thrust. Let's see if your numbers hold.",
+      "explota": "Structural alert! The launch loads were too much for the structure.",
+      "no_llega": "Engine cutoff too early! Not enough delta-v to reach the target.",
+      "se_apaga": "Batteries at zero! The spacecraft used more energy than its power system supplied.",
       "incomunicada": "We made it... but our signal can't reach Earth!",
-      "sin_ciencia": "The ship survived, but without enough instruments or time we missed the goal.",
-      "fuera_de_tiempo": "The ship survived, but without enough instruments or time we missed the goal.",
+      "sin_ciencia": "The spacecraft survived, but without enough science instruments it missed its objective.",
+      "fuera_de_tiempo": "The spacecraft ran out of endurance before the mission plan was complete.",
       "exito": "Mission accomplished! You think like a real mission designer."
     },
     "orbita_objetivo": "Target orbit",
@@ -190,13 +206,19 @@
     "revelado_parcial": "How close each resource was (exact numbers unlock with 5 stars)",
     "titulos_falla": {
       "explota": "The rocket broke apart",
-      "no_llega": "The ship didn't reach its destination",
-      "se_apaga": "The ship ran out of power",
-      "incomunicada": "The ship lost contact with Earth",
-      "sin_ciencia": "The mission missed its science goal",
+      "no_llega": "The spacecraft didn't reach its destination",
+      "se_apaga": "The spacecraft ran out of power",
+      "incomunicada": "The spacecraft lost contact with Earth",
+      "sin_ciencia": "The mission missed its science objective",
       "fuera_de_tiempo": "The mission ran out of time"
     },
     "falla_generica": "Mission failed"
+  },
+
+  "creditos": {
+    "fuentes_titulo": "Sources and estimates",
+    "estimaciones_titulo": "About the numbers",
+    "pagina": "Page {n}/{total}"
   },
 
   "notificaciones": {
@@ -217,11 +239,16 @@
 
   "unidades": {
     "dias": "days",
-    "puntos": "points"
+    "puntos": "points",
+    "kg": "kg",
+    "m/s": "m/s",
+    "W": "W",
+    "kbps": "kbps",
+    "Mbps": "Mbps"
   },
 
   "destinos": {
-    "LEO": "Low Earth Orbit",
+    "LEO": "Low Earth orbit (LEO)",
     "órbita lunar": "Lunar orbit",
     "órbita de Marte": "Mars orbit",
     "superficie de Marte": "Mars surface"

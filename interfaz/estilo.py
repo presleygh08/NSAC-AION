@@ -14,6 +14,16 @@ from interfaz.fuente_pixel import FuentePixel
 # Guardamos las fuentes ya creadas para no crearlas en cada cuadro (es lento).
 _fuentes = {}
 
+# Modo de prueba (v3, C): si REGISTRO es una lista, texto() y panel() anotan ahí lo que
+# dibujan, en orden: ("texto", rect, contenido) o ("panel", rect, None). Lo usa
+# revisar_textos.py para avisar si un texto se sale de su cuadro. En el juego es None.
+REGISTRO = None
+
+
+def _anotar(tipo, rect, contenido=None):
+    if REGISTRO is not None:
+        REGISTRO.append((tipo, pygame.Rect(rect), contenido))
+
 
 def _buscar_ttf():
     """Devuelve la ruta de la primera fuente .ttf de assets/fuentes/, o None si no hay.
@@ -57,7 +67,42 @@ def texto(sup, contenido, x, y, tamano=config.LETRA_NORMAL, color=config.COLOR_T
         imagen_sombra = f.render(contenido, False, config.COLOR_SOMBRA)
         sup.blit(imagen_sombra, (rect.x + 1, rect.y + 1))
     sup.blit(imagen, rect)       # blit = "pegar" la imagen en la superficie
+    if contenido.strip() != "":
+        _anotar("texto", rect, contenido)
     return rect
+
+
+# Tamaños de letra de mayor a menor (para texto_ajustado)
+TAMANOS = [config.LETRA_GIGANTE, config.LETRA_TITULO, config.LETRA_NORMAL, config.LETRA_PEQUENA]
+
+
+def tamano_que_cabe(contenido, ancho_max, tamano):
+    """El tamaño más grande (empezando por 'tamano' y bajando) con el que el texto no pasa
+    de ancho_max píxeles. Si ni la letra pequeña cabe, devuelve la pequeña."""
+    for t in TAMANOS:
+        if t <= tamano and fuente(t).size(contenido)[0] <= ancho_max:
+            return t
+    return config.LETRA_PEQUENA
+
+
+def recortar(contenido, ancho_max, tamano):
+    """Quita letras del final y agrega '...' hasta que el texto quepa en ancho_max."""
+    f = fuente(tamano)
+    if f.size(contenido)[0] <= ancho_max:
+        return contenido
+    while contenido and f.size(contenido + "...")[0] > ancho_max:
+        contenido = contenido[:-1]
+    return contenido.rstrip() + "..."
+
+
+def texto_ajustado(sup, contenido, x, y, ancho_max, tamano=config.LETRA_NORMAL, color=config.COLOR_TEXTO,
+                   centrado=False, derecha=False, sombra=True):
+    """Como texto(), pero nunca pasa de ancho_max (v3, C): usa una letra más pequeña si
+    hace falta y, como último recurso, recorta con '...'. Con centrado=True, (x, y) es el
+    centro; si la letra se achica, el texto sigue centrado en el mismo punto."""
+    t = tamano_que_cabe(contenido, ancho_max, tamano)
+    contenido = recortar(contenido, ancho_max, t)
+    return texto(sup, contenido, x, y, t, color, centrado=centrado, derecha=derecha, sombra=sombra)
 
 
 def texto_contorno(sup, contenido, x, y, tamano, color, color_contorno=config.NEGRO, grosor=2):
@@ -69,14 +114,36 @@ def texto_contorno(sup, contenido, x, y, tamano, color, color_contorno=config.NE
     return texto(sup, contenido, x, y, tamano, color, centrado=True, sombra=False)
 
 
+def cortar_palabra(palabra, ancho_max, f):
+    """Parte una palabra más ancha que ancho_max (por ejemplo una URL) en trozos que sí
+    caben. Devuelve la lista de trozos (v3, C: ningún texto fuera de su cuadro)."""
+    trozos = []
+    trozo = ""
+    for letra in palabra:
+        if f.size(trozo + letra)[0] > ancho_max and trozo != "":
+            trozos.append(trozo)
+            trozo = letra
+        else:
+            trozo = trozo + letra
+    trozos.append(trozo)
+    return trozos
+
+
 def partir_lineas(contenido, ancho_max, tamano=config.LETRA_NORMAL):
     """Parte un texto largo en líneas que no pasen de ancho_max píxeles.
-    Respeta los saltos de línea que ya trae el texto ("\\n")."""
+    Respeta los saltos de línea que ya trae el texto ("\\n"). Si una sola palabra no
+    cabe (una URL), la corta por letras."""
     f = fuente(tamano)
     lineas = []
     for parrafo in contenido.split("\n"):
         linea = ""
+        palabras = []
         for palabra in parrafo.split(" "):
+            if f.size(palabra)[0] > ancho_max:
+                palabras.extend(cortar_palabra(palabra, ancho_max, f))
+            else:
+                palabras.append(palabra)
+        for palabra in palabras:
             prueba = palabra if linea == "" else linea + " " + palabra
             if f.size(prueba)[0] > ancho_max and linea != "":
                 lineas.append(linea)
@@ -101,6 +168,7 @@ def panel(sup, rect, color_fondo=config.COLOR_PANEL, color_borde=config.COLOR_BO
     """Panel con borde pixel: sombra de 1 px, marco de 2 px y esquinas "en escalón"
     (se recorta 1 píxel en cada esquina para que no se vea redondeado ni cuadrado)."""
     r = pygame.Rect(rect)
+    _anotar("panel", r)
     # 1. Sombra abajo a la derecha
     pygame.draw.rect(sup, config.COLOR_SOMBRA, r.move(1, 1))
     # 2. Marco exterior (color del borde) con esquinas recortadas

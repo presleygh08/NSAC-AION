@@ -32,17 +32,17 @@ Leyenda: ✅ verificado · ⚠️ no sustentado (estimación o fuente no oficial
 | Normal – masa seca 140 kg y resto de valores | ⚠️ | Genéricos de "smallsat"; no son de Pandora → el texto dice "inspired by" |
 | Hard – masa seca MRO ≈1030 kg | ✅ | NASA/JPL: subsistemas e instrumentos < 1,031 kg; 1,149 kg de propelente |
 | Hard – cohete Falcon Heavy | ❌ | MRO voló en Atlas V 401 (el juego ya lo aclara en la ficha) |
-| Hard – potencia mín 550 / ópt 800 W | ❌ | Los paneles de MRO producen ~1000 W en Marte (NSSDCA vía Planetary Society) |
-| Hard – comunicaciones 30–230 kbps | ❌ | MRO llega a 6 Mbps; 30–230 kbps corresponde a Mars Express (ESA), no a MRO |
+| Hard – potencia mín 550 / ópt 800 W | ✅ corregido (v3) | Ahora 850 (estimado) / **1000 W**: los paneles de MRO producen ~1000 W en Marte (NSSDCA vía Planetary Society) |
+| Hard – comunicaciones 30–230 kbps | ✅ corregido (v3) | Ahora en Mbps: 1.0 (estimado) / **6.0 Mbps**, la tasa máxima de MRO (30–230 kbps era Mars Express, ESA) |
 | Hard – estructura 375–475 kg | ⚠️ | Estimación sin fuente |
 | Harder – cohete Falcon Heavy | ❌ | Perseverance voló en Atlas V 541 (el juego ya lo aclara) |
-| Harder – potencia solar 600–850 W | ❌ | Perseverance usa un generador nuclear (MMRTG) de ~110 W + baterías |
+| Harder – potencia solar 600–850 W | ✅ corregido (v3) | Ahora MMRTG con cálculo lineal: 100 (estimado) / **110 W** + baterías (NASA/JPL) |
 | Harder – masa seca 1900 kg | ⚠️ | El rover pesa 1,025 kg (NASA/JPL); 1900 kg no tiene fuente |
 | Harder – instrumentos 59 kg (7 instrumentos) | ⚠️/✅ | "7 instrumentos" ✅ NASA; "59 kg" solo en fuente secundaria (rocketstem.org) |
 | Insane – duración 25.5 días | ✅ | NASA (comunicado del amerizaje) |
 | Insane – instrumentos 98 kg (MARE: 36 + 62 kg) | ✅ | DLR (agencia espacial alemana) |
-| Insane – potencia 800–1100 W | ❌ | El módulo de servicio europeo de Orion genera ~11.2 kW (Airbus/ESA) |
+| Insane – potencia 800–1100 W | ✅ corregido (v3) | Ahora 9000 (estimado) / **11 200 W**: el módulo de servicio europeo de Orion genera ~11.2 kW (Airbus/ESA) |
 | Insane – masa seca Orion 10,300 kg | ⚠️ | Sin fuente oficial verificada |
 | Insane – delta-v 4000 m/s de la "nave" | ⚠️ | Simplificación: en la realidad la inyección lunar la hace la etapa ICPS del SLS, no Orion |
-| Todos los costos "M USD por unidad" | ⚠️ | Estimaciones del equipo para el juego; no hay tarifas oficiales |
+| Todos los costos "M USD por unidad" | ⚠️ | Estimaciones del equipo para el juego; no hay tarifas oficiales. En la v3 se ajustaron para que el costo del óptimo no cambie (ver `docs/evidencia_validacion_misiones.md`) |
 | Margen de diseño 20 % | ✅ | ESA, Margin philosophy for science assessment studies |
