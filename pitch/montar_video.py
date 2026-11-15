@@ -47,41 +47,40 @@ T_FINAL = 27.0                         # empieza la tarjeta final
 # (segundo del video, clip, cuadro inicial del clip, velocidad, palabra grande o None)
 TOMAS = [
     (0.00, "avatar", 15, 1.0, None),            # "Today's generation grows up playing."
-    (2.35, "lab1", 0, 1.0, None),               # "Can we turn play into scientific curiosity?"
-    (4.55, "titulo", 9, 1.0, None),             # "Hi, we are Aion Space and this is Star Forge:"
-    (7.80, "hangar_luna", 20, 1.6, "BUILD"),    # "build,"
-    (8.38, "lab2", 184, 1.0, "BALANCE"),        # "balance,"
-    (8.96, "sim_marte", 108, 1.5, "LAUNCH"),    # "launch."
-    (9.90, "misiones", 15, 2.0, None),           # "Build rockets with real NASA data,"
-    (10.90, "didactica_marte", 8, 1.0, None),
-    (11.75, "lab2", 45, 1.0, None),             # "but engineering and budget must stay in balance."
-    (12.95, "lab2", 82, 1.0, None),
-    (13.60, "revision", 6, 1.0, None),
-    (14.45, "sim_falla", 196, 1.6, None),       # "When a mission fails,"
-    (15.80, "res_falla", 0, 1.0, None),         # "the game shows whether design or budget was the problem."
-    (18.85, "lab_fix", 15, 1.6, None),          # "What if the next aerospace engineer..."
-    (19.75, "sim_exito", 232, 1.5, None),
-    (20.75, "sim_exito", 300, 1.0, None),
-    (21.30, "res_exito", 30, 1.0, None),        # "...is born playing Star Forge?"
-    (22.60, "sim_marte", 262, 2.0, None),       # "A generation that learns space science through play,"
-    (24.10, "sim_luna", 244, 1.5, None),
-    (25.30, "sim_mro", 268, 1.5, None),         # "and one day builds real missions."
-    (26.15, "sim_marte", 366, 1.0, None),
+    (2.40, "lab1", 0, 1.0, None),               # "Can we turn playing into scientific curiosity?"
+    (4.45, "titulo", 9, 1.0, None),             # "Hi, we are Aion Space and this is Star Forge:"
+    (7.42, "hangar_luna", 20, 1.6, "BUILD"),    # "build,"
+    (8.00, "lab2", 184, 1.0, "BALANCE"),        # "balance,"
+    (8.58, "sim_marte", 108, 1.5, "LAUNCH"),    # "launch."
+    (9.60, "misiones", 15, 2.0, None),          # "Build rockets with real NASA data,"
+    (10.60, "didactica_marte", 8, 1.0, None),
+    (11.45, "lab2", 45, 1.0, None),             # "but engineering and budget must stay in balance."
+    (12.65, "lab2", 82, 1.0, None),
+    (13.30, "revision", 6, 1.0, None),
+    (14.10, "sim_falla", 196, 1.6, None),       # "When a mission fails,"
+    (15.40, "res_falla", 0, 1.0, None),         # "the game shows whether design or budget was the problem."
+    (18.45, "lab_fix", 15, 1.6, None),          # "What if the next aerospace engineer..."
+    (19.35, "sim_exito", 232, 1.5, None),
+    (20.35, "sim_exito", 300, 1.0, None),
+    (20.90, "res_exito", 30, 1.0, None),        # "...is born playing Star Forge?"
+    (22.20, "sim_marte", 262, 2.0, None),       # "A generation that learns space science through playing,"
+    (23.75, "sim_luna", 244, 1.5, None),
+    (25.05, "sim_mro", 268, 1.5, None),         # "and one day will be able to build real missions."
+    (26.00, "sim_marte", 366, 1.0, None),
 ]
 
 # (inicio, fin, texto) en segundos DEL AUDIO de la voz (se les suma DESFASE_VOZ)
 SUBTITULOS = [
-    (0.00, 2.05, "Today's generation grows up playing."),
-    (2.15, 4.25, "Can we turn play into scientific curiosity?"),
-    (4.38, 7.30, "Hi, we are Aion Space and this is Star Forge:"),
-    (7.50, 9.45, "build, balance, launch."),
-    (9.70, 11.42, "Build rockets with real NASA data,"),
-    (11.50, 14.05, "but engineering and budget must stay in balance."),
-    (14.20, 15.40, "When a mission fails,"),
-    (15.55, 18.50, "the game shows whether design or budget was the problem."),
-    (18.65, 22.15, "What if the next aerospace engineer is born playing Star Forge?"),
-    (22.40, 25.50, "A generation that learns space science through play,"),
-    (25.65, 28.55, "and one day builds real missions."),
+    (0.10, 2.05, "Today's generation grows up playing."),
+    (2.20, 4.15, "Can we turn playing into scientific curiosity?"),
+    (4.25, 7.10, "Hi, we are Aion Space and this is Star Forge:"),
+    (7.18, 9.20, "build, balance, launch."),
+    (9.50, 11.15, "Build rockets with real NASA data,"),
+    (11.22, 13.70, "but engineering and budget must stay in balance."),
+    (13.90, 15.00, "When a mission fails,"),
+    (15.15, 17.95, "the game shows whether design or budget was the problem."),
+    (18.22, 21.60, "What if the next aerospace engineer is born playing Star Forge?"),
+    (21.95, 28.10, "A generation that learns space science through playing, and one day will be able to build real missions."),
 ]
 
 _clips = {}
@@ -265,7 +264,7 @@ def construir_musica():
                 tt = np.arange(int(0.9 * SR)) / SR
                 poner(pista, tj, np.sin(2 * np.pi * f * tt) * np.exp(-tt * 5.5), 0.13)
                 poner(pista, tj + 0.25, np.sin(2 * np.pi * f * 2 * tt) * np.exp(-tt * 9), 0.04)
-            if 7.8 <= tj < 27.0:
+            if 7.4 <= tj < 27.0:
                 tt = np.arange(int(0.3 * SR)) / SR
                 bombo = np.sin(2 * np.pi * (45 * tt + 40 * (1 - np.exp(-tt * 30)) / 30)) * np.exp(-tt * 14)
                 poner(pista, tj, bombo, 0.42)
