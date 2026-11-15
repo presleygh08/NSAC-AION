@@ -108,8 +108,9 @@ El estado global de la interfaz es un diccionario en el bucle principal de `app.
   - **Izquierda:** estantes/archivo de registros → **"!" verde** (pistas) y, más tarde, **"!" morado** (revisión de presupuesto).
   - **Abajo:** cuadro de diálogo del **NPC** (retrato del NPC a la derecha del cuadro) con el título del CML en rojo y la instrucción.
 - **Derecha (~40 %): ventana al hangar** con el cohete de la misión en su torre de lanzamiento.
-- **HUD de presupuesto** siempre visible abajo a la izquierda: `Budget left: $X.XM / $Y.YM` (`presupuesto_restante`),
-  en rojo si es negativo.
+- **HUD de presupuesto** siempre visible abajo a la izquierda, **estático**: solo `Budget: $Y.YM` (el `presupuesto_musd` asignado).
+  **Regla de dificultad:** el juego NUNCA muestra durante el reparto cuánto se lleva gastado en total ni cuánto queda
+  (no usar `presupuesto_restante` ni `gasto_total` en pantalla). El jugador debe sumar mentalmente lo que gasta en cada recurso.
 
 ### 4.2 Movimiento e interacción
 - El avatar se mueve con **flechas o WASD**, velocidad constante, con colisión contra paredes y muebles (`pygame.Rect`).
@@ -132,16 +133,16 @@ Los textos del NPC pueden incluir el nombre del jugador (ej. "Good job, {nombre}
 - Título: nombre del recurso en inglés + unidad (ej. **Propulsion (delta-v) — m/s**) y una línea que explica qué mide
   (de `textos_en.json`; tabla de nombres en sección 7).
 - **Caja de texto numérica**: el jugador escribe la **cantidad del recurso** en su unidad (números y punto decimal).
-- Mientras escribe, en vivo: **"Cost: $X.XXM"** y **"Budget left after this: $Y.YYM"** (rojo si queda negativo).
-  El costo sale de `cotizar(estado, clave, valor)` (sección 9).
+- Mientras escribe, en vivo, solo el costo de ESE recurso: **"Cost: $X.XXM"**. Nada de total gastado ni presupuesto restante.
+  El costo sale de `cotizar(estado, clave, valor)` (sección 9). Al reabrir una estación ya confirmada se muestra la cantidad y el costo que se le asignó.
 - Botones **CONFIRM** y **CANCEL**. Al confirmar: `repartir(estado, clave, costo)`, se marca la estación como hecha
   (el "i" pasa a ✓ pero sigue editable) y se reproduce la **animación de ensamblaje** de ese recurso en el hangar (4.6).
 - Si el texto no es un número válido o es negativo: mensaje en rojo "Enter a valid number" y no se confirma.
 
 ### 4.5 Ventana Budget review (CML 4)
 - Llama a `revisar(estado)`.
-- **Si `ok` es False:** título **BUDGET REVIEW**, mensaje "You have exceeded the budget by $X.XM. Adjust your resources."
-  (o el `mensaje` que devuelve `revisar`) + botón **ACCEPT** que cierra y deja moverse libremente para corregir.
+- **Si `ok` es False:** título **BUDGET REVIEW**, mensaje fijo "The total cost exceeds the assigned budget. Adjust your resources."
+  **Sin decir por cuánto** (no mostrar `exceso_musd` ni el `mensaje` de `revisar`, que trae cifras) + botón **ACCEPT** que cierra y deja moverse libremente para corregir.
 - **Si `ok` es True:** "Costs are within the assigned budget." + botón **CONFIRM LAUNCH** → `simulacion`.
   Ojo: con `ok` True el núcleo pasa a la fase de simulación y ya no se puede repartir, así que esta ventana no tiene botón de volver.
 
@@ -181,7 +182,7 @@ Se usa `revelar(estado)` y luego `registrar_resultado(progreso, estado)` **una s
 
 ### 6.1 Si ganó (`exito` True)
 - Título **"Mission complete!"** y **5 estrellas** (llenas en amarillo según `estrellas`, sección 9).
-- Tabla **Score**: por recurso → Your value, Minimum, Optimal, Points; y una fila **Budget used** (%).
+- Tabla **Score**: por recurso → Your value, Minimum, Optimal, Points; y una fila **Budget used** (total gastado y %): recién aquí, después de la misión, se revela cuánto se gastó.
   Puntaje total grande. `mensaje` de `revelar` debajo.
 - Si `optimo` es True: sello "Optimal design!".
 
